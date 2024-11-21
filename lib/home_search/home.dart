@@ -2,7 +2,7 @@
 import 'package:flight_bocking/widgets/bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'booking_card.dart';
+import 'booking_card/booking_card.dart';
 import '../widgets/colors.dart';
 import 'featured_items.dart';
 
