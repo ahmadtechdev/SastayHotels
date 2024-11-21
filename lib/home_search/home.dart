@@ -7,6 +7,8 @@ import '../widgets/colors.dart';
 import 'featured_items.dart';
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,22 +33,22 @@ class HomeScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(MdiIcons.whatsapp, color: Colors.green, size: 16),
-                      SizedBox(width: 4),
-                      Text(
+                      const SizedBox(width: 4),
+                      const Text(
                         'PKR',
                         style: TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
+                      const Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
                     ],
                   ),
                 ),
-                SizedBox(width: 12),
-                Icon(Icons.headset_mic_outlined, color: TColors.primary),
-                SizedBox(width: 12),
-                Icon(Icons.person_outline, color: TColors.primary),
+                const SizedBox(width: 12),
+                const Icon(Icons.headset_mic_outlined, color: TColors.primary),
+                const SizedBox(width: 12),
+                const Icon(Icons.person_outline, color: TColors.primary),
               ],
             ),
           ),
@@ -72,13 +74,13 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: 0,),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 0,),
     );
   }
 }
 
 class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({Key? key}) : super(key: key);
+  const CustomAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -90,13 +92,13 @@ class CustomAppBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Image.asset('assets/img/newLogo.png', height: 30),
-            Row(
+            const Row(
               children: [
                 CurrencySelector(),
-                const SizedBox(width: 8),
-                const Icon(Icons.headset_mic),
-                const SizedBox(width: 8),
-                const Icon(Icons.person_outline),
+                SizedBox(width: 8),
+                Icon(Icons.headset_mic),
+                SizedBox(width: 8),
+                Icon(Icons.person_outline),
               ],
             ),
           ],
@@ -107,6 +109,8 @@ class CustomAppBar extends StatelessWidget {
 }
 
 class CurrencySelector extends StatelessWidget {
+  const CurrencySelector({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -127,14 +131,14 @@ class CurrencySelector extends StatelessWidget {
 }
 
 class HomeBanner extends StatelessWidget {
-  const HomeBanner({Key? key}) : super(key: key);
+  const HomeBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Container(
-          height: 500,
+          height: 450,
           decoration: const BoxDecoration(
             color: TColors.primary,
             image: DecorationImage(
@@ -155,8 +159,8 @@ class HomeBanner extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 40),
+        const Padding(
+          padding: EdgeInsets.only(top: 40),
           child: BookingCard(),
         ),
       ],
@@ -165,7 +169,7 @@ class HomeBanner extends StatelessWidget {
 }
 
 class CustomerServiceSection extends StatelessWidget {
-  const CustomerServiceSection({Key? key}) : super(key: key);
+  const CustomerServiceSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -238,14 +242,14 @@ class CustomerServiceSection extends StatelessWidget {
 }
 
 class StatsSection extends StatelessWidget {
-  const StatsSection({Key? key}) : super(key: key);
+  const StatsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       // color: AppColors.primary.withOpacity(0.1),
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 0),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           StatItem(
@@ -278,8 +282,8 @@ class StatItem extends StatelessWidget {
     required this.icon,
     required this.number,
     required this.label,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

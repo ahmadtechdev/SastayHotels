@@ -6,7 +6,7 @@ import 'widgets/colors.dart';
 import 'widgets/bottom_bar.dart';
 
 class SupportScreen extends StatelessWidget {
-  const SupportScreen({Key? key}) : super(key: key);
+  const SupportScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,22 +33,22 @@ class SupportScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(MdiIcons.whatsapp, color: Colors.green, size: 16),
-                      SizedBox(width: 4),
-                      Text(
+                      const SizedBox(width: 4),
+                      const Text(
                         'PKR',
                         style: TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
+                      const Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
                     ],
                   ),
                 ),
-                SizedBox(width: 12),
-                Icon(Icons.headset_mic_outlined, color: TColors.primary),
-                SizedBox(width: 12),
-                Icon(Icons.person_outline, color: TColors.primary),
+                const SizedBox(width: 12),
+                const Icon(Icons.headset_mic_outlined, color: TColors.primary),
+                const SizedBox(width: 12),
+                const Icon(Icons.person_outline, color: TColors.primary),
               ],
             ),
           ),
@@ -60,7 +60,7 @@ class SupportScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Connect with us 24/7',
                 style: TextStyle(
                   fontSize: 24,
@@ -68,21 +68,21 @@ class SupportScreen extends StatelessWidget {
                   color: TColors.text,
                 ),
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               _buildSupportOption(
                 icon: Icons.phone,
                 title: 'Call us now',
                 subtitle: '+92 21-111-172-782',
                 iconColor: TColors.primary,
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               _buildSupportOption(
                 icon: MdiIcons.whatsapp,
                 title: 'Whatsapp support',
                 subtitle: '+92 304 777 2782',
                 iconColor: Colors.green,
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               _buildSupportOption(
                 icon: Icons.chat_bubble_outline,
                 title: 'Chat support',
@@ -94,7 +94,7 @@ class SupportScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: const BottomNavBar(
         currentIndex: 2, // Support tab
 
       ),
@@ -116,14 +116,14 @@ class SupportScreen extends StatelessWidget {
           BoxShadow(
             color: TColors.primary.withOpacity(0.2),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
@@ -132,7 +132,7 @@ class SupportScreen extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: TColors.text,
@@ -145,7 +145,7 @@ class SupportScreen extends StatelessWidget {
             color: subtitleColor ?? TColors.grey,
           ),
         ),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: TColors.grey),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: TColors.grey),
       ),
     );
   }

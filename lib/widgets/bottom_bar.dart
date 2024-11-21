@@ -11,9 +11,9 @@ class BottomNavBar extends StatelessWidget {
   final int currentIndex;
 
   const BottomNavBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,16 +53,16 @@ class BottomNavBar extends StatelessWidget {
         onTap: (int index) {
           switch (index) {
             case 0:
-              Get.off(() => HomeScreen());
+              Get.off(() => const HomeScreen());
               break;
             case 1:
               // Get.off(() => BookingsPage());
               break;
             case 2:
-              Get.off(() => SupportScreen());
+              Get.off(() => const SupportScreen());
               break;
             case 3:
-              Get.off(() => MenuScreen());
+              Get.off(() => const MenuScreen());
               break;
           }
         },

@@ -7,7 +7,7 @@ import 'widgets/colors.dart';
 
 void main() {
   runApp(
-    MyApp(),
+    const MyApp(),
   );
 }
 
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: TColors.primary),
         useMaterial3: true,
       ),
-      home: HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }

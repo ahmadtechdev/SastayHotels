@@ -16,7 +16,7 @@ class FeatureItem {
 }
 
 class FeatureCarousel extends StatefulWidget {
-  const FeatureCarousel({Key? key}) : super(key: key);
+  const FeatureCarousel({super.key});
 
   @override
   _FeatureCarouselState createState() => _FeatureCarouselState();
@@ -150,7 +150,7 @@ class FeatureCard extends StatelessWidget {
 }
 
 class FeaturedPartners extends StatefulWidget {
-  const FeaturedPartners({Key? key}) : super(key: key);
+  const FeaturedPartners({super.key});
 
   @override
   State<FeaturedPartners> createState() => _FeaturedPartnersState();
@@ -195,7 +195,7 @@ class _FeaturedPartnersState extends State<FeaturedPartners> {
   }
 
   List<List<String>> _getPagedLogos() {
-    final int logosPerPage = 6; // 2 rows × 3 columns
+    const int logosPerPage = 6; // 2 rows × 3 columns
     final List<List<String>> pages = [];
 
     for (var i = 0; i < partnerLogos.length; i += logosPerPage) {
@@ -278,10 +278,10 @@ class DotsIndicator extends StatelessWidget {
   final int currentPage;
 
   const DotsIndicator({
-    Key? key,
+    super.key,
     required this.itemCount,
     required this.currentPage,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

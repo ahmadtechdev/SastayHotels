@@ -20,7 +20,6 @@ class _TripTypeSelectorState extends State<TripTypeSelector> {
 
     return Row(
       children: tripTypes.map((type) {
-        final isSelected = type == selectedTripType;
 
         return GestureDetector(
           onTap: () {

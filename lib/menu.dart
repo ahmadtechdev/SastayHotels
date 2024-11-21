@@ -6,7 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'widgets/colors.dart';
 
 class MenuScreen extends StatelessWidget {
-  const MenuScreen({Key? key}) : super(key: key);
+  const MenuScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class MenuScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
+                      const Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
                     ],
                   ),
                 ),
@@ -82,11 +82,11 @@ class MenuScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'User 390784',
                           style: TextStyle(
                             fontSize: 18,
@@ -96,14 +96,14 @@ class MenuScreen extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Add your email',
                               style: TextStyle(
                                 color: TColors.grey,
                                 fontSize: 14,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Icon(Icons.edit, size: 16, color: TColors.secondary),
                           ],
                         ),
@@ -114,10 +114,10 @@ class MenuScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Divider(),
+            const Divider(),
             _buildMenuItems(),
             const SizedBox(height: 20),
-            Text(
+            const Text(
               'App version 0.7.73',
               style: TextStyle(
                 color: TColors.grey,
@@ -128,7 +128,7 @@ class MenuScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: const BottomNavBar(
         currentIndex: 3, // Menu tab
 
       ),
