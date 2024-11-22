@@ -2,8 +2,10 @@
 import 'package:flight_bocking/widgets/bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../widgets/app_bar.dart';
 import 'booking_card/booking_card.dart';
 import '../widgets/colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'featured_items.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -11,102 +13,39 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar:  AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Image.asset(
-          'assets/img/newLogo.png', // Make sure to add the logo asset
-          height: 30,
-        ),
-        actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
+    return GestureDetector(
+      onTap: () {
+        // This will dismiss the keyboard when tapping anywhere on the screen
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar:  const CustomAppBar(),
+        body: Container(
+          color: Colors.white,
+          child: const SingleChildScrollView(
+
+            child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(MdiIcons.whatsapp, color: Colors.green, size: 16),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'PKR',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.headset_mic_outlined, color: TColors.primary),
-                const SizedBox(width: 12),
-                const Icon(Icons.person_outline, color: TColors.primary),
+
+                HomeBanner(),
+                SizedBox(height: 60),
+                CustomerServiceSection(),
+                SizedBox(height: 24),
+                FeatureCarousel(),
+                SizedBox(height: 24),
+                StatsSection(),
+                SizedBox(height: 24),
+                FeaturedPartners(),
               ],
             ),
           ),
-        ],
-      ),
-      body: Container(
-        color: Colors.white,
-        child: const SingleChildScrollView(
-
-          child: Column(
-            children: [
-
-              HomeBanner(),
-              SizedBox(height: 60),
-              CustomerServiceSection(),
-              SizedBox(height: 24),
-              FeatureCarousel(),
-              SizedBox(height: 24),
-              StatsSection(),
-              SizedBox(height: 24),
-              FeaturedPartners(),
-            ],
-          ),
         ),
+        bottomNavigationBar: const BottomNavBar(currentIndex: 0,),
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 0,),
     );
   }
 }
 
-class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.white,
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Image.asset('assets/img/newLogo.png', height: 30),
-            const Row(
-              children: [
-                CurrencySelector(),
-                SizedBox(width: 8),
-                Icon(Icons.headset_mic),
-                SizedBox(width: 8),
-                Icon(Icons.person_outline),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class CurrencySelector extends StatelessWidget {
   const CurrencySelector({super.key});
@@ -171,6 +110,29 @@ class HomeBanner extends StatelessWidget {
 class CustomerServiceSection extends StatelessWidget {
   const CustomerServiceSection({super.key});
 
+  final String mobileNumber = "923027253781";
+
+  Future<void> launchWhatsApp() async {
+    String message = "Sastay Hotels ";
+    final url = "https://wa.me/$mobileNumber?text=${Uri.encodeComponent(message)}";
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  Future<void> launchCall() async {
+    final url = "tel:$mobileNumber";
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -210,7 +172,7 @@ class CustomerServiceSection extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => launchCall(),
                   icon: const Icon(Icons.phone),
                   label: const Text('Call'),
                   style: ElevatedButton.styleFrom(
@@ -223,7 +185,7 @@ class CustomerServiceSection extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => launchWhatsApp(),
                   icon: Icon(MdiIcons.whatsapp),
                   label: const Text('WhatsApp'),
                   style: ElevatedButton.styleFrom(
@@ -240,6 +202,7 @@ class CustomerServiceSection extends StatelessWidget {
     );
   }
 }
+
 
 class StatsSection extends StatelessWidget {
   const StatsSection({super.key});

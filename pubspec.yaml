@@ -39,6 +39,7 @@ dependencies:
   get: ^4.6.6
   syncfusion_flutter_datepicker: ^27.2.2
   custom_date_range_picker: ^1.1.0
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +67,7 @@ flutter:
   assets:
       - assets/img/
       - assets/img/logos/
+      - assets/img/cardbg/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

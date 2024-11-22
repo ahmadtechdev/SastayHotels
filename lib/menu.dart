@@ -1,8 +1,7 @@
 // menu_screen.dart
+import 'package:flight_bocking/widgets/app_bar.dart';
 import 'package:flight_bocking/widgets/bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-
 import 'widgets/colors.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -13,48 +12,7 @@ class MenuScreen extends StatelessWidget {
     return Scaffold(
 
       backgroundColor: TColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Image.asset(
-          'assets/img/newLogo.png',
-          height: 30,
-        ),
-        actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children:  [
-                      Icon(MdiIcons.whatsapp, color: Colors.green, size: 16),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'PKR',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Icon(Icons.keyboard_arrow_down, color: Colors.green, size: 16),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.headset_mic_outlined, color: TColors.primary),
-                const SizedBox(width: 12),
-                const Icon(Icons.person_outline, color: TColors.primary),
-              ],
-            ),
-          ),
-        ],
-      ),
+      appBar:  const CustomAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

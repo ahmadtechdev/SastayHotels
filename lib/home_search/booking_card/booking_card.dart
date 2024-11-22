@@ -1,8 +1,9 @@
+import 'package:flight_bocking/home_search/booking_card/tour.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/colors.dart';
-import 'forms/flight_form.dart';
-import 'forms/hotel_form.dart';
+import 'forms/flight/flight_form.dart';
+import 'forms/hotel/hotel_form.dart';
 
 import 'type_selector/type_selector.dart';
 
@@ -50,10 +51,9 @@ class _BookingCardState extends State<BookingCard> {
               ),
               const SizedBox(height: 16),
               // Show the relevant form based on the selected type
-              if (selectedType == 'Flights') const FlightForm(),
+              if (selectedType == 'Flights') FlightForm(),
               if (selectedType == 'Hotels') HotelForm(),
-              if (selectedType == 'Tours')
-                const Text('Tours functionality coming soon!'),
+              if (selectedType == 'Tours') const ToursPage(),
             ],
           ),
         ),

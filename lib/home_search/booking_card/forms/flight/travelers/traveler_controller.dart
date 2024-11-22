@@ -1,7 +1,7 @@
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:get/get.dart';
 
-import '../../../../widgets/snackbar.dart';
+import '../../../../../widgets/snackbar.dart';
 
 class TravelersController extends GetxController {
   var adultCount = 1.obs;
@@ -26,6 +26,7 @@ class TravelersController extends GetxController {
   }
 
   void incrementChildren() => childrenCount.value++;
+
   void decrementChildren() {
     if (childrenCount.value > 0) childrenCount.value--;
   }
@@ -34,7 +35,10 @@ class TravelersController extends GetxController {
     if (infantCount.value < adultCount.value) {
       infantCount.value++;
     } else {
-      CustomSnackBar(message: "Infants cannot exceed the number of adults.", backgroundColor: TColors.third).show();
+      CustomSnackBar(
+              message: "Infants cannot exceed the number of adults.",
+              backgroundColor: TColors.third)
+          .show();
     }
   }
 
