@@ -8,10 +8,10 @@ class TripTypeSelector extends StatefulWidget {
   const TripTypeSelector({super.key, required this.onTripTypeChanged});
 
   @override
-  _TripTypeSelectorState createState() => _TripTypeSelectorState();
+  TripTypeSelectorState createState() => TripTypeSelectorState();
 }
 
-class _TripTypeSelectorState extends State<TripTypeSelector> {
+class TripTypeSelectorState extends State<TripTypeSelector> {
   String selectedTripType = 'One-way'; // Default trip type
 
   @override

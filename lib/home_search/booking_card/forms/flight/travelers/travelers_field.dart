@@ -11,10 +11,10 @@ class TravelersField extends StatefulWidget {
   });
 
   @override
-  _TravelersFieldState createState() => _TravelersFieldState();
+  TravelersFieldState createState() => TravelersFieldState();
 }
 
-class _TravelersFieldState extends State<TravelersField> {
+class TravelersFieldState extends State<TravelersField> {
   final TravelersController controller = Get.put(TravelersController());
 
   @override

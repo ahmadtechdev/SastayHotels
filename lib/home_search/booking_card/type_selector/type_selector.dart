@@ -8,10 +8,10 @@ class TypeSelector extends StatefulWidget {
   const TypeSelector({super.key, required this.onTypeChanged});
 
   @override
-  _TypeSelectorState createState() => _TypeSelectorState();
+  TypeSelectorState createState() => TypeSelectorState();
 }
 
-class _TypeSelectorState extends State<TypeSelector> {
+class TypeSelectorState extends State<TypeSelector> {
   String selectedType = 'Flights';
 
   final List<Map<String, dynamic>> travelTypes = [

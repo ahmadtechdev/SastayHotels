@@ -19,10 +19,10 @@ class FeatureCarousel extends StatefulWidget {
   const FeatureCarousel({super.key});
 
   @override
-  _FeatureCarouselState createState() => _FeatureCarouselState();
+  FeatureCarouselState createState() => FeatureCarouselState();
 }
 
-class _FeatureCarouselState extends State<FeatureCarousel> {
+class FeatureCarouselState extends State<FeatureCarousel> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final List<FeatureItem> features = [

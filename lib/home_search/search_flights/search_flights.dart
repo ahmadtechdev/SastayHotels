@@ -2,171 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../widgets/colors.dart';
-
-// Models
-class Flight {
-  final String airline;
-  final String flightNumber;
-  final String departureTime;
-  final String arrivalTime;
-  final String duration;
-  final double price;
-  final String from;
-  final String to;
-  final String type;
-
-  Flight({
-    required this.airline,
-    required this.flightNumber,
-    required this.departureTime,
-    required this.arrivalTime,
-    required this.duration,
-    required this.price,
-    required this.from,
-    required this.to,
-    required this.type,
-  });
-}
-
-// Controller
-class FlightController extends GetxController {
-  var selectedCurrency = 'PKR'.obs;
-  var selectedDate = DateTime.now().obs;
-  var flights = <Flight>[].obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    loadDummyFlights();
-  }
-
-  void loadDummyFlights() {
-    flights.value = [
-      Flight(
-        airline: 'Airblue',
-        flightNumber: 'PA-401',
-        departureTime: '09:00 AM',
-        arrivalTime: '11:00 AM',
-        duration: '2h',
-        price: 50002,
-        from: 'Lahore (LHE)',
-        to: 'Karachi (KHI)',
-        type: 'Value',
-      ),
-      Flight(
-        airline: 'PIA',
-        flightNumber: 'PK-302',
-        departureTime: '08:00 AM',
-        arrivalTime: '10:30 AM',
-        duration: '2h 30m',
-        price: 45000,
-        from: 'Karachi (KHI)',
-        to: 'Islamabad (ISB)',
-        type: 'Economy',
-      ),
-      Flight(
-        airline: 'SereneAir',
-        flightNumber: 'ER-101',
-        departureTime: '07:30 AM',
-        arrivalTime: '09:45 AM',
-        duration: '2h 15m',
-        price: 48000,
-        from: 'Islamabad (ISB)',
-        to: 'Lahore (LHE)',
-        type: 'Business',
-      ),
-      Flight(
-        airline: 'Airblue',
-        flightNumber: 'PA-402',
-        departureTime: '01:00 PM',
-        arrivalTime: '03:00 PM',
-        duration: '2h',
-        price: 52000,
-        from: 'Karachi (KHI)',
-        to: 'Lahore (LHE)',
-        type: 'Premium',
-      ),
-      Flight(
-        airline: 'PIA',
-        flightNumber: 'PK-305',
-        departureTime: '11:00 AM',
-        arrivalTime: '01:00 PM',
-        duration: '2h',
-        price: 46000,
-        from: 'Lahore (LHE)',
-        to: 'Peshawar (PEW)',
-        type: 'Economy',
-      ),
-      Flight(
-        airline: 'SereneAir',
-        flightNumber: 'ER-102',
-        departureTime: '03:00 PM',
-        arrivalTime: '05:15 PM',
-        duration: '2h 15m',
-        price: 49000,
-        from: 'Peshawar (PEW)',
-        to: 'Karachi (KHI)',
-        type: 'Business',
-      ),
-      Flight(
-        airline: 'Airblue',
-        flightNumber: 'PA-403',
-        departureTime: '06:00 AM',
-        arrivalTime: '08:00 AM',
-        duration: '2h',
-        price: 53000,
-        from: 'Multan (MUX)',
-        to: 'Islamabad (ISB)',
-        type: 'Value',
-      ),
-      Flight(
-        airline: 'PIA',
-        flightNumber: 'PK-308',
-        departureTime: '09:30 AM',
-        arrivalTime: '11:30 AM',
-        duration: '2h',
-        price: 47000,
-        from: 'Karachi (KHI)',
-        to: 'Multan (MUX)',
-        type: 'Economy',
-      ),
-      Flight(
-        airline: 'SereneAir',
-        flightNumber: 'ER-103',
-        departureTime: '10:00 AM',
-        arrivalTime: '12:30 PM',
-        duration: '2h 30m',
-        price: 49500,
-        from: 'Islamabad (ISB)',
-        to: 'Peshawar (PEW)',
-        type: 'Business',
-      ),
-      Flight(
-        airline: 'Airblue',
-        flightNumber: 'PA-404',
-        departureTime: '05:00 PM',
-        arrivalTime: '07:00 PM',
-        duration: '2h',
-        price: 54000,
-        from: 'Lahore (LHE)',
-        to: 'Karachi (KHI)',
-        type: 'Premium',
-      ),
-    ];
-
-  }
-
-  void changeCurrency(String currency) {
-    selectedCurrency.value = currency;
-    Get.back();
-  }
-}
+import 'flight_package/fight_package.dart';
+import 'search_flight_utils/filter_modal.dart';
+import 'search_flight_utils/flight_bottom_sheet.dart';
+import 'search_flight_utils/flight_controller.dart';
 
 // Currency Dialog
 class CurrencyDialog extends StatelessWidget {
   final FlightController controller;
 
-  const CurrencyDialog({Key? key, required this.controller}) : super(key: key);
+  const CurrencyDialog({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -218,28 +63,26 @@ class CurrencyDialog extends StatelessWidget {
 class FlightCard extends StatelessWidget {
   final Flight flight;
 
-  const FlightCard({Key? key, required this.flight}) : super(key: key);
+  const FlightCard({super.key, required this.flight});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: TColors.background,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: TColors.primary.withOpacity(0.2),
-            blurRadius: 10,
-            // spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Get.dialog(
+        PackageSelectionDialog(flight: flight),
       ),
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          color: TColors.background,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -248,6 +91,8 @@ class FlightCard extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  Image.asset(flight.imgPath, height: 32, width: 50,),
+                  const SizedBox(width: 8),
                   Text(
                     flight.airline,
                     style: const TextStyle(
@@ -258,7 +103,7 @@ class FlightCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     flight.flightNumber,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: TColors.grey,
                       fontSize: 14,
                     ),
@@ -275,13 +120,13 @@ class FlightCard extends StatelessWidget {
                       Text(
                         flight.departureTime,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         flight.from,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: TColors.grey,
                           fontSize: 14,
                         ),
@@ -292,12 +137,23 @@ class FlightCard extends StatelessWidget {
                     children: [
                       Text(
                         flight.duration,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: TColors.grey,
                           fontSize: 14,
                         ),
                       ),
-                      const Icon(Icons.flight_takeoff),
+                      const Icon(
+                        Icons.flight_takeoff,
+                        color: TColors.primary,
+                      ),
+                      if(flight.isNonStop)
+                      const Text(
+                        'Nonstop',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: TColors.grey,
+                        ),
+                      )
                     ],
                   ),
                   Column(
@@ -306,13 +162,13 @@ class FlightCard extends StatelessWidget {
                       Text(
                         flight.arrivalTime,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         flight.to,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: TColors.grey,
                           fontSize: 14,
                         ),
@@ -326,12 +182,20 @@ class FlightCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   GetX<FlightController>(
-                    builder: (controller) => Text(
-                      '${controller.selectedCurrency.value} ${flight.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: TColors.primary,
+                    builder: (controller) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: TColors.secondary.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(42),
+                        border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        '${controller.selectedCurrency.value} ${flight.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: TColors.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -345,22 +209,23 @@ class FlightCard extends StatelessWidget {
   }
 }
 
-// Main Page
 class FlightBookingPage extends StatelessWidget {
   final controller = Get.put(FlightController());
 
-  FlightBookingPage({Key? key}) : super(key: key);
+  FlightBookingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: TColors.background,
+      backgroundColor: TColors.background2,
       appBar: AppBar(
+        surfaceTintColor: TColors.background,
+        backgroundColor: TColors.background,
         leading: const BackButton(),
-        title: Column(
+        title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Lahore → Karachi',
               style: TextStyle(fontSize: 16),
             ),
@@ -377,6 +242,7 @@ class FlightBookingPage extends StatelessWidget {
           GetX<FlightController>(
             builder: (controller) => TextButton(
               onPressed: () {
+                // Currency selection dialog
                 showDialog(
                   context: context,
                   builder: (context) => CurrencyDialog(controller: controller),
@@ -396,25 +262,44 @@ class FlightBookingPage extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // Filter and sorting section
           Container(
-            color: TColors.secondary,
+            color: TColors.background,
             margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _filterButton('Suggested', true),
-                  _filterButton('Cheapest', false),
-                  _filterButton('Fastest', false),
+                  Obx(() => _filterButton(
+                      'Suggested', controller.sortType.value == 'Suggested')),
+                  Obx(() => _filterButton(
+                      'Cheapest', controller.sortType.value == 'Cheapest')),
+                  Obx(() => _filterButton(
+                      'Fastest', controller.sortType.value == 'Fastest')),
                   OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Open filter bottom sheet
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (_) =>
+                            FilterBottomSheet(controller: controller),
+                      );
+                    },
                     child: const Row(
                       children: [
-                        Icon(Icons.tune, size: 12,),
+                        Icon(Icons.tune, size: 12),
                         SizedBox(width: 4),
-                        Text('Filters', style: TextStyle(fontSize: 12),),
+                        Text(
+                          'Filters',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -422,14 +307,26 @@ class FlightBookingPage extends StatelessWidget {
               ),
             ),
           ),
+          // Flight list section
           Expanded(
             child: GetX<FlightController>(
-              builder: (controller) => ListView.builder(
-                itemCount: controller.flights.length,
-                itemBuilder: (context, index) {
-                  return FlightCard(flight: controller.flights[index]);
-                },
-              ),
+              builder: (controller) {
+                if (controller.filteredFlights.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No flights match your criteria.',
+                      style: TextStyle(color: TColors.grey),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: controller.filteredFlights.length,
+                  itemBuilder: (context, index) {
+                    return FlightCard(
+                        flight: controller.filteredFlights[index]);
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -439,11 +336,17 @@ class FlightBookingPage extends StatelessWidget {
 
   Widget _filterButton(String text, bool isSelected) {
     return TextButton(
-      onPressed: () {},
+      onPressed: () {
+        // Update sorting type
+        controller.updateSortType(text);
+      },
       style: TextButton.styleFrom(
         foregroundColor: isSelected ? TColors.primary : TColors.grey,
       ),
-      child: Text(text, style: TextStyle(fontSize: 12),),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12),
+      ),
     );
   }
 }
