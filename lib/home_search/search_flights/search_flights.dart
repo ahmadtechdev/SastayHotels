@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../widgets/colors.dart';
+import '../home.dart';
 import 'flight_package/fight_package.dart';
 import 'search_flight_utils/filter_modal.dart';
 import 'search_flight_utils/flight_bottom_sheet.dart';
@@ -91,7 +92,11 @@ class FlightCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Image.asset(flight.imgPath, height: 32, width: 50,),
+                  Image.asset(
+                    flight.imgPath,
+                    height: 32,
+                    width: 50,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     flight.airline,
@@ -146,14 +151,14 @@ class FlightCard extends StatelessWidget {
                         Icons.flight_takeoff,
                         color: TColors.primary,
                       ),
-                      if(flight.isNonStop)
-                      const Text(
-                        'Nonstop',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: TColors.grey,
-                        ),
-                      )
+                      if (flight.isNonStop)
+                        const Text(
+                          'Nonstop',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: TColors.grey,
+                          ),
+                        )
                     ],
                   ),
                   Column(
@@ -183,18 +188,20 @@ class FlightCard extends StatelessWidget {
                 children: [
                   GetX<FlightController>(
                     builder: (controller) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: TColors.secondary.withOpacity(0.3),
+                        color: TColors.black.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(42),
-                        border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                        border:
+                            Border.all(color: TColors.black.withOpacity(0.3)),
                       ),
                       child: Text(
                         '${controller.selectedCurrency.value} ${flight.price.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: TColors.primary,
+                          color: TColors.black,
                         ),
                       ),
                     ),
@@ -209,6 +216,56 @@ class FlightCard extends StatelessWidget {
   }
 }
 
+class StepContainer extends StatelessWidget {
+  final String stepNumber;
+  final String stepText;
+  final bool isActive;
+
+  const StepContainer({
+    Key? key,
+    required this.stepNumber,
+    required this.stepText,
+    this.isActive = false,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: isActive ? TColors.primary : TColors.grey,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              stepNumber,
+              style: const TextStyle(
+                color: TColors.background,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            stepText,
+            style: TextStyle(
+              color: isActive ? TColors.primary : TColors.grey,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
 class FlightBookingPage extends StatelessWidget {
   final controller = Get.put(FlightController());
 
@@ -222,19 +279,70 @@ class FlightBookingPage extends StatelessWidget {
         surfaceTintColor: TColors.background,
         backgroundColor: TColors.background,
         leading: const BackButton(),
-        title: const Column(
+
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Lahore → Karachi',
-              style: TextStyle(fontSize: 16),
+            const Row(
+              children: [
+                Text(
+                  'Karachi ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: TColors.text,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Icon(
+                  Icons.swap_horiz,
+                  size: 20,
+                  color:  TColors.text,
+                ),
+                Text(
+                  ' Islamabad',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color:  TColors.text,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '1 Dec',
-              style: TextStyle(
-                fontSize: 14,
-                color: TColors.grey,
-              ),
+            Row(
+              children: [
+                const Text(
+                  '20 Dec - 25 Dec',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: TColors.text,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    // Add your logic for changing the date
+                    Get.off(()=> const HomeScreen());
+                  },
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.edit,
+                        size: 16,
+                        color:  TColors.text,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Change',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:  TColors.text,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -262,6 +370,27 @@ class FlightBookingPage extends StatelessWidget {
       ),
       body: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            color: Colors.white,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                StepContainer(
+                  stepNumber: '1',
+                  stepText: 'Karachi to Islamabad',
+                  isActive: true,
+                ),
+                StepContainer(
+                  stepNumber: '2',
+                  stepText: 'Islamabad to Karachi',
+                  isActive: false,
+                ),
+              ],
+            ),
+          ),
+
           // Filter and sorting section
           Container(
             color: TColors.background,

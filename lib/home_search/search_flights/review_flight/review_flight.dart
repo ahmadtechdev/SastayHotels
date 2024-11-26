@@ -1,4 +1,6 @@
+import 'package:flight_bocking/home_search/search_flights/booking_flight/booking_flight.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'dart:async';
 
 import '../../../widgets/colors.dart';
@@ -68,7 +70,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
           icon: const Icon(
             Icons.arrow_back,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Get.back(),
         ),
         title: const Text(
           'Review Trip',
@@ -138,8 +140,8 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Text(
                           '06:15 PM',
                           style: TextStyle(
@@ -195,10 +197,167 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                           ),
                         ),
                         const Spacer(),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text('Change'),
+                        // TextButton(
+                        //   onPressed: () {},
+                        //   child: const Text('Change'),
+                        // ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: TColors.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(42),
+                            border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                          ),
+                          child: const Text(
+                            'Change',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: TColors.primary,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical:0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                decoration: BoxDecoration(
+                  color: TColors.background,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Text(
+                          'Returning',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: TColors.grey,
+                          ),
                         ),
+                        Spacer(),
+                        Text(
+                          '07 Dec, 2024',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: TColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Image.asset(
+                          "assets/img/logos/flyjinnah.png",
+                          height: 30,
+                          width: 40,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Serene Air',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'ER-502 (I_SP)',
+                          style: TextStyle(color: TColors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Row(
+                      children: [
+                        Text(
+                          '06:15 PM',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        Spacer(),
+                        Icon(Icons.arrow_forward, color: TColors.grey),
+                        Spacer(),
+                        Text(
+                          '08:00 PM',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Row(
+                      children: [
+                        Text(
+                          'Karachi (KHI) - Nonstop - Islamabad (ISB)',
+                          style: TextStyle(color: TColors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Row(
+                      children: [
+                        Icon(Icons.shopping_bag, size: 16, color: TColors.grey),
+                        SizedBox(width: 4),
+                        Text(
+                          'Total: 80kg',
+                          style: TextStyle(color: TColors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Serene Plus',
+                      style: TextStyle(color: TColors.grey),
+                    ),
+                    const Divider(color: TColors.grey),
+                    Row(
+                      children: [
+                        const Text(
+                          'PKR 35,866',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const Spacer(),
+                        // TextButton(
+                        //   onPressed: () {},
+                        //   child: const Text('Change'),
+                        // ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: TColors.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(42),
+                            border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                          ),
+                          child: const Text(
+                            'Change',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: TColors.primary,
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ],
@@ -207,7 +366,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
             ),
             // Add-ons Section
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               child: Text(
                 'Add-Ons',
                 style: TextStyle(
@@ -217,7 +376,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 1500),
                 curve: Curves.easeInOut,
@@ -226,8 +385,8 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: _animatedShadow,
                 ),
-                padding: const EdgeInsets.all(16),
-                child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
                   width: double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,21 +398,21 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                             'Sasta Refund',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
                           ),
                           Text(
                             'PKR 849',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 14,
                               color: TColors.primary,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(
-                        height: 16,
+                        height: 12,
                       ),
                       Row(
                         children: [
@@ -273,7 +432,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                                 Text(
                                   'Enhance your booking experience with:',
                                   style: TextStyle(
-                                      color: TColors.grey, fontSize: 12),
+                                      color: TColors.grey, fontSize: 11),
                                   softWrap: true,
                                   // Ensures text wraps to the next line
                                   overflow: TextOverflow.visible,
@@ -287,7 +446,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                                         size: 14, color: TColors.primary),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Zero cancellation fees',
+                                      'Zero cancellation fees', style: TextStyle(fontSize: 11),
                                     ),
                                   ],
                                 ),
@@ -297,7 +456,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                                     Icon(Icons.check,
                                         size: 14, color: TColors.primary),
                                     SizedBox(width: 8),
-                                    Text('Guaranteed refund'),
+                                    Text('Guaranteed refund',  style: TextStyle(fontSize: 11)),
                                   ],
                                 ),
                                 SizedBox(height: 4),
@@ -307,7 +466,8 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                                         size: 14, color: TColors.primary),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Ensured flexibility for \n your trip',
+                                      'Ensured flexibility for your trip',
+                                      style: TextStyle(fontSize: 11),
                                       softWrap: true,
                                       // Ensures text wraps to the next line
                                       overflow: TextOverflow.visible,
@@ -328,7 +488,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                           onPressed: () {},
                           child: const Text(
                             'Terms & Conditions',
-                            style: TextStyle(color: TColors.primary),
+                            style: TextStyle(color: TColors.primary, fontSize: 12),
                           ),
                         ),
                       ),
@@ -352,51 +512,65 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                 ),
               ),
             ),
-            // Bottom Section
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Text(
-                    'Review Details',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Spacer(),
-                  Text(
-                    'PKR 35,866',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: TColors.primary,
-                  foregroundColor: TColors.background,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(48),
-                  ),
-                ),
-                child: const Text(
-                  'Book',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 12,
-            )
+
           ],
         ),
       ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  children: [
+                    Text(
+                      'Review Details',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: TColors.grey),
+                    ),
+                   SizedBox(
+                     height: 2,
+                   ),
+                    Text(
+                      'PKR 35,866',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  width:200,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.to(()=>const BookingForm());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: TColors.primary,
+                      foregroundColor: TColors.background,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(48),
+                      ),
+                    ),
+                    child: const Text(
+                      'Book',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(
+            height: 2,
+          )
+        ],
+      ) ,
     );
   }
 }
