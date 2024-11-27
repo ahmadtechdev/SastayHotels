@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math';
 
+import '../flight_package/flight_package.dart';
+import '../review_flight/review_flight.dart';
+import '../search_flights.dart';
 import 'filter_modal.dart';
 
 class FilterState {
@@ -53,9 +56,49 @@ class FlightController extends GetxController {
     arrivalTimeRanges: {},
   ));
 
+  // Scenario tracking
+  final Rx<FlightScenario> currentScenario = FlightScenario.oneWay.obs;
+
+  // Flight selection tracking
+  final Rx<bool> isSelectingFirstFlight = true.obs;
+  final Rx<Flight?> selectedFirstFlight = Rx<Flight?>(null);
+  final Rx<Flight?> selectedSecondFlight = Rx<Flight?>(null);
+
+  void resetFlightSelection() {
+    isSelectingFirstFlight.value = true;
+    selectedFirstFlight.value = null;
+    selectedSecondFlight.value = null;
+  }
+
+  void setScenario(FlightScenario scenario) {
+    currentScenario.value = scenario;
+    resetFlightSelection();
+  }
+
+  void handleFlightSelection(Flight flight) {
+    if (currentScenario.value == FlightScenario.oneWay) {
+      // Directly proceed to package selection for one-way trips
+      Get.to(() => PackageSelectionDialog(flight: flight, isAnyFlightRemaining: false,));
+    } else {
+      // For return trips
+      if (isSelectingFirstFlight.value) {
+        // Select the first flight
+        selectedFirstFlight.value = flight;
+        isSelectingFirstFlight.value = false;
+        Get.to(() =>
+            PackageSelectionDialog(flight: flight, isAnyFlightRemaining: true));
+      } else {
+        // Select the second flight and move to the review page
+        selectedSecondFlight.value = flight;
+        Get.to(() => PackageSelectionDialog(
+            flight: flight, isAnyFlightRemaining: false));
+      }
+    }
+  }
 
   // New: Sorting type
   var sortType = 'Suggested'.obs;
+
   void loadDummyFlights() {
     flights.value = List.generate(100, (index) {
       // Generate unique flight numbers and times for variety
@@ -96,8 +139,8 @@ class FlightController extends GetxController {
       final randomMinutes = index % 3 == 0
           ? 30
           : index % 2 == 0
-          ? 15
-          : 45; // Randomized 15, 30, or 45 minutes
+              ? 15
+              : 45; // Randomized 15, 30, or 45 minutes
       final duration = '${randomHours}h ${randomMinutes}m';
 
       // Random but consistent flight details
@@ -105,10 +148,12 @@ class FlightController extends GetxController {
         imgPath: images[airline]!,
         airline: airline,
         flightNumber: '${airline.substring(0, 2).toUpperCase()}-${300 + index}',
-        departureTime: '${(6 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
-        arrivalTime: '${(8 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
+        departureTime:
+            '${(6 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
+        arrivalTime:
+            '${(8 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
         duration: duration,
-        price: 4500*(index+1) + (index % 50000),
+        price: 4500 * (index + 1) + (index % 50000),
         from: from,
         to: to == from ? cities[(index + 2) % cities.length] : to,
         type: type,
@@ -131,7 +176,8 @@ class FlightController extends GetxController {
     loadDummyFlights();
     initializeFilterRanges();
     ever(filterState, (_) => applyFilters());
-    ever(sortType, (_) => sortFlights()); // Sort flights when sorting type changes
+    ever(sortType,
+        (_) => sortFlights()); // Sort flights when sorting type changes
   }
 
   void initializeFilterRanges() {
@@ -162,7 +208,7 @@ class FlightController extends GetxController {
       // Refundable filter
       if (filterState.value.isRefundable && !flight.isRefundable) {
         return false;
-      }  // Non Stop filter
+      } // Non Stop filter
       if (filterState.value.isNonStop && !flight.isNonStop) {
         return false;
       }
@@ -195,16 +241,19 @@ class FlightController extends GetxController {
 
     filteredFlights.value = filtered;
   }
+
   // New: Sort flights based on the selected sort type
   void sortFlights() {
     if (sortType.value == 'Cheapest') {
       filteredFlights.sort((a, b) => a.price.compareTo(b.price));
     } else if (sortType.value == 'Fastest') {
       filteredFlights.sort((a, b) {
-        return parseTimeToDouble(a.duration).compareTo(parseTimeToDouble(b.duration));
+        return parseTimeToDouble(a.duration)
+            .compareTo(parseTimeToDouble(b.duration));
       });
     } else {
-      filteredFlights.value = flights.toList(); // Default: Suggested (original order)
+      filteredFlights.value =
+          flights.toList(); // Default: Suggested (original order)
     }
   }
 
@@ -212,6 +261,7 @@ class FlightController extends GetxController {
   void updateSortType(String type) {
     sortType.value = type;
   }
+
   bool isTimeInRange(String flightTime, String range) {
     final time = parseTimeToDouble(flightTime);
 
@@ -256,6 +306,7 @@ class FlightController extends GetxController {
       throw FormatException("Invalid time format: $timeStr");
     }
   }
+
   void updatePriceRange(RangeValues values) {
     filterState.value = filterState.value.copyWith(priceRange: values);
   }
@@ -290,6 +341,7 @@ class FlightController extends GetxController {
   void toggleRefundable(bool value) {
     filterState.value = filterState.value.copyWith(isRefundable: value);
   }
+
   void toggleNonStop(bool value) {
     filterState.value = filterState.value.copyWith(isNonStop: value);
   }

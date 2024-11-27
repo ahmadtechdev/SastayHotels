@@ -186,7 +186,13 @@ class FlightForm extends StatelessWidget {
         ElevatedButton(
           onPressed: () {
             // Implement search logic using flightDateController
-            Get.to(()=>FlightBookingPage());
+            if(flightDateController.tripType.value == 'One-way'){
+              Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
+            }else{
+              // For return flight
+              Get.to(() => FlightBookingPage(scenario: FlightScenario.returnFlight));
+            }
+            // Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: TColors.primary,

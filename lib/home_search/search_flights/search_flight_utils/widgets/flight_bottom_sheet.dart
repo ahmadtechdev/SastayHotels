@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../widgets/colors.dart';
-import 'flight_controller.dart';
+import '../../../../widgets/colors.dart';
+import '../flight_controller.dart';
 
 class FilterBottomSheet extends StatelessWidget {
   final FlightController controller;

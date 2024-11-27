@@ -6,14 +6,18 @@ import 'dart:async';
 import '../../../widgets/colors.dart';
 
 class ReviewTripPage extends StatefulWidget {
-  const ReviewTripPage({Key? key}) : super(key: key);
+  final bool isMulti; // Add 'final' for immutability
+
+  const ReviewTripPage({
+    Key? key,
+    required this.isMulti, // Mark the parameter as required
+  }) : super(key: key);
 
   @override
   _ReviewTripPageState createState() => _ReviewTripPageState();
 }
 
 class _ReviewTripPageState extends State<ReviewTripPage> {
-  final Color _animatedColor = TColors.primary;
   List<BoxShadow> _animatedShadow = [
     BoxShadow(
       color: TColors.primary.withOpacity(0.4),
@@ -82,288 +86,13 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Flight Details Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                decoration: BoxDecoration(
-                  color: TColors.background,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Text(
-                          'Departing',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: TColors.grey,
-                          ),
-                        ),
-                        Spacer(),
-                        Text(
-                          '07 Dec, 2024',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: TColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Image.asset(
-                          "assets/img/logos/flyjinnah.png",
-                          height: 30,
-                          width: 40,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Serene Air',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'ER-502 (I_SP)',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Text(
-                          '06:15 PM',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        Spacer(),
-                        Icon(Icons.arrow_forward, color: TColors.grey),
-                        Spacer(),
-                        Text(
-                          '08:00 PM',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Text(
-                          'Karachi (KHI) - Nonstop - Islamabad (ISB)',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Icon(Icons.shopping_bag, size: 16, color: TColors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          'Total: 80kg',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Serene Plus',
-                      style: TextStyle(color: TColors.grey),
-                    ),
-                    const Divider(color: TColors.grey),
-                    Row(
-                      children: [
-                        const Text(
-                          'PKR 35,866',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        // TextButton(
-                        //   onPressed: () {},
-                        //   child: const Text('Change'),
-                        // ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: TColors.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(42),
-                            border: Border.all(color: TColors.primary.withOpacity(0.3)),
-                          ),
-                          child: const Text(
-                            'Change',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: TColors.primary,
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical:0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-                decoration: BoxDecoration(
-                  color: TColors.background,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Text(
-                          'Returning',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: TColors.grey,
-                          ),
-                        ),
-                        Spacer(),
-                        Text(
-                          '07 Dec, 2024',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: TColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Image.asset(
-                          "assets/img/logos/flyjinnah.png",
-                          height: 30,
-                          width: 40,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Serene Air',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'ER-502 (I_SP)',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Text(
-                          '06:15 PM',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        Spacer(),
-                        Icon(Icons.arrow_forward, color: TColors.grey),
-                        Spacer(),
-                        Text(
-                          '08:00 PM',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Text(
-                          'Karachi (KHI) - Nonstop - Islamabad (ISB)',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Row(
-                      children: [
-                        Icon(Icons.shopping_bag, size: 16, color: TColors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          'Total: 80kg',
-                          style: TextStyle(color: TColors.grey),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Serene Plus',
-                      style: TextStyle(color: TColors.grey),
-                    ),
-                    const Divider(color: TColors.grey),
-                    Row(
-                      children: [
-                        const Text(
-                          'PKR 35,866',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const Spacer(),
-                        // TextButton(
-                        //   onPressed: () {},
-                        //   child: const Text('Change'),
-                        // ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: TColors.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(42),
-                            border: Border.all(color: TColors.primary.withOpacity(0.3)),
-                          ),
-                          child: const Text(
-                            'Change',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: TColors.primary,
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            SizedBox(height: 8,),
+            _reviewContainer(typeFlight: 'Departing'),
+            if(widget.isMulti) ...[
+              SizedBox(height: 8,),
+              _reviewContainer(typeFlight: 'Returning'),
+            ],
+
             // Add-ons Section
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
@@ -571,6 +300,150 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
           )
         ],
       ) ,
+    );
+  }
+
+  Widget _reviewContainer({required String typeFlight}){
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical:0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+        decoration: BoxDecoration(
+          color: TColors.background,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Row(
+              children: [
+                Text(
+                  typeFlight,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: TColors.grey,
+                  ),
+                ),
+                Spacer(),
+                const Text(
+                  '07 Dec, 2024',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: TColors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Image.asset(
+                  "assets/img/logos/flyjinnah.png",
+                  height: 30,
+                  width: 40,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Serene Air',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'ER-502 (I_SP)',
+                  style: TextStyle(color: TColors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Text(
+                  '06:15 PM',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                Spacer(),
+                Icon(Icons.arrow_forward, color: TColors.grey),
+                Spacer(),
+                Text(
+                  '08:00 PM',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Text(
+                  'Karachi (KHI) - Nonstop - Islamabad (ISB)',
+                  style: TextStyle(color: TColors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.shopping_bag, size: 16, color: TColors.grey),
+                SizedBox(width: 4),
+                Text(
+                  'Total: 80kg',
+                  style: TextStyle(color: TColors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Serene Plus',
+              style: TextStyle(color: TColors.grey),
+            ),
+            const Divider(color: TColors.grey),
+            Row(
+              children: [
+                const Text(
+                  'PKR 35,866',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                // TextButton(
+                //   onPressed: () {},
+                //   child: const Text('Change'),
+                // ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: TColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(42),
+                    border: Border.all(color: TColors.primary.withOpacity(0.3)),
+                  ),
+                  child: const Text(
+                    'Change',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: TColors.primary,
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

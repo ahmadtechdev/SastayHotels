@@ -5,15 +5,22 @@ import 'package:get/get.dart';
 import '../../../widgets/colors.dart';
 import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
+import '../search_flight_utils/flight_controller.dart';
+import '../search_flights.dart';
 import 'package_controller.dart';
 
 class PackageSelectionDialog extends StatelessWidget {
   final Flight flight;
+  final bool isAnyFlightRemaining;
 
-  PackageSelectionDialog({required this.flight});
-
+  PackageSelectionDialog({
+    super.key,
+    required this.flight,
+    required this.isAnyFlightRemaining,
+  });
   final packageController = Get.put(PackageController());
   final PageController _pageController = PageController(viewportFraction: 0.9);
+  final flightController = Get.find<FlightController>();
 
   @override
   Widget build(BuildContext context) {
@@ -28,16 +35,15 @@ class PackageSelectionDialog extends StatelessWidget {
           ),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'Select Fare',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        title: Text(
+          isAnyFlightRemaining ? 'Select Return Flight Package' : 'Select Flight Package',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
             _buildFlightInfo(),
-
             _buildPackagesList(),
             const SizedBox(height: 10),
           ],
@@ -45,7 +51,6 @@ class PackageSelectionDialog extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildFlightInfo() {
     return Container(
@@ -66,7 +71,11 @@ class PackageSelectionDialog extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset('assets/img/logos/air-arabia.png', height: 32, width: 50,),
+              Image.asset(
+                'assets/img/logos/air-arabia.png',
+                height: 32,
+                width: 50,
+              ),
               const SizedBox(width: 12),
               const Text(
                 'Fly Jinnah',
@@ -157,7 +166,7 @@ class PackageSelectionDialog extends StatelessWidget {
   Widget _buildPackagesList() {
     return Expanded(
       child: Obx(
-            () => PageView.builder(
+        () => PageView.builder(
           controller: _pageController,
           itemCount: packageController.packages.length,
           itemBuilder: (context, index) {
@@ -250,19 +259,56 @@ class PackageSelectionDialog extends StatelessWidget {
               ),
             ),
           ),
+          // ElevatedButton(
+          //   onPressed: () {
+          //     if(Flight Package){
+          //
+          //     }
+          //     Get.to(() => const ReviewTripPage());
+          //   },
+          //   style: ElevatedButton.styleFrom(
+          //     backgroundColor: TColors.primary,
+          //     fixedSize: const Size(double.infinity, 40),
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(48),
+          //     ),
+          //   ),
+          //   child: const Text(
+          //     'Select Package',
+          //     style: TextStyle(
+          //       fontSize: 16,
+          //       fontWeight: FontWeight.bold,
+          //       color: TColors.background,
+          //     ),
+          //   ),
+          // ),
           ElevatedButton(
-            onPressed: () => Get.to(()=>const ReviewTripPage()),
+            onPressed: () {
+              print(isAnyFlightRemaining);
+              if (flightController.currentScenario.value == FlightScenario.oneWay || !isAnyFlightRemaining) {
+                // For one-way or first flight selection
+                if(flightController.currentScenario.value !=FlightScenario.oneWay){
+                  Get.to(() => const ReviewTripPage(isMulti: true,));
+                }else{
+                  Get.to(() => const ReviewTripPage(isMulti: false,));
+                }
+
+              } else {
+                // For return flight, go back to select second flight
+                flightController.isSelectingFirstFlight.value = false;
+                Get.back(); // Go back to flight selection
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: TColors.primary,
               fixedSize: const Size(double.infinity, 40),
-
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(48),
               ),
             ),
-            child: const Text(
-              'Select Package',
-              style: TextStyle(
+            child: Text(
+              isAnyFlightRemaining ? 'Select Return Package' : 'Select Package',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: TColors.background,
