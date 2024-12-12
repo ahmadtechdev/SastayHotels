@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'dart:math';
 
 import '../flight_package/flight_package.dart';
-import '../review_flight/review_flight.dart';
 import '../search_flights.dart';
 import 'filter_modal.dart';
 

@@ -1,3 +1,4 @@
+import 'package:flight_bocking/home_search/search_hotels/search_hotel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../widgets/colors.dart';
@@ -37,13 +38,13 @@ class HotelForm extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Obx(() => DateSelectionField(
-                    initialDate: hotelDateController.checkInDate.value,
-                    fontSize: 12,
-                    onDateChanged: (date) {
-                      hotelDateController.updateCheckInDate(date);
-                    },
-                    firstDate: DateTime.now(),
-                  )),
+                        initialDate: hotelDateController.checkInDate.value,
+                        fontSize: 12,
+                        onDateChanged: (date) {
+                          hotelDateController.updateCheckInDate(date);
+                        },
+                        firstDate: DateTime.now(),
+                      )),
                 ],
               ),
             ),
@@ -57,13 +58,13 @@ class HotelForm extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Obx(() => DateSelectionField(
-                    initialDate: hotelDateController.checkOutDate.value,
-                    fontSize: 12,
-                    onDateChanged: (date) {
-                      hotelDateController.updateCheckOutDate(date);
-                    },
-                    minDate: hotelDateController.getMinCheckOutDate(),
-                  )),
+                        initialDate: hotelDateController.checkOutDate.value,
+                        fontSize: 12,
+                        onDateChanged: (date) {
+                          hotelDateController.updateCheckOutDate(date);
+                        },
+                        minDate: hotelDateController.getMinCheckOutDate(),
+                      )),
                 ],
               ),
             ),
@@ -74,6 +75,8 @@ class HotelForm extends StatelessWidget {
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
+            Get.to(HotelScreen());
+
             // // Access dates from controller when searching
             // final checkIn = hotelDateController.checkInDate.value;
             // final checkOut = hotelDateController.checkOutDate.value;

@@ -1,4 +1,3 @@
-
 import 'package:flight_bocking/home_search/home.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
@@ -18,7 +17,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: TColors.primary),
         useMaterial3: true,
@@ -27,4 +27,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

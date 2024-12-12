@@ -1,4 +1,4 @@
-import 'package:flight_bocking/home_search/booking_card/tour.dart';
+import 'package:flight_bocking/home_search/search_tour/tour.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/colors.dart';

@@ -1,4 +1,6 @@
+import 'package:flight_bocking/home_search/search_tour/bookingtour.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../widgets/colors.dart';
 
 class Tour {
@@ -370,6 +372,7 @@ class _ToursPageState extends State<ToursPage> {
                                   // Makes the button take full width
                                   child: ElevatedButton.icon(
                                     onPressed: () {
+                                      Get.to(BookingTour());
                                       // Add booking functionality
                                     },
                                     style: ElevatedButton.styleFrom(

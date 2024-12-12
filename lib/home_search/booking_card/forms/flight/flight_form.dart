@@ -5,7 +5,7 @@ import '../../../../widgets/custom_textfield.dart';
 import '../../../../widgets/date_selection.dart';
 import '../../../../widgets/snackbar.dart';
 import '../../../search_flights/search_flights.dart';
-import '../../trip_type/trip_type_selector.dart';
+import 'trip_type/trip_type_selector.dart';
 import 'flight_date_controller.dart';
 import 'travelers/travelers_field.dart';
 

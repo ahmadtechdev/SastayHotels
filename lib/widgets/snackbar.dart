@@ -15,14 +15,14 @@ class CustomSnackBar {
       "Sastay Hotels", // Title can be left empty if not needed
       message,
       backgroundColor: backgroundColor,
+
       colorText: Colors.white, // Text color
-      snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.TOP,
       borderRadius: 22,
       margin: const EdgeInsets.only(bottom: 12, right: 20, left: 20),
       duration: const Duration(seconds: 3),
       isDismissible: true,
       snackStyle: SnackStyle.FLOATING,
     );
-
   }
 }
