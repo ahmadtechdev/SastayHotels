@@ -41,6 +41,7 @@ dependencies:
   intl_phone_field: ^3.2.0
   datepicker_dropdown: ^0.1.5
   intl: ^0.19.0
+  flutter_rating_bar: ^4.0.1
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,8 @@ flutter:
       - assets/img/
       - assets/img/logos/
       - assets/img/cardbg/
+      - assets/img/cars/
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

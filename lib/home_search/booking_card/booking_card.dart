@@ -1,4 +1,5 @@
 import 'package:flight_bocking/home_search/search_tour/tour.dart';
+import 'package:flight_bocking/home_search/searchcars/searchcars.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/colors.dart';
@@ -54,6 +55,7 @@ class _BookingCardState extends State<BookingCard> {
               if (selectedType == 'Flights') FlightForm(),
               if (selectedType == 'Hotels') HotelForm(),
               if (selectedType == 'Tours') const ToursPage(),
+              if (selectedType == 'Cars') const SearchCars(),
             ],
           ),
         ),

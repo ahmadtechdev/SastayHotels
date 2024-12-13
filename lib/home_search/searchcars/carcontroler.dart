@@ -1,45 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class Tourcontroler extends GetxController {
-  // Observable properties
-  var selectedCar = ''.obs;
-  var carPrice = 0.obs;
-  var ticketPrice = 0.obs;
-  var totalPrice = 0.obs;
-  final Rx<DateTime> departureDate = DateTime.now().obs;
-  final Rx<DateTime> returnDate = DateTime.now().add(const Duration(days:1)).obs;
-  // Controllers for each text field
-  
-
-
-  // Update car selection and its price
-  void updateCarPrice(String carType, int price) {
-    selectedCar.value = carType;
-    carPrice.value = price;
-    calculateTotalPrice();
-  }
-
-  // Update ticket price based on adults and children count
-  void updateTicketPrice(
-      int adults, int children, int adultPrice, int childPrice) {
-    ticketPrice.value = (adults * adultPrice) + (children * childPrice);
-    calculateTotalPrice();
-  }
-
-  // Calculate total price (ticket + car)
-  void calculateTotalPrice() {
-    totalPrice.value = ticketPrice.value + carPrice.value;
-  }
+class CarControler extends GetxController {
   var firstNameController = TextEditingController();
   var lastNameController = TextEditingController();
   var emailController = TextEditingController();
   var phoneController = TextEditingController();
   var addressController = TextEditingController();
   var cityController = TextEditingController();
+  var pickupController = TextEditingController();
+  var offController = TextEditingController();
+  final Rx<DateTime> departureDate = DateTime.now().obs;
+  final Rx<DateTime> returnDate = DateTime.now().add(const Duration(days:1)).obs;
 
-  // Checkboxes
-  
+
   @override
   void onClose() {
     // Dispose controllers

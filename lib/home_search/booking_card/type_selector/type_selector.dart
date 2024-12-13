@@ -18,6 +18,7 @@ class TypeSelectorState extends State<TypeSelector> {
     {'icon': Icons.flight, 'label': 'Flights'},
     {'icon': MdiIcons.bed, 'label': 'Hotels'},
     {'icon': MdiIcons.earth, 'label': 'Tours'},
+    {'icon': MdiIcons.carEstate, 'label': 'Cars'},
   ];
 
   @override

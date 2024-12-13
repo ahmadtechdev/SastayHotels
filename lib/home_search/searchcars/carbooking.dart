@@ -1,12 +1,14 @@
-import 'package:flight_bocking/home_search/search_hotels/BookingHotle/BookingControler.dart';
+import 'package:flight_bocking/home_search/searchcars/carcontroler.dart';
 import 'package:flight_bocking/widgets/colors.dart';
+import 'package:flight_bocking/widgets/date_selection.dart';
 import 'package:flight_bocking/widgets/snackbar.dart';
 import 'package:flight_bocking/widgets/thankuscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
-class BookingScreen extends StatelessWidget {
-  final BookingController bookingController = Get.put(BookingController());
+class CarBooking extends StatelessWidget {
+  final CarControler carcontroler = Get.put(CarControler());
 
   @override
   Widget build(BuildContext context) {
@@ -28,103 +30,102 @@ class BookingScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 10),
-              // Form Fields
+              Center(
+                  child: Image.asset(height: 250, 'assets/img/Cbooking.png')),
+              SizedBox(height: 20),
               _buildTextField(
-                controller: bookingController.firstNameController,
+                controller: carcontroler.firstNameController,
+                label: "Flight Number",
+                hintText: "Enter your Flight Number",
+                icon: MdiIcons.airplane,
+              ),
+              SizedBox(height: 16),
+
+              _buildTextField(
+                controller: carcontroler.firstNameController,
                 label: "First Name",
                 hintText: "Enter your first name",
                 icon: Icons.person,
               ),
+              // Form Fields
+
               SizedBox(height: 16),
               _buildTextField(
-                controller: bookingController.lastNameController,
+                controller: carcontroler.lastNameController,
                 label: "Last Name",
                 hintText: "Enter your last name",
                 icon: Icons.person_outline,
               ),
               SizedBox(height: 16),
               _buildTextField(
-                controller: bookingController.emailController,
+                controller: carcontroler.emailController,
                 label: "Email",
                 hintText: "Enter your email",
-                keyboardType: TextInputType.emailAddress,
                 icon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
               ),
               SizedBox(height: 16),
               _buildTextField(
-                controller: bookingController.phoneController,
+                controller: carcontroler.phoneController,
                 label: "Phone Number",
                 hintText: "Enter your phone number",
-                keyboardType: TextInputType.phone,
                 icon: Icons.phone,
+                keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 16),
               _buildTextField(
-                controller: bookingController.addressController,
+                controller: carcontroler.addressController,
                 label: "Address",
                 hintText: "Enter your address",
-                icon: Icons.home,
+                icon: Icons.location_on,
               ),
               SizedBox(height: 16),
               _buildTextField(
-                controller: bookingController.cityController,
+                controller: carcontroler.cityController,
                 label: "City",
                 hintText: "Enter your city",
                 icon: Icons.location_city,
               ),
               SizedBox(height: 20),
-              // Checkbox Section
-              Text(
-                "Special Requests",
-                style: TextStyle(
-                  fontSize: screenSize.width * 0.05,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+
+              // Pickup and Off Fields in One Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: carcontroler.pickupController,
+                      label: "Pickup Location",
+                      hintText: "Enter Pickup Location",
+                      icon: Icons.location_on,
+                    ),
+                  ),
+                  SizedBox(width: 16), // Space between Pickup and Off
+                  Expanded(
+                    child: _buildTextField(
+                      controller: carcontroler.offController,
+                      label: "Dropoff Location",
+                      hintText: "Enter Off Location",
+                      icon: Icons.location_on,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 10),
-              Obx(() => Column(
-                    children: [
-                      _buildCheckbox(
-                        title: "Ground Floor",
-                        value: bookingController.isGroundFloor.value,
-                        onChanged: (value) =>
-                            bookingController.isGroundFloor.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "High Floor",
-                        value: bookingController.isHighFloor.value,
-                        onChanged: (value) =>
-                            bookingController.isHighFloor.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Late Checkout",
-                        value: bookingController.isLateCheckout.value,
-                        onChanged: (value) =>
-                            bookingController.isLateCheckout.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Early Checkin",
-                        value: bookingController.isEarlyCheckin.value,
-                        onChanged: (value) =>
-                            bookingController.isEarlyCheckin.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Twin Bed",
-                        value: bookingController.isTwinBed.value,
-                        onChanged: (value) =>
-                            bookingController.isTwinBed.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Smoking",
-                        value: bookingController.isSmoking.value,
-                        onChanged: (value) =>
-                            bookingController.isSmoking.value = value!,
-                      ),
-                    ],
+              SizedBox(height: 20),
+              Obx(() => Container(
+                    color: Colors.white,
+                    height: 55,
+                    child: DateSelectionField(
+                      initialDate: carcontroler.departureDate.value,
+                      fontSize: 12,
+                      onDateChanged: (date) {
+                        carcontroler.updateDepartureDate(date);
+                      },
+                      firstDate: DateTime.now(),
+                    ),
                   )),
               SizedBox(height: 20),
+
               // Submit Button
               Center(
                 child: SizedBox(
@@ -132,6 +133,7 @@ class BookingScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       Get.to(ThankYouScreen());
+
                       // Validate input and handle submission
                       if (_validateFields()) {
                         CustomSnackBar(
@@ -167,7 +169,7 @@ class BookingScreen extends StatelessWidget {
     );
   }
 
-  // Helper to build text fields
+  // Helper to build text fields with icons
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -182,11 +184,11 @@ class BookingScreen extends StatelessWidget {
         filled: true,
         labelText: label,
         hintText: hintText,
-        prefixIcon: Icon(icon, color: TColors.primary),
         hintStyle: TextStyle(color: Colors.grey),
+        prefixIcon: Icon(icon, color: TColors.primary),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.primary)),
+            borderSide: BorderSide(color: TColors.black)),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: TColors.black)),
@@ -196,26 +198,11 @@ class BookingScreen extends StatelessWidget {
     );
   }
 
-  // Helper to build checkboxes
-  Widget _buildCheckbox({
-    required String title,
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
-    return CheckboxListTile(
-      title: Text(title),
-      value: value,
-      onChanged: onChanged,
-      activeColor: TColors.primary,
-      controlAffinity: ListTileControlAffinity.leading,
-    );
-  }
-
   // Validate form fields
   bool _validateFields() {
-    return bookingController.firstNameController.text.isNotEmpty &&
-        bookingController.lastNameController.text.isNotEmpty &&
-        bookingController.emailController.text.isNotEmpty &&
-        bookingController.phoneController.text.isNotEmpty;
+    return carcontroler.firstNameController.text.isNotEmpty &&
+        carcontroler.lastNameController.text.isNotEmpty &&
+        carcontroler.emailController.text.isNotEmpty &&
+        carcontroler.phoneController.text.isNotEmpty;
   }
 }

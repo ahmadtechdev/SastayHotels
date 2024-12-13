@@ -15,7 +15,7 @@ class DateSelector extends StatelessWidget {
     required this.fontSize,
     required this.initialDate,
     required this.onDateChanged,
-    this.label = "Date of Birth: ",
+    this.label = "",
   });
 
   final Rx<DateTime> selectedDate =

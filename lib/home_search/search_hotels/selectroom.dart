@@ -25,7 +25,7 @@ class SelectRoomScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Select Room', style: TextStyle(color: TColors.text)),
-        backgroundColor: TColors.primary,
+        // backgroundColor: TColors.primary,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
@@ -38,7 +38,10 @@ class SelectRoomScreen extends StatelessWidget {
           children: [
             Text(
               'Hotel name',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: TColors.primary),
             ),
             SizedBox(height: 16),
             Expanded(
