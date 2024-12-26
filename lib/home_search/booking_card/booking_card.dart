@@ -1,9 +1,9 @@
+import 'package:flight_bocking/home_search/booking_card/forms/flight/flight_form.dart';
 import 'package:flight_bocking/home_search/search_tour/tour.dart';
 import 'package:flight_bocking/home_search/searchcars/searchcars.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/colors.dart';
-import 'forms/flight/flight_form.dart';
 import 'forms/hotel/hotel_form.dart';
 
 import 'type_selector/type_selector.dart';

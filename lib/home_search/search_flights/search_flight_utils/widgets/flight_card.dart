@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../widgets/colors.dart';
-import '../../flight_package/flight_package.dart';
 import '../filter_modal.dart';
 import '../flight_controller.dart';
 

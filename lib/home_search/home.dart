@@ -19,14 +19,12 @@ class HomeScreen extends StatelessWidget {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
-        appBar:  const CustomAppBar(),
+        appBar: const CustomAppBar(),
         body: Container(
           color: Colors.white,
           child: const SingleChildScrollView(
-
             child: Column(
               children: [
-
                 HomeBanner(),
                 SizedBox(height: 60),
                 CustomerServiceSection(),
@@ -40,12 +38,11 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ),
-        bottomNavigationBar: const BottomNavBar(currentIndex: 0,),
+        bottomNavigationBar: const BottomNavBar(currentIndex: 0),
       ),
     );
   }
 }
-
 
 class CurrencySelector extends StatelessWidget {
   const CurrencySelector({super.key});
@@ -202,7 +199,6 @@ class CustomerServiceSection extends StatelessWidget {
     );
   }
 }
-
 
 class StatsSection extends StatelessWidget {
   const StatsSection({super.key});

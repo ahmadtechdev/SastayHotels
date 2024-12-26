@@ -14,6 +14,115 @@ class _HotelScreenState extends State<HotelScreen> {
   @override
   Widget build(BuildContext context) {
     final SearchHotelController controller = Get.put(SearchHotelController());
+    Widget buildRatingBar(double rating) {
+      return RatingBarIndicator(
+        rating: rating,
+        itemBuilder: (context, index) => Icon(
+          Icons.star,
+          color: Colors.orange,
+        ),
+        itemCount: 5,
+        itemSize: 20.0,
+        direction: Axis.horizontal,
+      );
+    }
+
+    void showFilterSheet(BuildContext context) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (BuildContext context) {
+          return Obx(() => Padding(
+                padding: MediaQuery.of(context).viewInsets,
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filter by Rating',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 16),
+                      Column(
+                        children: List.generate(6, (index) {
+                          if (index == 5) {
+                            return Row(
+                              children: [
+                                Checkbox(
+                                  value: !controller.selectedRatings
+                                      .contains(true),
+                                  onChanged: (value) {
+                                    if (value == true) {
+                                      controller.resetFilters();
+                                    }
+                                  },
+                                  activeColor: TColors.primary,
+                                ),
+                                Text('All Hotels'),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Checkbox(
+                                value: controller.selectedRatings[index],
+                                onChanged: (value) {
+                                  controller.selectedRatings[index] = value!;
+                                },
+                                activeColor: TColors.primary,
+                              ),
+                              buildRatingBar((5 - index).toDouble()),
+                              SizedBox(width: 8),
+                              Text(
+                                '(${controller.hotels.where((hotel) => hotel['rating'] == 5 - index).length})',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              Get.back();
+
+                              // setState(() {
+                              //   selectedOption = 'Recommended';
+                              // });
+                              controller.resetFilters();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[200],
+                              foregroundColor: Colors.black,
+                            ),
+                            child: Text('Reset'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              controller.filterByRating();
+                              Get.back();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: TColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: Text('Confirm'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ));
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -62,7 +171,7 @@ class _HotelScreenState extends State<HotelScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildButton(context, Icons.filter_list, 'Filter', () {
-                      // Implement Filter Action
+                      showFilterSheet(context);
                     }),
                     _buildButton(context, Icons.sort, 'Sort', () {
                       _showSortOptionsBottomSheet(context);
@@ -218,8 +327,17 @@ class _HotelScreenState extends State<HotelScreen> {
 
   void _showPriceRangeBottomSheet(
       BuildContext context, SearchHotelController controller) {
-    double minPrice = 1000;
-    double maxPrice = 100000;
+    // Calculate min and max prices dynamically from the hotels list
+    final prices = controller.hotels
+        .map((hotel) =>
+            double.parse(hotel['price'].toString().replaceAll(',', '').trim()))
+        .toList();
+
+    double minPrice =
+        prices.isNotEmpty ? prices.reduce((a, b) => a < b ? a : b) : 0.0;
+    double maxPrice =
+        prices.isNotEmpty ? prices.reduce((a, b) => a > b ? a : b) : 0.0;
+
     double lowerValue = minPrice;
     double upperValue = maxPrice;
 
@@ -281,6 +399,8 @@ class _HotelScreenState extends State<HotelScreen> {
                           setState(() {
                             lowerValue = minPrice;
                             upperValue = maxPrice;
+                            controller.resetFilters();
+                            Get.back(); 
                           });
                         },
                         style: ElevatedButton.styleFrom(

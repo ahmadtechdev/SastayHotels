@@ -1,10 +1,8 @@
-import 'package:flight_bocking/home_search/search_flights/review_flight/review_flight.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../widgets/colors.dart';
 import '../home.dart';
-import 'flight_package/flight_package.dart';
 import 'search_flight_utils/widgets/currency_dialog.dart';
 import 'search_flight_utils/widgets/flight_bottom_sheet.dart';
 import 'search_flight_utils/flight_controller.dart';

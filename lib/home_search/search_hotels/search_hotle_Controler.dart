@@ -52,6 +52,8 @@ class SearchHotelController extends GetxController {
       <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> originalHotels =
       <Map<String, dynamic>>[].obs;
+  final RxList<bool> selectedRatings = List<bool>.filled(5, false).obs;
+
 
   @override
   void onInit() {
@@ -60,6 +62,34 @@ class SearchHotelController extends GetxController {
     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
   }
+   void filterByRating() {
+    List<int> selectedStars = [];
+
+    // Collect selected ratings based on the selected checkboxes
+    for (int i = 0; i < selectedRatings.length; i++) {
+      if (selectedRatings[i]) {
+        selectedStars.add(5 - i); // Match stars with index
+      }
+    }
+
+    // Debugging: Print the selected ratings
+    print("Selected ratings: $selectedStars");
+
+    if (selectedStars.isEmpty) {
+      // Show all hotels if no filter is selected
+      filteredHotels.value = List<Map<String, dynamic>>.from(originalHotels);
+    } else {
+      // Apply the rating filter
+      filteredHotels.value = originalHotels
+          .where((hotel) => selectedStars.contains(hotel['rating']))
+          .toList();
+      hotels.value = filteredHotels;
+
+      // Debugging: Print the filtered list
+      print("Filtered hotels: ${filteredHotels}");
+    }
+  }
+
 
   // Method to filter hotels by price range
   void filterByPriceRange(double minPrice, double maxPrice) {
