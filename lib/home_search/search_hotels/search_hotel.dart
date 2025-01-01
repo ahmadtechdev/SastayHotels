@@ -4,6 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotle_Controler.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HotelScreen extends StatefulWidget {
   @override
@@ -292,9 +293,7 @@ class _HotelScreenState extends State<HotelScreen> {
                         onPressed: () {
                           Get.back();
 
-                          // setState(() {
-                          //   selectedOption = 'Recommended';
-                          // });
+                          //
                           controller.resetFilters();
                         },
                         style: ElevatedButton.styleFrom(
@@ -400,7 +399,7 @@ class _HotelScreenState extends State<HotelScreen> {
                             lowerValue = minPrice;
                             upperValue = maxPrice;
                             controller.resetFilters();
-                            Get.back(); 
+                            Get.back();
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -461,21 +460,47 @@ class HotelCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  hotel['name'],
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  hotel['address'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hotel['name'],
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          hotel['address'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        Get.to(
+                          MapScreen(
+                            latitude: hotel['latitude'],
+                            longitude: hotel['longitude'],
+                            hotelName: hotel['name'],
+                          ),
+                        );
+                      },
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        color: TColors.primary,
+                        size: 30,
+                      ),
+                    )
+                  ],
                 ),
                 SizedBox(height: 8),
                 Row(
@@ -496,8 +521,8 @@ class HotelCard extends StatelessWidget {
                     ),
                     Spacer(),
                     Text(
-                      'From RS${hotel['price']} / Per Night',
-                      style: TextStyle(fontSize: 16, color: Colors.red),
+                      'RS${hotel['price']} / Per Night',
+                      style: TextStyle(fontSize: 15, color: Colors.red),
                     ),
                   ],
                 ),
@@ -525,6 +550,50 @@ class HotelCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class MapScreen extends StatelessWidget {
+  final double latitude;
+  final double longitude;
+  final String hotelName;
+
+  MapScreen({
+    required this.latitude,
+    required this.longitude,
+    required this.hotelName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final CameraPosition initialPosition = CameraPosition(
+      target: LatLng(latitude, longitude),
+      zoom: 15,
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Get.back();
+          },
+          icon: Icon(
+            Icons.arrow_back,
+            color: TColors.primary,
+          ),
+        ),
+      ),
+      body: GoogleMap(
+        initialCameraPosition: initialPosition,
+        markers: {
+          Marker(
+            markerId: MarkerId(hotelName),
+            position: LatLng(latitude, longitude),
+            infoWindow: InfoWindow(title: hotelName),
+          ),
+        },
       ),
     );
   }

@@ -6,9 +6,11 @@ class SearchHotelController extends GetxController {
     {
       'name': 'Al Shohada Hotel',
       'price': ' 59,946',
-      'address': 'Ajyad Street P.O. Box 10056, Makkah 21955',
+      'address': 'Ajyad Street P.O',
       'image': 'assets/img/cardbg/2.jpg',
       'rating': 5,
+      'latitude': 21.4225,
+      'longitude': 39.8262,
     },
     {
       'name': 'Mecca Hotel',
@@ -16,6 +18,8 @@ class SearchHotelController extends GetxController {
       'address': 'Makkah City Center',
       'image': 'assets/img/cardbg/3.jpg',
       'rating': 4,
+      'latitude': 21.4267,
+      'longitude': 39.8295,
     },
     {
       'name': 'Jeddah Resort',
@@ -23,6 +27,8 @@ class SearchHotelController extends GetxController {
       'address': 'Red Sea District, Jeddah',
       'image': 'assets/img/cardbg/4.jpg',
       'rating': 1,
+      'latitude': 21.5433,
+      'longitude': 39.1728,
     },
     {
       'name': 'Riyadh Grand Hotel',
@@ -30,6 +36,8 @@ class SearchHotelController extends GetxController {
       'address': 'King Fahd Road, Riyadh 11564',
       'image': 'assets/img/cardbg/5.jpg',
       'rating': 5,
+      'latitude': 24.7136,
+      'longitude': 46.6753,
     },
     {
       'name': 'Madinah Plaza',
@@ -37,6 +45,8 @@ class SearchHotelController extends GetxController {
       'address': 'Al Haram, Madinah 42311',
       'image': 'assets/img/cardbg/6.jpg',
       'rating': 3,
+      'latitude': 24.4672,
+      'longitude': 39.6112,
     },
     {
       'name': 'Qatar Beach Resort',
@@ -44,8 +54,31 @@ class SearchHotelController extends GetxController {
       'address': 'Doha Corniche, Qatar',
       'image': 'assets/img/cardbg/7.jpg',
       'rating': 2,
+      'latitude': 25.2867,
+      'longitude': 51.5333,
     },
+    // Adding more hotels with coordinates
+    {
+      'name': 'Dubai Marina Hotel',
+      'price': ' 95,000',
+      'address': 'Dubai Marina, UAE',
+      'image': 'assets/img/cardbg/8.jpg',
+      'rating': 5,
+      'latitude': 25.0819,
+      'longitude': 55.1367,
+    },
+    {
+      'name': 'Abu Dhabi Palace',
+      'price': ' 120,000',
+      'address': 'Corniche Road, Abu Dhabi',
+      'image': 'assets/img/cardbg/9.jpg',
+      'rating': 5,
+      'latitude': 24.4539,
+      'longitude': 54.3773,
+    },
+    // Add more hotels as needed
   ].obs;
+  // Function to open location in maps
 
   // Observable lists with explicit types
   final RxList<Map<String, dynamic>> filteredHotels =
@@ -54,7 +87,6 @@ class SearchHotelController extends GetxController {
       <Map<String, dynamic>>[].obs;
   final RxList<bool> selectedRatings = List<bool>.filled(5, false).obs;
 
-
   @override
   void onInit() {
     super.onInit();
@@ -62,7 +94,8 @@ class SearchHotelController extends GetxController {
     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
   }
-   void filterByRating() {
+
+  void filterByRating() {
     List<int> selectedStars = [];
 
     // Collect selected ratings based on the selected checkboxes
@@ -89,7 +122,6 @@ class SearchHotelController extends GetxController {
       print("Filtered hotels: ${filteredHotels}");
     }
   }
-
 
   // Method to filter hotels by price range
   void filterByPriceRange(double minPrice, double maxPrice) {
