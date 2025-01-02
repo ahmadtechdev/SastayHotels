@@ -1,81 +1,83 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SearchHotelController extends GetxController {
   // Define the hotels list with explicit type
   final RxList<Map<String, dynamic>> hotels = <Map<String, dynamic>>[
-    {
-      'name': 'Al Shohada Hotel',
-      'price': ' 59,946',
-      'address': 'Ajyad Street P.O',
-      'image': 'assets/img/cardbg/2.jpg',
-      'rating': 5,
-      'latitude': 21.4225,
-      'longitude': 39.8262,
-    },
-    {
-      'name': 'Mecca Hotel',
-      'price': ' 45,500',
-      'address': 'Makkah City Center',
-      'image': 'assets/img/cardbg/3.jpg',
-      'rating': 4,
-      'latitude': 21.4267,
-      'longitude': 39.8295,
-    },
-    {
-      'name': 'Jeddah Resort',
-      'price': ' 35,200',
-      'address': 'Red Sea District, Jeddah',
-      'image': 'assets/img/cardbg/4.jpg',
-      'rating': 1,
-      'latitude': 21.5433,
-      'longitude': 39.1728,
-    },
-    {
-      'name': 'Riyadh Grand Hotel',
-      'price': ' 80,000',
-      'address': 'King Fahd Road, Riyadh 11564',
-      'image': 'assets/img/cardbg/5.jpg',
-      'rating': 5,
-      'latitude': 24.7136,
-      'longitude': 46.6753,
-    },
-    {
-      'name': 'Madinah Plaza',
-      'price': ' 55,300',
-      'address': 'Al Haram, Madinah 42311',
-      'image': 'assets/img/cardbg/6.jpg',
-      'rating': 3,
-      'latitude': 24.4672,
-      'longitude': 39.6112,
-    },
-    {
-      'name': 'Qatar Beach Resort',
-      'price': ' 70,000',
-      'address': 'Doha Corniche, Qatar',
-      'image': 'assets/img/cardbg/7.jpg',
-      'rating': 2,
-      'latitude': 25.2867,
-      'longitude': 51.5333,
-    },
-    // Adding more hotels with coordinates
-    {
-      'name': 'Dubai Marina Hotel',
-      'price': ' 95,000',
-      'address': 'Dubai Marina, UAE',
-      'image': 'assets/img/cardbg/8.jpg',
-      'rating': 5,
-      'latitude': 25.0819,
-      'longitude': 55.1367,
-    },
-    {
-      'name': 'Abu Dhabi Palace',
-      'price': ' 120,000',
-      'address': 'Corniche Road, Abu Dhabi',
-      'image': 'assets/img/cardbg/9.jpg',
-      'rating': 5,
-      'latitude': 24.4539,
-      'longitude': 54.3773,
-    },
+    // {
+    //   'name': 'Al Shohada Hotel',
+    //   'price': ' 59,946',
+    //   'address': 'Ajyad Street P.O',
+    //   'image': 'assets/img/cardbg/2.jpg',
+    //   'rating': 5,
+    //   'latitude': 21.4225,
+    //   'longitude': 39.8262,
+    // },
+    // {
+    //   'name': 'Mecca Hotel',
+    //   'price': ' 45,500',
+    //   'address': 'Makkah City Center',
+    //   'image': 'assets/img/cardbg/3.jpg',
+    //   'rating': 4,
+    //   'latitude': 21.4267,
+    //   'longitude': 39.8295,
+    // },
+    // {
+    //   'name': 'Jeddah Resort',
+    //   'price': ' 35,200',
+    //   'address': 'Red Sea District, Jeddah',
+    //   'image': 'assets/img/cardbg/4.jpg',
+    //   'rating': 1,
+    //   'latitude': 21.5433,
+    //   'longitude': 39.1728,
+    // },
+    // {
+    //   'name': 'Riyadh Grand Hotel',
+    //   'price': ' 80,000',
+    //   'address': 'King Fahd Road, Riyadh 11564',
+    //   'image': 'assets/img/cardbg/5.jpg',
+    //   'rating': 5,
+    //   'latitude': 24.7136,
+    //   'longitude': 46.6753,
+    // },
+    // {
+    //   'name': 'Madinah Plaza',
+    //   'price': ' 55,300',
+    //   'address': 'Al Haram, Madinah 42311',
+    //   'image': 'assets/img/cardbg/6.jpg',
+    //   'rating': 3,
+    //   'latitude': 24.4672,
+    //   'longitude': 39.6112,
+    // },
+    // {
+    //   'name': 'Qatar Beach Resort',
+    //   'price': ' 70,000',
+    //   'address': 'Doha Corniche, Qatar',
+    //   'image': 'assets/img/cardbg/7.jpg',
+    //   'rating': 2,
+    //   'latitude': 25.2867,
+    //   'longitude': 51.5333,
+    // },
+    // // Adding more hotels with coordinates
+    // {
+    //   'name': 'Dubai Marina Hotel',
+    //   'price': ' 95,000',
+    //   'address': 'Dubai Marina, UAE',
+    //   'image': 'assets/img/cardbg/8.jpg',
+    //   'rating': 5,
+    //   'latitude': 25.0819,
+    //   'longitude': 55.1367,
+    // },
+    // {
+    //   'name': 'Abu Dhabi Palace',
+    //   'price': ' 120,000',
+    //   'address': 'Corniche Road, Abu Dhabi',
+    //   'image': 'assets/img/cardbg/9.jpg',
+    //   'rating': 5,
+    //   'latitude': 24.4539,
+    //   'longitude': 54.3773,
+    // },
     // Add more hotels as needed
   ].obs;
   // Function to open location in maps
@@ -87,12 +89,15 @@ class SearchHotelController extends GetxController {
       <Map<String, dynamic>>[].obs;
   final RxList<bool> selectedRatings = List<bool>.filled(5, false).obs;
 
+  var dio = Dio();
+
   @override
   void onInit() {
     super.onInit();
     // Initialize lists with proper type casting
     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
+
   }
 
   void filterByRating() {
@@ -201,6 +206,96 @@ class SearchHotelController extends GetxController {
       }
     } catch (e) {
       print('Error searching hotels by name: $e');
+    }
+  }
+
+  var roomsdata = [].obs;
+
+  var hotlename = ''.obs;
+  var image = ''.obs;
+  var hotelCode =''.obs;
+
+  fetch_slectroom_data() async {
+    try {
+      var headers = {
+        'apikey': 'VSXYTrVlCtVXRAOXGS2==',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      print(hotelCode.value);
+      print(hotelCode.toString());
+      var data = {
+        "SessionId": "e6c0de00d6b14c679d217701246e8709",
+        "SearchParameter": {
+          "HotelCode": hotelCode.value ?? "",
+          "Currency": "USD",
+          "Rooms": {
+            "Room": [
+              {"RoomIdentifier": 1, "Adult": 1}
+            ]
+          }
+        }
+      };
+      var response = await dio.post(
+        'http://uat-apiv2.giinfotech.ae/api/v2/hotel/RoomDetails',
+        options: Options(
+          headers: headers,
+        ),
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        var responseData = response.data;
+        // Extract room information
+        var data = responseData['hotel']['hotelInfo'];
+        var roomData = responseData['hotel']['rooms']['room'];
+
+        if (data != null) {
+          hotlename.value = data['name'];
+          image.value = data['image'];
+          roomsdata.value = roomData;
+
+          print(roomData);
+        } else {
+          print('No room information available');
+        }
+      } else {
+        print(response.statusMessage);
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+  final RxInt nights = RxInt(1);
+  final Rx<DateTimeRange> dateRange = Rx<DateTimeRange>(
+    DateTimeRange(
+      start: DateTime.now(),
+      end: DateTime.now().add(const Duration(days: 1)),
+    ),
+  );
+
+  void updateDateRange(DateTimeRange newRange) {
+    dateRange.value = newRange;
+    nights.value = newRange.duration.inDays;
+  }
+
+  void updateNights(int newNights) {
+    if (newNights > 0) {
+      nights.value = newNights;
+      dateRange.value = DateTimeRange(
+        start: dateRange.value.start,
+        end: dateRange.value.start.add(Duration(days: newNights)),
+      );
+    }
+  }
+
+  void incrementNights() {
+    updateNights(nights.value + 1);
+  }
+
+  void decrementNights() {
+    if (nights.value > 1) {
+      updateNights(nights.value - 1);
     }
   }
 }

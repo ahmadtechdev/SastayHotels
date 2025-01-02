@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flight_bocking/home_search/search_hotels/selectroom.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -7,6 +8,8 @@ import 'package:flight_bocking/home_search/search_hotels/search_hotle_Controler.
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HotelScreen extends StatefulWidget {
+  const HotelScreen({super.key});
+
   @override
   State<HotelScreen> createState() => _HotelScreenState();
 }
@@ -175,7 +178,7 @@ class _HotelScreenState extends State<HotelScreen> {
                       showFilterSheet(context);
                     }),
                     _buildButton(context, Icons.sort, 'Sort', () {
-                      _showSortOptionsBottomSheet(context);
+                      _showSortOptionsBottomSheet(context, controller);
                       // Implement Sort Action
                     }),
                     _buildButton(context, Icons.attach_money, 'Price', () {
@@ -200,6 +203,7 @@ class _HotelScreenState extends State<HotelScreen> {
               }
               return ListView.builder(
                 itemCount: hotels.length,
+                physics: const BouncingScrollPhysics(),
                 itemBuilder: (context, index) {
                   return HotelCard(hotel: hotels[index]);
                 },
@@ -227,8 +231,8 @@ class _HotelScreenState extends State<HotelScreen> {
     );
   }
 
-  void _showSortOptionsBottomSheet(BuildContext context) {
-    final SearchHotelController controller = Get.find<SearchHotelController>();
+  void _showSortOptionsBottomSheet(BuildContext context, SearchHotelController controller) {
+
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
@@ -434,7 +438,9 @@ class _HotelScreenState extends State<HotelScreen> {
 class HotelCard extends StatelessWidget {
   final Map hotel;
 
-  HotelCard({required this.hotel});
+   HotelCard({required this.hotel});
+
+  final SearchHotelController controller = Get.put(SearchHotelController());
 
   @override
   Widget build(BuildContext context) {
@@ -448,12 +454,7 @@ class HotelCard extends StatelessWidget {
         children: <Widget>[
           ClipRRect(
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            child: Image.asset(
-              hotel['image'],
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: _buildHotelImage(),
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
@@ -462,35 +463,44 @@ class HotelCard extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          hotel['name'],
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hotel['name'] ?? 'Unknown Hotel',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          hotel['address'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
+                          SizedBox(height: 4),
+                          Text(
+                            hotel['address'] ?? 'Address not available',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    Spacer(),
                     GestureDetector(
                       onTap: () {
                         Get.to(
                           MapScreen(
-                            latitude: hotel['latitude'],
-                            longitude: hotel['longitude'],
-                            hotelName: hotel['name'],
+                            latitude: double.tryParse(
+                                    hotel['latitude']?.toString() ?? '') ??
+                                0.0,
+                            longitude: double.tryParse(
+                                    hotel['longitude']?.toString() ?? '') ??
+                                0.0,
+                            hotelName: hotel['name'] ?? 'Unknown Hotel',
                           ),
                         );
                       },
@@ -506,7 +516,7 @@ class HotelCard extends StatelessWidget {
                 Row(
                   children: [
                     RatingBar.builder(
-                      initialRating: hotel['rating'].toDouble(),
+                      initialRating: (hotel['rating'] ?? 3.0).toDouble(),
                       minRating: 1,
                       direction: Axis.horizontal,
                       allowHalfRating: true,
@@ -521,8 +531,8 @@ class HotelCard extends StatelessWidget {
                     ),
                     Spacer(),
                     Text(
-                      'RS${hotel['price']} / Per Night',
-                      style: TextStyle(fontSize: 15, color: Colors.red),
+                      'USD ${(hotel['price'] ?? 0.0)}',
+                      style: TextStyle(fontSize: 18, color: TColors.text, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -535,6 +545,10 @@ class HotelCard extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: ElevatedButton(
               onPressed: () {
+                controller.hotelCode.value =  hotel['hotelCode'];
+                controller.roomsdata.clear();
+                print(controller.hotelCode.value);
+                controller.fetch_slectroom_data();
                 Get.to(SelectRoomScreen());
               },
               style: ElevatedButton.styleFrom(
@@ -552,6 +566,42 @@ class HotelCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildHotelImage() {
+    String imageUrl = hotel['image'] ?? '';
+
+    // Check if the image is a URL
+    if (imageUrl.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          color: Colors.grey[300],
+          child: Center(
+            child: CircularProgressIndicator(
+              color: TColors.primary,
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => Image.asset(
+          'assets/img/cardbg/broken-image.png',
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else {
+      // If not a URL, assume it's a local asset path
+      return Image.asset(
+        imageUrl.isEmpty ? 'assets/img/cardbg/broken-image.png' : imageUrl,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+    }
   }
 }
 
