@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../../../widgets/colors.dart';
 import 'guests_controller.dart';
 
@@ -28,14 +27,9 @@ class _GuestsFieldState extends State<GuestsField> {
           children: [
             const Icon(Icons.person_outline, color: TColors.primary),
             const SizedBox(width: 12),
-            Obx(() {
-              // Automatically update the UI based on controller values
-              final totalAdults = controller.adultsPerRoom.reduce((a, b) => a + b);
-              final totalChildren = controller.childrenPerRoom.reduce((a, b) => a + b);
-              return Text(
-                '${controller.roomCount.value} Rooms, $totalAdults Adults, $totalChildren Children',
-              );
-            }),
+            Obx(() => Text(
+              '${controller.roomCount.value} Rooms, ${controller.totalAdults} Adults, ${controller.totalChildren} Children',
+            )),
           ],
         ),
       ),
@@ -52,6 +46,7 @@ class _GuestsFieldState extends State<GuestsField> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildRoomsRow(),
                 const SizedBox(height: 24),
@@ -59,7 +54,7 @@ class _GuestsFieldState extends State<GuestsField> {
                   child: Obx(() => ListView.builder(
                     itemCount: controller.roomCount.value,
                     itemBuilder: (context, index) {
-                      return _buildGuestsRow(index + 1);
+                      return _buildRoomSection(index);
                     },
                   )),
                 ),
@@ -102,11 +97,11 @@ class _GuestsFieldState extends State<GuestsField> {
     );
   }
 
-  Widget _buildGuestsRow(int roomNumber) {
+  Widget _buildRoomSection(int roomIndex) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Room $roomNumber - Guests',
+        Text('Room ${roomIndex + 1}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: TColors.primary)),
         const SizedBox(height: 8),
         Row(
@@ -116,12 +111,12 @@ class _GuestsFieldState extends State<GuestsField> {
             Obx(() => Row(
               children: [
                 IconButton(
-                  onPressed: () => controller.decrementAdults(roomNumber),
+                  onPressed: () => controller.decrementAdults(roomIndex),
                   icon: const Icon(Icons.remove_circle_outline, color: TColors.primary),
                 ),
-                Text('${controller.adultsPerRoom[roomNumber - 1]}'),
+                Text('${controller.rooms[roomIndex].adults.value}'),
                 IconButton(
-                  onPressed: () => controller.incrementAdults(roomNumber),
+                  onPressed: () => controller.incrementAdults(roomIndex),
                   icon: const Icon(Icons.add_circle_outline, color: TColors.primary),
                 ),
               ],
@@ -135,19 +130,58 @@ class _GuestsFieldState extends State<GuestsField> {
             Obx(() => Row(
               children: [
                 IconButton(
-                  onPressed: () => controller.decrementChildren(roomNumber),
+                  onPressed: () => controller.decrementChildren(roomIndex),
                   icon: const Icon(Icons.remove_circle_outline, color: TColors.primary),
                 ),
-                Text('${controller.childrenPerRoom[roomNumber - 1]}'),
+                Text('${controller.rooms[roomIndex].children.value}'),
                 IconButton(
-                  onPressed: () => controller.incrementChildren(roomNumber),
+                  onPressed: () => controller.incrementChildren(roomIndex),
                   icon: const Icon(Icons.add_circle_outline, color: TColors.primary),
                 ),
               ],
             )),
           ],
         ),
+        Obx(() => Column(
+          children: List.generate(
+            controller.rooms[roomIndex].children.value,
+                (childIndex) => _buildChildAgeSelector(roomIndex, childIndex),
+          ),
+        )),
+        const Divider(height: 32),
       ],
+    );
+  }
+
+  Widget _buildChildAgeSelector(int roomIndex, int childIndex) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Child ${childIndex + 1} Age'),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: DropdownButton<int>(
+              value: controller.rooms[roomIndex].childrenAges[childIndex],
+              underline: const SizedBox(),
+              items: List.generate(18, (index) => DropdownMenuItem(
+                value: index,
+                child: Text('$index'),
+              )),
+              onChanged: (age) {
+                if (age != null) {
+                  controller.updateChildAge(roomIndex, childIndex, age);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

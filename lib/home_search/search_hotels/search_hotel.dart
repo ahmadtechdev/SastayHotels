@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
-import 'package:flight_bocking/home_search/search_hotels/search_hotle_Controler.dart';
+import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HotelScreen extends StatefulWidget {

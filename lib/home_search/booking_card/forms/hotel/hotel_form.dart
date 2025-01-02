@@ -1,5 +1,5 @@
 import 'package:flight_bocking/home_search/search_hotels/search_hotel.dart';
-import 'package:flight_bocking/home_search/search_hotels/search_hotle_Controler.dart';
+import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:flight_bocking/widgets/date_range_slector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,10 +19,8 @@ class HotelForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final hotelDateController = Get.put(AboutDialog());
     final cityController = TextEditingController();
-    SearchHotelController searchhotelController =
-    Get.put(SearchHotelController());
+    SearchHotelController searchhotelController = Get.put(SearchHotelController());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,49 +39,6 @@ class HotelForm extends StatelessWidget {
             onNightsChanged: searchhotelController.updateNights,
           ),
         ),
-        // Row(
-        //   children: [
-        //     Expanded(
-        //       child: Column(
-        //         crossAxisAlignment: CrossAxisAlignment.start,
-        //         children: [
-        //           const Text(
-        //             "Check In",
-        //             style: TextStyle(fontWeight: FontWeight.bold),
-        //           ),
-        //           Obx(() => DateSelectionField(
-        //                 initialDate: hotelDateController.checkInDate.value,
-        //                 fontSize: 12,
-        //                 onDateChanged: (date) {
-        //                   hotelDateController.updateCheckInDate(date);
-        //                 },
-        //                 firstDate: DateTime.now(),
-        //               )),
-        //         ],
-        //       ),
-        //     ),
-        //     const SizedBox(width: 8),
-        //     Expanded(
-        //       child: Column(
-        //         crossAxisAlignment: CrossAxisAlignment.start,
-        //         children: [
-        //           const Text(
-        //             "Check Out",
-        //             style: TextStyle(fontWeight: FontWeight.bold),
-        //           ),
-        //           Obx(() => DateSelectionField(
-        //                 initialDate: hotelDateController.checkOutDate.value,
-        //                 fontSize: 12,
-        //                 onDateChanged: (date) {
-        //                   hotelDateController.updateCheckOutDate(date);
-        //                 },
-        //                 minDate: hotelDateController.getMinCheckOutDate(),
-        //               )),
-        //         ],
-        //       ),
-        //     ),
-        //   ],
-        // ),
         const SizedBox(height: 16),
         const GuestsField(),
         const SizedBox(height: 16),
@@ -103,15 +58,18 @@ class HotelForm extends StatelessWidget {
             String countryCode = "AE";
             String nationality = "AE";
             String currency = "USD";
-            String checkInDate =
-            hotelDateController.checkInDate.value.toIso8601String();
-            String checkOutDate =
-            hotelDateController.checkOutDate.value.toIso8601String();
+            String checkInDate = hotelDateController.checkInDate.value.toIso8601String();
+            String checkOutDate = hotelDateController.checkOutDate.value.toIso8601String();
+
+            // Create rooms array with the new structure
             List<Map<String, dynamic>> rooms = List.generate(
               guestsController.roomCount.value,
                   (index) => {
                 "RoomIdentifier": index + 1,
-                "Adult": guestsController.adultsPerRoom[index],
+                "Adult": guestsController.rooms[index].adults.value,
+                "Children": guestsController.rooms[index].children.value,
+                if (guestsController.rooms[index].children.value > 0)
+                  "ChildrenAges": guestsController.rooms[index].childrenAges.toList(),
               },
             );
 
@@ -140,7 +98,8 @@ class HotelForm extends StatelessWidget {
               Get.dialog(
                 Dialog(
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15)),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -148,10 +107,9 @@ class HotelForm extends StatelessWidget {
                       children: [
                         Icon(Icons.error_outline, color: Colors.red, size: 48),
                         const SizedBox(height: 16),
-                        Text(
+                        const Text(
                           'Something went wrong',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -165,8 +123,7 @@ class HotelForm extends StatelessWidget {
                             backgroundColor: TColors.primary,
                             minimumSize: const Size(200, 45),
                           ),
-                          child: const Text('OK',
-                              style: TextStyle(color: Colors.white)),
+                          child: const Text('OK', style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),

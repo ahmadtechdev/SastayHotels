@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../home_search/search_hotels/search_hotle_Controler.dart';
+import '../home_search/search_hotels/search_hotel_controller.dart';
 
 class ApiService extends GetxService {
   final String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
