@@ -10,6 +10,8 @@ class BookingTour extends StatelessWidget {
   final RxInt adultCount = 0.obs;
   final RxInt childCount = 0.obs;
 
+   BookingTour({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Pricing constants
@@ -26,7 +28,7 @@ class BookingTour extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tour Booking'),
+        title: const Text('Tour Booking'),
         // backgroundColor: TColors.primary,
       ),
       body: SingleChildScrollView(
@@ -49,9 +51,9 @@ class BookingTour extends StatelessWidget {
                     left: 10,
                     child: Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       color: Colors.black54,
-                      child: Text(
+                      child: const Text(
                         'Southern Tales: Full-day Tour',
                         style: TextStyle(
                           color: Colors.white,
@@ -69,7 +71,7 @@ class BookingTour extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Description',
                         style: TextStyle(
                           fontSize: 18,
@@ -77,13 +79,13 @@ class BookingTour extends StatelessWidget {
                           color: TColors.text,
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Text(
+                      const SizedBox(height: 10),
+                      const Text(
                         'In this 8-hour private tour, you will explore the Southwest of Mauritius. The journey includes visits to stunning beaches, historical landmarks, and beautiful nature reserves. You will enjoy breathtaking views of the island while learning about its rich cultural heritage and unique wildlife. Our knowledgeable local guides will ensure you have an unforgettable experience, sharing insights into the island’s history, traditions, and hidden gems.',
                         style: TextStyle(fontSize: 16, color: TColors.grey),
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Starting From: PKR 800,85',
                         style: TextStyle(
                           fontSize: 18,
@@ -91,17 +93,17 @@ class BookingTour extends StatelessWidget {
                           color: TColors.text,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10)),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: TColors.primary),
+                            borderSide: const BorderSide(color: TColors.primary),
                           ),
                         ),
-                        items: [
+                        items: const [
                           DropdownMenuItem(
                               value: 'Ticket Only', child: Text('Ticket Only')),
                           DropdownMenuItem(
@@ -109,10 +111,10 @@ class BookingTour extends StatelessWidget {
                               child: Text('Ticket + Private Transfer')),
                         ],
                         onChanged: (value) {},
-                        hint: Text('Select Ticket'),
+                        hint: const Text('Select Ticket'),
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Date',
                         style: TextStyle(
                           fontSize: 18,
@@ -120,7 +122,7 @@ class BookingTour extends StatelessWidget {
                           color: TColors.text,
                         ),
                       ),
-                      Obx(() => Container(
+                      Obx(() => SizedBox(
                             height: 55,
                             child: DateSelectionField(
                               initialDate: controler.departureDate.value,
@@ -131,8 +133,8 @@ class BookingTour extends StatelessWidget {
                               firstDate: DateTime.now(),
                             ),
                           )),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Adults',
                         style: TextStyle(
                           fontSize: 18,
@@ -143,7 +145,7 @@ class BookingTour extends StatelessWidget {
                       DropdownButtonFormField<int>(
                         value: adultCount.value,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.person,
                             color: TColors.primary,
                           ),
@@ -152,7 +154,7 @@ class BookingTour extends StatelessWidget {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: TColors.primary),
+                            borderSide: const BorderSide(color: TColors.primary),
                           ),
                         ),
                         items: List.generate(
@@ -163,10 +165,10 @@ class BookingTour extends StatelessWidget {
                           ),
                         ),
                         onChanged: (value) => adultCount.value = value!,
-                        hint: Text('Select Adults'),
+                        hint: const Text('Select Adults'),
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Children',
                         style: TextStyle(
                           fontSize: 18,
@@ -177,7 +179,7 @@ class BookingTour extends StatelessWidget {
                       DropdownButtonFormField<int>(
                         value: childCount.value,
                         decoration: InputDecoration(
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.child_care,
                             color: TColors.primary,
                           ),
@@ -186,7 +188,7 @@ class BookingTour extends StatelessWidget {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: TColors.primary),
+                            borderSide: const BorderSide(color: TColors.primary),
                           ),
                         ),
                         items: List.generate(
@@ -197,10 +199,10 @@ class BookingTour extends StatelessWidget {
                           ),
                         ),
                         onChanged: (value) => childCount.value = value!,
-                        hint: Text('Select Children'),
+                        hint: const Text('Select Children'),
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Choose a Car:',
                         style: TextStyle(
                           fontSize: 18,
@@ -212,7 +214,7 @@ class BookingTour extends StatelessWidget {
                             children: [
                               RadioListTile(
                                 activeColor: TColors.primary,
-                                title: Row(
+                                title: const Row(
                                   children: [
                                     Icon(Icons.car_rental,
                                         color: TColors.primary),
@@ -231,7 +233,7 @@ class BookingTour extends StatelessWidget {
                               ),
                               RadioListTile(
                                 activeColor: TColors.primary,
-                                title: Row(
+                                title: const Row(
                                   children: [
                                     Icon(Icons.car_rental,
                                         color: TColors.primary),
@@ -250,7 +252,7 @@ class BookingTour extends StatelessWidget {
                               ),
                               RadioListTile(
                                 activeColor: TColors.primary,
-                                title: Row(
+                                title: const Row(
                                   children: [
                                     Icon(Icons.directions_bus,
                                         color: TColors.primary),
@@ -269,9 +271,9 @@ class BookingTour extends StatelessWidget {
                               ),
                             ],
                           )),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Container(
-                        padding: EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           border: Border.all(color: TColors.grey),
                           borderRadius: BorderRadius.circular(8),
@@ -282,24 +284,24 @@ class BookingTour extends StatelessWidget {
                             Text(
                               'Total Adult Price: ${adultCount.value} x PKR $adultPrice = PKR ${adultCount.value * adultPrice}',
                               style:
-                                  TextStyle(fontSize: 16, color: TColors.text),
+                                  const TextStyle(fontSize: 16, color: TColors.text),
                             ),
-                            SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             Text(
                               'Total Child Price: ${childCount.value} x PKR $childPrice = PKR ${childCount.value * childPrice}',
                               style:
-                                  TextStyle(fontSize: 16, color: TColors.text),
+                                  const TextStyle(fontSize: 16, color: TColors.text),
                             ),
-                            SizedBox(height: 5),
+                            const SizedBox(height: 5),
                             Text(
                               'Private Transfer: PKR ${controler.carPrice.value}',
                               style:
-                                  TextStyle(fontSize: 16, color: TColors.text),
+                                  const TextStyle(fontSize: 16, color: TColors.text),
                             ),
-                            SizedBox(height: 10),
+                            const SizedBox(height: 10),
                             Text(
                               'Total Price: PKR ${controler.totalPrice.value}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -308,16 +310,16 @@ class BookingTour extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
                           Get.to(ConformBooking());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: TColors.primary,
-                          minimumSize: Size(double.infinity, 50),
+                          minimumSize: const Size(double.infinity, 50),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Book Now',
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),

@@ -9,15 +9,15 @@ class ReviewTripPage extends StatefulWidget {
   final bool isMulti; // Add 'final' for immutability
 
   const ReviewTripPage({
-    Key? key,
+    super.key,
     required this.isMulti, // Mark the parameter as required
-  }) : super(key: key);
+  });
 
   @override
-  _ReviewTripPageState createState() => _ReviewTripPageState();
+  ReviewTripPageState createState() => ReviewTripPageState();
 }
 
-class _ReviewTripPageState extends State<ReviewTripPage> {
+class ReviewTripPageState extends State<ReviewTripPage> {
   List<BoxShadow> _animatedShadow = [
     BoxShadow(
       color: TColors.primary.withOpacity(0.4),
@@ -86,10 +86,10 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Flight Details Card
-            SizedBox(height: 8,),
+            const SizedBox(height: 8,),
             _reviewContainer(typeFlight: 'Departing'),
             if(widget.isMulti) ...[
-              SizedBox(height: 8,),
+              const SizedBox(height: 8,),
               _reviewContainer(typeFlight: 'Returning'),
             ],
 
@@ -150,12 +150,12 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                             height: 100,
                             width: 100,
                           ),
-                          SizedBox(
+                          const SizedBox(
                             width: 8,
                           ),
-                          Container(
+                          const SizedBox(
                             width: 180,
-                            child: const Column(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
@@ -331,7 +331,7 @@ class _ReviewTripPageState extends State<ReviewTripPage> {
                     color: TColors.grey,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 const Text(
                   '07 Dec, 2024',
                   style: TextStyle(

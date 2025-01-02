@@ -43,7 +43,7 @@ class CustomDateRangeSelector extends StatelessWidget {
                       builder: (context, child) {
                         return Theme(
                           data: Theme.of(context).copyWith(
-                            colorScheme: ColorScheme.light(
+                            colorScheme: const ColorScheme.light(
                               primary: TColors.primary,
                               onPrimary: TColors.background,
                               surface: TColors.background,
@@ -69,7 +69,7 @@ class CustomDateRangeSelector extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           'Check-in',
                           style: TextStyle(
                             color: TColors.text,
@@ -80,12 +80,12 @@ class CustomDateRangeSelector extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.calendar_today,
+                            const Icon(Icons.calendar_today,
                                 color: TColors.primary, size: 16),
                             const SizedBox(width: 4),
                             Text(
                               '${dateRange.start.day}/${dateRange.start.month}/${dateRange.start.year}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: TColors.text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -98,7 +98,7 @@ class CustomDateRangeSelector extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
               // Nights Selector Section
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
@@ -112,7 +112,7 @@ class CustomDateRangeSelector extends StatelessWidget {
                   children: [
                     IconButton(
                       icon:
-                          Icon(Icons.remove, color: TColors.primary, size: 14),
+                          const Icon(Icons.remove, color: TColors.primary, size: 14),
                       onPressed: () {
                         if (nights > 1) onNightsChanged(nights - 1);
                       },
@@ -121,14 +121,14 @@ class CustomDateRangeSelector extends StatelessWidget {
                     ),
                     Text(
                       '$nights Nights',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: TColors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.add, color: TColors.primary, size: 14),
+                      icon: const Icon(Icons.add, color: TColors.primary, size: 14),
                       onPressed: () => onNightsChanged(nights + 1),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -144,7 +144,7 @@ class CustomDateRangeSelector extends StatelessWidget {
           // Check-out Date Display Section
           Text(
             'Check-out: ${dateRange.end.day}/${dateRange.end.month}/${dateRange.end.year}',
-            style: TextStyle(
+            style: const TextStyle(
               color: TColors.text,
               fontSize: 12,
             ),

@@ -16,11 +16,11 @@ class ReturnCaseScenario extends StatelessWidget {
   final bool isActive;
 
   const ReturnCaseScenario({
-    Key? key,
+    super.key,
     required this.stepNumber,
     required this.stepText,
     this.isActive = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +118,8 @@ class FlightBookingPage extends StatelessWidget {
                   onTap: () {
                     Get.off(() => const HomeScreen());
                   },
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(
                         Icons.edit,
                         size: 16,
@@ -169,7 +169,7 @@ class FlightBookingPage extends StatelessWidget {
             if (controller.currentScenario.value == FlightScenario.returnFlight) {
               return _buildReturnCaseScenario();
             }
-            return SizedBox.shrink();
+            return const SizedBox.shrink();
           }),
           _buildFilterSection(),
           _buildFlightList(),

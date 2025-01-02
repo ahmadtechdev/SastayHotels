@@ -30,7 +30,7 @@ class DateSelector extends StatelessWidget {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: TColors.primary,
               // Primary color for headers and selected date
               onPrimary: TColors.background,

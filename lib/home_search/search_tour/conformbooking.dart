@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 class ConformBooking extends StatelessWidget {
   final Tourcontroler tourcontroler = Get.put(Tourcontroler());
 
+  ConformBooking({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Get screen size for responsiveness
@@ -15,9 +17,9 @@ class ConformBooking extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Complete Your Booking"),
+        title: const Text("Complete Your Booking"),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: TColors.text),
+          icon: const Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
         ),
       ),
@@ -30,8 +32,8 @@ class ConformBooking extends StatelessWidget {
             children: [
               Center(
                   child: Image.asset(height: 250, 'assets/img/Cbooking.png')),
-              SizedBox(height: 20),
-              SizedBox(height: 10),
+              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               // Form Fields
               _buildTextField(
                 controller: tourcontroler.firstNameController,
@@ -39,14 +41,14 @@ class ConformBooking extends StatelessWidget {
                 hintText: "Enter your first name",
                 icon: Icons.person,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: tourcontroler.lastNameController,
                 label: "Last Name",
                 hintText: "Enter your last name",
                 icon: Icons.person_outline,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: tourcontroler.emailController,
                 label: "Email",
@@ -54,7 +56,7 @@ class ConformBooking extends StatelessWidget {
                 icon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: tourcontroler.phoneController,
                 label: "Phone Number",
@@ -62,28 +64,28 @@ class ConformBooking extends StatelessWidget {
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: tourcontroler.addressController,
                 label: "Address",
                 hintText: "Enter your address",
                 icon: Icons.location_on,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: tourcontroler.cityController,
                 label: "City",
                 hintText: "Enter your city",
                 icon: Icons.location_city,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Submit Button
               Center(
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(ThankYouScreen());
+                      Get.to(const ThankYouScreen());
 
                       // Validate input and handle submission
                       if (_validateFields()) {
@@ -101,7 +103,7 @@ class ConformBooking extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -135,15 +137,15 @@ class ConformBooking extends StatelessWidget {
         filled: true,
         labelText: label,
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey),
+        hintStyle: const TextStyle(color: Colors.grey),
         prefixIcon: Icon(icon, color: TColors.primary),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.black)),
+            borderSide: const BorderSide(color: TColors.black)),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.black)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            borderSide: const BorderSide(color: TColors.black)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       keyboardType: keyboardType,
     );

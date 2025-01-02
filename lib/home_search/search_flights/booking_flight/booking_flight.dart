@@ -220,7 +220,7 @@ class _BookingFormState extends State<BookingForm> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           "Mobile Number",
           style: TextStyle(
               color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
@@ -268,7 +268,7 @@ class _BookingFormState extends State<BookingForm> {
             Icon(Icons.info_outline, size: 14, color: TColors.grey,),
 
             SizedBox(width: 4,),
-            const Text(
+            Text(
               "(your ticket will be emailed here)",
               style: TextStyle(color: TColors.grey, fontSize: 12),
             ),
@@ -361,7 +361,7 @@ class _BookingFormState extends State<BookingForm> {
                   // Handle the "Add a new traveler" action
                   print("Add a new traveler clicked");
                 },
-                child: Text(
+                child: const Text(
                   "+ Add a new traveler",
                   style: TextStyle(
                     color: TColors.primary,
@@ -371,7 +371,7 @@ class _BookingFormState extends State<BookingForm> {
               ),
             ),
             // Divider section
-            DropdownMenuItem<String>(
+            const DropdownMenuItem<String>(
               enabled: false,
               child: Text(
                 "Select from my account",
@@ -382,11 +382,11 @@ class _BookingFormState extends State<BookingForm> {
               ),
             ),
             // Traveler options
-            DropdownMenuItem<String>(
+            const DropdownMenuItem<String>(
               value: "ahmad_raza_ali",
               child: Text("Ahmad Raza Ali"),
             ),
-            DropdownMenuItem<String>(
+            const DropdownMenuItem<String>(
               value: "john_doe",
               child: Text("John Doe"),
             ),
@@ -439,7 +439,7 @@ class _BookingFormState extends State<BookingForm> {
               IntrinsicHeight(
                 child: Row(
                   children: [
-                    VerticalDivider(
+                    const VerticalDivider(
                       color: TColors.grey,
                       thickness: 1,
                     ),
@@ -460,7 +460,7 @@ class _BookingFormState extends State<BookingForm> {
               IntrinsicHeight(
                 child: Row(
                   children: [
-                    VerticalDivider(
+                    const VerticalDivider(
                       color: TColors.grey,
                       thickness: 1,
                     ),
@@ -611,7 +611,7 @@ class _BookingFormState extends State<BookingForm> {
 
   Widget _buildBottomSection() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
         border: Border(
           top: BorderSide(

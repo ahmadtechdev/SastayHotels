@@ -1,4 +1,4 @@
-import 'package:flight_bocking/home_search/search_hotels/BookingHotle/BookingControler.dart';
+import 'package:flight_bocking/home_search/search_hotels/BookingHotle/booking_controller.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:flight_bocking/widgets/snackbar.dart';
 import 'package:flight_bocking/widgets/thankuscreen.dart';
@@ -8,6 +8,8 @@ import 'package:get/get.dart';
 class BookingScreen extends StatelessWidget {
   final BookingController bookingController = Get.put(BookingController());
 
+  BookingScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Get screen size for responsiveness
@@ -15,9 +17,9 @@ class BookingScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Complete Your Booking"),
+        title: const Text("Complete Your Booking"),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: TColors.text),
+          icon: const Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
         ),
       ),
@@ -28,7 +30,7 @@ class BookingScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               // Form Fields
               _buildTextField(
                 controller: bookingController.firstNameController,
@@ -36,14 +38,14 @@ class BookingScreen extends StatelessWidget {
                 hintText: "Enter your first name",
                 icon: Icons.person,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: bookingController.lastNameController,
                 label: "Last Name",
                 hintText: "Enter your last name",
                 icon: Icons.person_outline,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: bookingController.emailController,
                 label: "Email",
@@ -51,7 +53,7 @@ class BookingScreen extends StatelessWidget {
                 keyboardType: TextInputType.emailAddress,
                 icon: Icons.email,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: bookingController.phoneController,
                 label: "Phone Number",
@@ -59,21 +61,21 @@ class BookingScreen extends StatelessWidget {
                 keyboardType: TextInputType.phone,
                 icon: Icons.phone,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: bookingController.addressController,
                 label: "Address",
                 hintText: "Enter your address",
                 icon: Icons.home,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: bookingController.cityController,
                 label: "City",
                 hintText: "Enter your city",
                 icon: Icons.location_city,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Checkbox Section
               Text(
                 "Special Requests",
@@ -83,7 +85,7 @@ class BookingScreen extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Obx(() => Column(
                     children: [
                       _buildCheckbox(
@@ -124,14 +126,14 @@ class BookingScreen extends StatelessWidget {
                       ),
                     ],
                   )),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Submit Button
               Center(
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(ThankYouScreen());
+                      Get.to(const ThankYouScreen());
                       // Validate input and handle submission
                       if (_validateFields()) {
                         CustomSnackBar(
@@ -148,7 +150,7 @@ class BookingScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -183,14 +185,14 @@ class BookingScreen extends StatelessWidget {
         labelText: label,
         hintText: hintText,
         prefixIcon: Icon(icon, color: TColors.primary),
-        hintStyle: TextStyle(color: Colors.grey),
+        hintStyle: const TextStyle(color: Colors.grey),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.primary)),
+            borderSide: const BorderSide(color: TColors.primary)),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.black)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            borderSide: const BorderSide(color: TColors.black)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       keyboardType: keyboardType,
     );

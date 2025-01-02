@@ -9,14 +9,14 @@ class Room {
 }
 
 class GuestsController extends GetxController {
-  static const int MAX_ROOMS = 4; // Maximum number of rooms allowed
+  static const int maxRooms = 4; // Maximum number of rooms allowed
 
   RxInt roomCount = 1.obs;
   RxList<Room> rooms = RxList<Room>([Room()]);
 
   // Add a new room
   void incrementRooms() {
-    if (roomCount.value < MAX_ROOMS) {
+    if (roomCount.value < maxRooms) {
       roomCount.value++;
       rooms.add(Room());
     }

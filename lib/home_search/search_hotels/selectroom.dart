@@ -1,4 +1,4 @@
-import 'package:flight_bocking/home_search/search_hotels/BookingHotle/BookingHotle.dart';
+import 'package:flight_bocking/home_search/search_hotels/BookingHotle/booking_hotel.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,7 +7,7 @@ import 'package:flight_bocking/widgets/colors.dart';
 import '../booking_card/forms/hotel/guests/guests_controller.dart';
 
 class SelectRoomScreen extends StatefulWidget {
-  const SelectRoomScreen({Key? key}) : super(key: key);
+  const SelectRoomScreen({super.key});
 
   @override
   State<SelectRoomScreen> createState() => _SelectRoomScreenState();
@@ -55,9 +55,9 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Room', style: TextStyle(color: TColors.text)),
+        title: const Text('Select Room', style: TextStyle(color: TColors.text)),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: TColors.text),
+          icon: const Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
         ),
         elevation: 0,
@@ -72,7 +72,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Room ${index + 1}', style: TextStyle(fontSize: 14),),
+                    Text('Room ${index + 1}', style: const TextStyle(fontSize: 14),),
                     if (selectedRooms.containsKey(index))
                       const Icon(Icons.check_circle, size: 10),
                   ],
@@ -88,7 +88,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
       ),
       body: Obx(() {
         if (controller.roomsdata.isEmpty) {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(color: TColors.primary),
           );
         }
@@ -175,7 +175,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: Text(
+          child: const Text(
             'Book Now',
             style: TextStyle(
               color: TColors.secondary,
@@ -204,10 +204,10 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
             ),
           ),
           const SizedBox(height: 8),
-          Row(
+          const Row(
             children: [
               Icon(Icons.star, color: TColors.primary, size: 18),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Text(
                 '4 Star Hotel',
                 style: TextStyle(
@@ -231,13 +231,13 @@ class RoomTypeSection extends StatefulWidget {
   final Function(dynamic) isSelected;
 
   const RoomTypeSection({
-    Key? key,
+    super.key,
     required this.roomTypeName,
     required this.rooms,
     required this.nights,
     required this.onRoomSelected,
     required this.isSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<RoomTypeSection> createState() => _RoomTypeSectionState();
@@ -306,12 +306,12 @@ class RoomCard extends StatelessWidget {
   final bool isSelected;
 
   const RoomCard({
-    Key? key,
+    super.key,
     required this.room,
     required this.nights,
     required this.onSelect,
     required this.isSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +345,7 @@ class RoomCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           room['meal'] ?? 'Not Available',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: TColors.text,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -362,7 +362,7 @@ class RoomCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     room['remarks']['remark'][0]['text'] ?? '',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: TColors.grey,
                       fontSize: 12,
                     ),
@@ -377,7 +377,7 @@ class RoomCard extends StatelessWidget {
                     onPressed: () => onSelect(room),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                      isSelected ? Colors.green : TColors.primary,
+                      isSelected ? Colors.green: TColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -385,7 +385,7 @@ class RoomCard extends StatelessWidget {
                     ),
                     child: Text(
                       isSelected ? 'Selected' : 'Select Room',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: TColors.secondary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -407,10 +407,10 @@ class RoomCard extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.payment, size: 16, color: TColors.grey),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   'Per Night',
                   style: TextStyle(
@@ -433,10 +433,10 @@ class RoomCard extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.calculate, size: 16, color: TColors.grey),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   'Total',
                   style: TextStyle(
@@ -468,7 +468,7 @@ class RoomCard extends StatelessWidget {
         color: TColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
+      child: const Icon(
         Icons.hotel,
         color: TColors.primary,
         size: 24,

@@ -10,6 +10,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 class CarBooking extends StatelessWidget {
   final CarControler carcontroler = Get.put(CarControler());
 
+  CarBooking({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Get screen size for responsiveness
@@ -17,9 +19,9 @@ class CarBooking extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Complete Your Booking"),
+        title: const Text("Complete Your Booking"),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: TColors.text),
+          icon: const Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
         ),
       ),
@@ -32,14 +34,14 @@ class CarBooking extends StatelessWidget {
             children: [
               Center(
                   child: Image.asset(height: 250, 'assets/img/Cbooking.png')),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               _buildTextField(
                 controller: carcontroler.firstNameController,
                 label: "Flight Number",
                 hintText: "Enter your Flight Number",
                 icon: MdiIcons.airplane,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               _buildTextField(
                 controller: carcontroler.firstNameController,
@@ -49,14 +51,14 @@ class CarBooking extends StatelessWidget {
               ),
               // Form Fields
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: carcontroler.lastNameController,
                 label: "Last Name",
                 hintText: "Enter your last name",
                 icon: Icons.person_outline,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: carcontroler.emailController,
                 label: "Email",
@@ -64,7 +66,7 @@ class CarBooking extends StatelessWidget {
                 icon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: carcontroler.phoneController,
                 label: "Phone Number",
@@ -72,21 +74,21 @@ class CarBooking extends StatelessWidget {
                 icon: Icons.phone,
                 keyboardType: TextInputType.phone,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: carcontroler.addressController,
                 label: "Address",
                 hintText: "Enter your address",
                 icon: Icons.location_on,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: carcontroler.cityController,
                 label: "City",
                 hintText: "Enter your city",
                 icon: Icons.location_city,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Pickup and Off Fields in One Row
               Row(
@@ -100,7 +102,7 @@ class CarBooking extends StatelessWidget {
                       icon: Icons.location_on,
                     ),
                   ),
-                  SizedBox(width: 16), // Space between Pickup and Off
+                  const SizedBox(width: 16), // Space between Pickup and Off
                   Expanded(
                     child: _buildTextField(
                       controller: carcontroler.offController,
@@ -111,7 +113,7 @@ class CarBooking extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Obx(() => Container(
                     color: Colors.white,
                     height: 55,
@@ -124,7 +126,7 @@ class CarBooking extends StatelessWidget {
                       firstDate: DateTime.now(),
                     ),
                   )),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Submit Button
               Center(
@@ -132,7 +134,7 @@ class CarBooking extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(ThankYouScreen());
+                      Get.to(const ThankYouScreen());
 
                       // Validate input and handle submission
                       if (_validateFields()) {
@@ -150,7 +152,7 @@ class CarBooking extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -184,15 +186,15 @@ class CarBooking extends StatelessWidget {
         filled: true,
         labelText: label,
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey),
+        hintStyle: const TextStyle(color: Colors.grey),
         prefixIcon: Icon(icon, color: TColors.primary),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.black)),
+            borderSide: const BorderSide(color: TColors.black)),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: TColors.black)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            borderSide: const BorderSide(color: TColors.black)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       keyboardType: keyboardType,
     );

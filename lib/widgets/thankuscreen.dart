@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ThankYouScreen extends StatelessWidget {
+  const ThankYouScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,7 +17,7 @@ class ThankYouScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Image.asset(height: 200, 'assets/img/thanku1.png'),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               // Icon/Image at the top
               Container(
@@ -23,14 +25,14 @@ class ThankYouScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: TColors.primary.withOpacity(0.1),
                 ),
-                padding: EdgeInsets.all(20),
-                child: Icon(
+                padding: const EdgeInsets.all(20),
+                child: const Icon(
                   Icons.check_circle_outline,
                   size: 50,
                   color: TColors.primary,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               // Thank You Text
               // Text(
               //   'Thank You!',
@@ -42,7 +44,7 @@ class ThankYouScreen extends StatelessWidget {
               // ),
               // SizedBox(height: 10),
               // Payment success or similar message
-              Text(
+              const Text(
                 'Your booking has been confirmed successfully.',
                 style: TextStyle(
                   fontSize: 16,
@@ -50,9 +52,9 @@ class ThankYouScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Redirection message
-              Text(
+              const Text(
                 'You will be redirected to the home page shortly, or click below to return manually.',
                 style: TextStyle(
                   fontSize: 14,
@@ -60,11 +62,11 @@ class ThankYouScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               // Home button
               ElevatedButton(
                 onPressed: () {
-                  Get.off(HomeScreen());
+                  Get.off(const HomeScreen());
                   // Navigator.pop(context); // Return to the previous or home page
                 },
                 style: ElevatedButton.styleFrom(
@@ -72,9 +74,9 @@ class ThankYouScreen extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  minimumSize: Size(150, 50),
+                  minimumSize: const Size(150, 50),
                 ),
-                child: Text(
+                child: const Text(
                   'Go Home',
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),

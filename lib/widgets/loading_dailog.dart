@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../../widgets/colors.dart';
 
 class LoadingDialog extends StatefulWidget {
   final String message;
 
   const LoadingDialog({
-    Key? key,
+    super.key,
     this.message = 'Searching for the best hotels for you...',
-  }) : super(key: key);
+  });
 
   @override
   State<LoadingDialog> createState() => _LoadingDialogState();
@@ -101,7 +100,7 @@ class _LoadingDialogState extends State<LoadingDialog> with SingleTickerProvider
               child: LinearProgressIndicator(
                 value: (_countdown / 20),
                 backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(TColors.primary),
+                valueColor: const AlwaysStoppedAnimation<Color>(TColors.primary),
                 minHeight: 6,
               ),
             ),
@@ -128,7 +127,7 @@ class _LoadingDialogState extends State<LoadingDialog> with SingleTickerProvider
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: TColors.primary, size: 20),
+                  const Icon(Icons.info_outline, color: TColors.primary, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

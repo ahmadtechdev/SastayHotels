@@ -124,7 +124,7 @@ class SearchHotelController extends GetxController {
       hotels.value = filteredHotels;
 
       // Debugging: Print the filtered list
-      print("Filtered hotels: ${filteredHotels}");
+      print("Filtered hotels: $filteredHotels");
     }
   }
 
@@ -215,7 +215,7 @@ class SearchHotelController extends GetxController {
   var image = ''.obs;
   var hotelCode =''.obs;
 
-  fetch_slectroom_data() async {
+  fetchSelectRoomData() async {
     try {
       var headers = {
         'apikey': 'VSXYTrVlCtVXRAOXGS2==',
@@ -227,7 +227,7 @@ class SearchHotelController extends GetxController {
       var data = {
         "SessionId": "e6c0de00d6b14c679d217701246e8709",
         "SearchParameter": {
-          "HotelCode": hotelCode.value ?? "",
+          "HotelCode": hotelCode.value,
           "Currency": "USD",
           "Rooms": {
             "Room": [
