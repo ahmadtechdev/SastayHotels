@@ -10,247 +10,337 @@ class SelectRoomScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SearchHotelController());
-    print(controller.hotelCode.value);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Select Room', style: TextStyle(color: TColors.text)),
-        // backgroundColor: TColors.primary,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: TColors.text),
           onPressed: () => Get.back(),
         ),
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Obx(
-          () {
-            if (controller.roomsdata.isEmpty) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: TColors.primary,
+      body: Obx(() {
+        if (controller.roomsdata.isEmpty) {
+          return Center(
+            child: CircularProgressIndicator(color: TColors.primary),
+          );
+        }
+
+        // Group rooms by roomName
+        Map<String, List<dynamic>> groupedRooms = {};
+        for (var room in controller.roomsdata) {
+          String roomName = room['roomName'] ?? 'Unknown Room';
+          if (!groupedRooms.containsKey(roomName)) {
+            groupedRooms[roomName] = [];
+          }
+          groupedRooms[roomName]!.add(room);
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                color: TColors.background2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.hotlename.value,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: TColors.primary, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          '4 Star Hotel',
+                          style: TextStyle(
+                            color: TColors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.hotlename.value,
-                  style: TextStyle(
-                    fontSize: 20,
+              ),
+              ...groupedRooms.entries.map((entry) =>
+                  RoomTypeSection(
+                    roomTypeName: entry.key,
+                    rooms: entry.value,
+                    nights: controller.nights.value,
+                  ),
+              ).toList(),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class RoomTypeSection extends StatefulWidget {
+  final String roomTypeName;
+  final List<dynamic> rooms;
+  final int nights;
+
+  const RoomTypeSection({
+    Key? key,
+    required this.roomTypeName,
+    required this.rooms,
+    required this.nights,
+  }) : super(key: key);
+
+  @override
+  State<RoomTypeSection> createState() => _RoomTypeSectionState();
+}
+
+class _RoomTypeSectionState extends State<RoomTypeSection> {
+  bool isExpanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: TColors.secondary.withOpacity(0.3),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: () => setState(() => isExpanded = !isExpanded),
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: TColors.background4,
+                    border: Border.all(color: TColors.background3),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isExpanded ? Icons.remove : Icons.add,
+                      size: 16,
+                      color: TColors.background3,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.roomTypeName,
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: TColors.primary,
                   ),
                 ),
-                SizedBox(height: 16),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: controller.roomsdata.length,
-                    physics: const BouncingScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      var room = controller.roomsdata[index];
-                      return RoomCard(
-                        room: room,
-                        image: controller.image.value,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
-      ),
+        if (isExpanded)
+          ...widget.rooms.map((room) => RoomCard(
+            room: room,
+            nights: widget.nights,
+          )).toList(),
+      ],
     );
   }
 }
 
 class RoomCard extends StatelessWidget {
   final Map<String, dynamic> room;
-  final String image;
+  final int nights;
 
-  const RoomCard({Key? key, required this.room, required this.image})
-      : super(key: key);
+  const RoomCard({
+    Key? key,
+    required this.room,
+    required this.nights,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final pricePerNight = room['price']['net'] ?? 0.0;
+    final totalPrice = pricePerNight * nights;
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: Image.network(
-                    image,
-                    height: 220,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        height: 220,
-                        color: Colors.grey[200],
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    (loadingProgress.expectedTotalBytes ?? 1)
-                                : null,
-                            color: TColors.primary,
-                          ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 220,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.error_outline, size: 50),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    room['roomName'] ?? 'Unknown Room',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+
+                    Row(
+
                       children: [
-                        _buildInfoChip(Icons.restaurant_menu,
-                            room['meal'] ?? 'Not Available'),
-                        const SizedBox(width: 12),
-                        _buildInfoChip(Icons.card_membership,
-                            room['rateType'] ?? 'Unknown'),
+                        _buildRoomIcon(),
+
+                        const SizedBox(width: 8),
+                        Row(
+                          children: [
+
+                            Text(
+                              room['meal'] ?? 'Not Available',
+                              style: TextStyle(color: TColors.text, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: room['status'] == 'Available'
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+
+                    _buildBadge(room['rateType'] ?? 'Unknown'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.payment, size: 16, color: TColors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Per Night',
+                              style: TextStyle(
+                                color: TColors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          room['status'] ?? 'Unknown',
-                          style: TextStyle(
-                            color: room['status'] == 'Available'
-                                ? Colors.green
-                                : Colors.red,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          // color: TColors.primary.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '\$${room['price']['net']?.toStringAsFixed(2) ?? 'N/A'}/Night',
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${pricePerNight.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            color: TColors.black,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0, vertical: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.to(BookingScreen());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TColors.primary,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        minimumSize: Size(double.infinity, 40),
-                      ),
-                      child: Text('Book Now',
-                          style: TextStyle(color: TColors.secondary)),
+                      ],
                     ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calculate, size: 16, color: TColors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              // 'Total for $nights Nights',
+                              'Total',
+                              style: TextStyle(
+                                color: TColors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${totalPrice.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (room['remarks']?['remark'] != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    room['remarks']['remark'][0]['text'] ?? '',
+                    style: TextStyle(
+                      color: TColors.grey,
+                      fontSize: 12,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Get.to(BookingScreen()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: TColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Book Name',
+                      style: TextStyle(
+                        color: TColors.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
+  Widget _buildRoomIcon() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: TColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        Icons.hotel,
+        color: TColors.primary,
+        size: 24,
+      ),
+    );
+  }
+
+  Widget _buildBadge(String text) {
+    final isRefundable = text.toLowerCase() == 'refundable';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(20),
+        color: isRefundable ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: TColors.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isRefundable ? Colors.green.shade700 : Colors.red.shade700,
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
       ),
     );
   }
