@@ -3,30 +3,44 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../home_search/booking_card/forms/hotel/guests/guests_controller.dart';
+import '../home_search/search_hotels/BookingHotle/booking_hotel.dart';
 import '../home_search/search_hotels/search_hotel_controller.dart';
 
 class ApiService extends GetxService {
-  var dio = Dio();
-  final String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
-  final String apiUrl = 'http://uat-apiv2.giinfotech.ae/api/v2/Hotel/Search';
+  late final Dio dio;
+  static const String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
+  static const String _baseUrl = 'http://uat-apiv2.giinfotech.ae/api/v2';
 
-  // Initialize the existing SearchHotelController
   ApiService() {
+    dio = Dio(BaseOptions(baseUrl: _baseUrl));
     if (!Get.isRegistered<SearchHotelController>()) {
       Get.put(SearchHotelController());
     }
   }
 
+  /// Helper: Sets default headers for API requests.
+  Options _defaultHeaders() {
+    return Options(
+      headers: {
+        'apikey': _apiKey,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    );
+  }
+
+  /// Helper: Formats date strings to 'yyyy-MM-dd'.
   String _formatDate(String isoDate) {
     try {
-      DateTime dateTime = DateTime.parse(isoDate);
-      return DateFormat("yyyy-MM-dd").format(dateTime);
+      return DateFormat('yyyy-MM-dd').format(DateTime.parse(isoDate));
     } catch (e) {
       print('Date formatting error: $e');
-      return isoDate;
+      return isoDate; // Fallback to the original format if parsing fails.
     }
   }
 
+  /// Fetches hotels based on search parameters.
   Future<void> fetchHotels({
     required String destinationCode,
     required String countryCode,
@@ -38,166 +52,155 @@ class ApiService extends GetxService {
   }) async {
     final searchController = Get.find<SearchHotelController>();
 
-    print('\n=== Starting Hotel Search API Call ===');
-    print('Input Parameters:');
-    print('DestinationCode: $destinationCode');
-    print('CountryCode: $countryCode');
-    print('Nationality: $nationality');
-    print('Currency: $currency');
-    print('Original CheckInDate: $checkInDate');
-    print('Original CheckOutDate: $checkOutDate');
-    print('Rooms: $rooms');
-
-    // Format dates correctly
-    final formattedCheckInDate = _formatDate(checkInDate);
-    final formattedCheckOutDate = _formatDate(checkOutDate);
-
-    print('\nFormatted Dates:');
-    print('Formatted CheckInDate: $formattedCheckInDate');
-    print('Formatted CheckOutDate: $formattedCheckOutDate');
-
-    var headers = {
-      'apikey': _apiKey,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
-
-    var requestBody = {
+    final requestBody = {
       "SearchParameter": {
         "DestinationCode": destinationCode,
         "CountryCode": countryCode,
         "Nationality": nationality,
         "Currency": currency,
-        "CheckInDate": formattedCheckInDate,
-        "CheckOutDate": formattedCheckOutDate,
+        "CheckInDate": _formatDate(checkInDate),
+        "CheckOutDate": _formatDate(checkOutDate),
         "Rooms": {
-          "Room": rooms
-              .map((room) => {
+          "Room": rooms.map((room) => {
             "RoomIdentifier": room["RoomIdentifier"],
             "Adult": room["Adult"],
-          })
-              .toList(),
+          }).toList(),
         },
         "TassProInfo": {"CustomerCode": "4805", "RegionID": "123"}
       }
     };
 
-    print('\nRequest Body:');
-    print(json.encode(requestBody));
-
+    print('Fetching Hotels with Request: ${json.encode(requestBody)}');
     try {
-      var response = await dio.post(
-        apiUrl,
+      final response = await dio.post(
+        '/Hotel/Search',
         data: requestBody,
-        options: Options(
-          headers: headers,
-        ),
+        options: _defaultHeaders(),
       );
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = response.data;
+        final data = response.data;
+        final hotels = data['hotels']?['hotel'] ?? [];
+        final sessionId = data['generalInfo']?['sessionId'];
 
-        if (responseData['hotels'] != null) {
-          print('\nHotels data found in response');
-          List<dynamic> apiHotels = responseData['hotels']['hotel'];
+        searchController.sessionId.value = sessionId ?? '';
+        searchController.hotels.value = hotels.map<Map<String, dynamic>>((hotel) {
+          return {
+            'name': hotel['name'] ?? 'Unknown Hotel',
+            'price': hotel['minPrice']?.toString() ?? '0',
+            'address': hotel['hotelInfo']?['add1'] ?? 'Address not available',
+            'image': hotel['hotelInfo']?['image'] ??
+                'assets/img/cardbg/broken-image.png',
+            'rating': double.tryParse(
+                hotel['hotelInfo']?['starRating']?.toString() ?? '0') ??
+                3.0,
+            'latitude': hotel['hotelInfo']?['lat'] ?? 0.0,
+            'longitude': hotel['hotelInfo']?['lon'] ?? 0.0,
+            'hotelCode': hotel['code'] ?? '',
+          };
+        }).toList();
 
-          // Transform API hotel data to match your existing format
-          List<Map<String, dynamic>> transformedHotels = apiHotels.map((hotel) {
-            return {
-              'name': hotel['name'] ?? 'Unknown Hotel',
-              'price': hotel['minPrice']?.toString() ?? '0',
-              'address': hotel['hotelInfo']['add1'] ?? 'Address not available',
-              'image': hotel['hotelInfo']['image'] ??
-                  'assets/img/cardbg/broken-image.png',
-              // Default image or from API
-              'rating': double.tryParse(
-                  hotel['hotelInfo']['starRating']?.toString() ?? '') ??
-                  3.0,
-              'latitude': hotel['hotelInfo']['lat'] ?? 0.0,
-              'longitude': hotel['hotelInfo']['lon'] ?? 0.0,
-              'hotelCode': hotel['code'] ?? "",
-              // Add any additional fields that your existing controller uses
-            };
-          }).toList();
-
-          print('Transformed ${transformedHotels.length} hotels');
-
-          // Update the existing controller
-          searchController.hotels.value = transformedHotels;
-          searchController.originalHotels.value = transformedHotels;
-          searchController.filteredHotels.value = transformedHotels;
-
-          print('Successfully updated SearchHotelController with new data');
-        } else {
-          print('\nNo hotels found in the response');
-          throw Exception('No hotels data in response');
-        }
+        print('Successfully updated hotel data');
       } else {
-        print('\nAPI request failed');
-        print('Status code: ${response.statusCode}');
-        print('Reason: ${response.statusCode}');
-        throw Exception('Failed to fetch hotels: ${response.statusCode}');
+        print('API Error: ${response.statusMessage}');
       }
     } catch (e) {
-      print('\n=== Error in API Call ===');
-      print('Error type: ${e.runtimeType}');
-      print('Error details: $e');
-      rethrow;
-    } finally {
-      print('\n=== End of Hotel Search API Call ===\n');
+      print('Error Fetching Hotels: $e');
     }
   }
-  // slect room api
 
-  fetch_slectroom_data(hotlecode) async {
+  /// Fetch room details.
+  Future<void> fetchRoomDetails(String hotelCode, String sessionId) async {
+    final guestsController = Get.put(GuestsController());
+
+    List<Map<String, dynamic>> rooms = guestsController.rooms
+        .asMap()
+        .entries
+        .map((entry) {
+      final index = entry.key;
+      final room = entry.value;
+      return {
+        "RoomIdentifier": index + 1,
+        "Adult": room.adults.value,
+        if (room.children.value > 0) "child": room.children.value,
+      };
+    })
+        .toList();
+
+    final requestBody = {
+      "SessionId": sessionId,
+      "SearchParameter": {
+        "HotelCode": hotelCode,
+        "Currency": "USD",
+        "Rooms": {"Room": rooms}
+      }
+    };
+
+    print('Fetching Room Details with Request: $requestBody');
     try {
-      final searchController = Get.find<SearchHotelController>();
-
-      var headers = {
-        'apikey': 'VSXYTrVlCtVXRAOXGS2==',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      var data = {
-        "SessionId": "e6c0de00d6b14c679d217701246e8709",
-        "SearchParameter": {
-          "HotelCode": hotlecode,
-          "Currency": "USD",
-          "Rooms": {
-            "Room": [
-              {"RoomIdentifier": 1, "Adult": 1}
-            ]
-          }
-        }
-      };
-      var response = await dio.post(
-        'http://uat-apiv2.giinfotech.ae/api/v2/hotel/RoomDetails',
-        options: Options(
-          headers: headers,
-        ),
-        data: data,
+      final response = await dio.post(
+        '/hotel/RoomDetails',
+        data: requestBody,
+        options: _defaultHeaders(),
       );
 
       if (response.statusCode == 200) {
-        var responseData = response.data;
-        // Extract room information
-        var data = responseData['hotel']['hotelInfo'];
-        var roomData = responseData['hotel']['rooms']['room'];
+        final data = response.data;
+        final hotelInfo = data['hotel']?['hotelInfo'];
+        final roomData = data['hotel']?['rooms']?['room'];
 
-        if (data != null) {
-          searchController.hotlename.value = data['name'];
-          searchController.image.value = data['image'];
+        if (hotelInfo != null) {
+          final searchController = Get.find<SearchHotelController>();
+          searchController.hotelName.value = hotelInfo['name'];
+          searchController.image.value = hotelInfo['image'];
           searchController.roomsdata.value = roomData;
-
-          print(roomData);
+          print('Successfully updated room data');
         } else {
           print('No room information available');
         }
       } else {
-        print(response.statusMessage);
+        print('API Error: ${response.statusMessage}');
       }
     } catch (e) {
-      print(e);
+      print('Error Fetching Room Details: $e');
     }
+  }
+
+  /// Pre-book a room.
+  Future<Map<String, dynamic>?> prebook({
+    required String sessionId,
+    required String hotelCode,
+    required int groupCode,
+    required String currency,
+    required List<String> rateKeys,
+  }) async {
+    final requestBody = {
+      "SessionId": sessionId,
+      "SearchParameter": {
+        "HotelCode": hotelCode,
+        "GroupCode": groupCode,
+        "Currency": currency,
+        "RateKeys": {"RateKey": rateKeys},
+      }
+    };
+
+    print('Prebooking with Request: ${json.encode(requestBody)}');
+    try {
+      final response = await dio.post(
+        '/hotel/Reprice',
+        data: requestBody,
+        options: _defaultHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        print('Prebook Successful: ${response.data}');
+        return response.data as Map<String, dynamic>;
+      } else {
+        print('Prebook Failed: ${response.statusMessage}');
+      }
+    } catch (e) {
+      print('Error in Prebooking: $e');
+    }
+    return null;
   }
 }

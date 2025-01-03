@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 
+import '../../services/api_service.dart';
 import '../booking_card/forms/hotel/guests/guests_controller.dart';
 
 class SelectRoomScreen extends StatefulWidget {
@@ -18,7 +19,80 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
   final controller = Get.put(SearchHotelController());
   final Map<int, dynamic> selectedRooms = {};
   final guestsController = Get.find<GuestsController>();
+  final apiService = ApiService();
+  bool isLoading = false;
 
+  Future<void> handleBookNow() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Extract rate keys from selected rooms
+      List<String> rateKeys = selectedRooms.values
+          .map((room) => room['rateKey'].toString())
+          .toList();
+
+      // Get the group code from the first selected room
+      int groupCode = selectedRooms.values.first['groupCode'] as int;
+
+      // Make the prebook API call
+      var response = await apiService.prebook(
+        sessionId: controller.sessionId.value,
+        hotelCode: controller.hotelCode.value,
+        groupCode: groupCode,
+        currency: "USD",
+        rateKeys: rateKeys,
+      );
+
+      // Check the booking status
+      if (response != null) {
+        bool isSoldOut = response['isSoldOut'] ?? false;
+        bool isPriceChanged = response['isPriceChanged'] ?? false;
+        bool isBookable = response['isBookable'] ?? false;
+
+        if (isSoldOut) {
+          _showErrorDialog('Sorry, one or more selected rooms are no longer available.');
+        } else if (isPriceChanged) {
+          _showErrorDialog('The price for one or more rooms has changed. Please review the updated prices.');
+        } else if (!isBookable) {
+          _showErrorDialog('One or more rooms are not currently bookable. Please try different rooms.');
+        } else {
+          // All validations passed, proceed to booking
+          Get.to(() => BookingHotelScreen());
+        }
+      } else {
+        _showErrorDialog('Failed to validate room availability. Please try again.');
+      }
+    } catch (e) {
+      _showErrorDialog('An error occurred while processing your booking. Please try again.');
+      print('Booking error: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Booking Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
   @override
   void initState() {
     super.initState();
@@ -61,7 +135,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
           onPressed: () => Get.back(),
         ),
         elevation: 0,
-        bottom: guestsController.roomCount.value >= 1
+        bottom: guestsController.roomCount.value > 1
             ? TabBar(
           controller: _tabController,
           tabs: List.generate(
@@ -152,7 +226,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
           );
         }
       }),
-      bottomNavigationBar: guestsController.roomCount.value > 1 && allRoomsSelected
+      bottomNavigationBar: guestsController.roomCount.value >= 1 && allRoomsSelected
           ? Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -166,23 +240,37 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
             ),
           ],
         ),
-        child: ElevatedButton(
-          onPressed: () => Get.to(BookingHotelScreen()),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: TColors.primary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: isLoading ? null : handleBookNow,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                isLoading ? 'Checking Availability...' : 'Book Now',
+                style: const TextStyle(
+                  color: TColors.secondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
-          ),
-          child: const Text(
-            'Book Now',
-            style: TextStyle(
-              color: TColors.secondary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
+            if (isLoading)
+              const Positioned.fill(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: TColors.secondary,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+          ],
         ),
       )
           : null,
@@ -197,7 +285,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            controller.hotlename.value,
+            controller.hotelName.value,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

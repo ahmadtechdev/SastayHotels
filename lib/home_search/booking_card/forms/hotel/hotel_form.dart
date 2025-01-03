@@ -89,7 +89,7 @@ class HotelForm extends StatelessWidget {
               Get.back();
 
               // Navigate to the hotel listing screen
-              Get.to(const HotelScreen());
+              Get.to(()=>const HotelScreen());
             } catch (e) {
               // Close loading dialog
               Get.back();

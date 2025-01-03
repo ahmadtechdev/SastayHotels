@@ -23,7 +23,8 @@ class _HotelScreenState extends State<HotelScreen> {
     Widget buildRatingBar(double rating) {
       return RatingBarIndicator(
         rating: rating,
-        itemBuilder: (context, index) => const Icon(
+        itemBuilder: (context, index) =>
+        const Icon(
           Icons.star,
           color: Colors.orange,
         ),
@@ -38,8 +39,11 @@ class _HotelScreenState extends State<HotelScreen> {
         context: context,
         isScrollControlled: true,
         builder: (BuildContext context) {
-          return Obx(() => Padding(
-                padding: MediaQuery.of(context).viewInsets,
+          return Obx(() =>
+              Padding(
+                padding: MediaQuery
+                    .of(context)
+                    .viewInsets,
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -83,7 +87,10 @@ class _HotelScreenState extends State<HotelScreen> {
                               buildRatingBar((5 - index).toDouble()),
                               const SizedBox(width: 8),
                               Text(
-                                '(${controller.hotels.where((hotel) => hotel['rating'] == 5 - index).length})',
+                                '(${controller.hotels
+                                    .where((hotel) =>
+                                hotel['rating'] == 5 - index)
+                                    .length})',
                                 style: const TextStyle(color: Colors.grey),
                               ),
                             ],
@@ -161,7 +168,8 @@ class _HotelScreenState extends State<HotelScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search for hotels...',
                       hintStyle: const TextStyle(color: TColors.black),
-                      prefixIcon: const Icon(Icons.search, color: TColors.primary),
+                      prefixIcon: const Icon(
+                          Icons.search, color: TColors.primary),
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -233,8 +241,8 @@ class _HotelScreenState extends State<HotelScreen> {
     );
   }
 
-  void _showSortOptionsBottomSheet(BuildContext context, SearchHotelController controller) {
-
+  void _showSortOptionsBottomSheet(BuildContext context,
+      SearchHotelController controller) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -330,18 +338,18 @@ class _HotelScreenState extends State<HotelScreen> {
     );
   }
 
-  void _showPriceRangeBottomSheet(
-      BuildContext context, SearchHotelController controller) {
+  void _showPriceRangeBottomSheet(BuildContext context,
+      SearchHotelController controller) {
     // Calculate min and max prices dynamically from the hotels list
     final prices = controller.hotels
         .map((hotel) =>
-            double.parse(hotel['price'].toString().replaceAll(',', '').trim()))
+        double.parse(hotel['price'].toString().replaceAll(',', '').trim()))
         .toList();
 
     double minPrice =
-        prices.isNotEmpty ? prices.reduce((a, b) => a < b ? a : b) : 0.0;
+    prices.isNotEmpty ? prices.reduce((a, b) => a < b ? a : b) : 0.0;
     double maxPrice =
-        prices.isNotEmpty ? prices.reduce((a, b) => a > b ? a : b) : 0.0;
+    prices.isNotEmpty ? prices.reduce((a, b) => a > b ? a : b) : 0.0;
 
     double lowerValue = minPrice;
     double upperValue = maxPrice;
@@ -440,7 +448,7 @@ class _HotelScreenState extends State<HotelScreen> {
 class HotelCard extends StatelessWidget {
   final Map hotel;
 
-   HotelCard({super.key, required this.hotel});
+  HotelCard({super.key, required this.hotel});
 
   final SearchHotelController controller = Get.put(SearchHotelController());
 
@@ -494,16 +502,16 @@ class HotelCard extends StatelessWidget {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Get.to(
-                          MapScreen(
-                            latitude: double.tryParse(
-                                    hotel['latitude']?.toString() ?? '') ??
-                                0.0,
-                            longitude: double.tryParse(
-                                    hotel['longitude']?.toString() ?? '') ??
-                                0.0,
-                            hotelName: hotel['name'] ?? 'Unknown Hotel',
-                          ),
+                        Get.to(() =>
+                            MapScreen(
+                              latitude: double.tryParse(
+                                  hotel['latitude']?.toString() ?? '') ??
+                                  0.0,
+                              longitude: double.tryParse(
+                                  hotel['longitude']?.toString() ?? '') ??
+                                  0.0,
+                              hotelName: hotel['name'] ?? 'Unknown Hotel',
+                            ),
                         );
                       },
                       child: const Icon(
@@ -525,7 +533,8 @@ class HotelCard extends StatelessWidget {
                       itemCount: 5,
                       itemSize: 15,
                       itemPadding: const EdgeInsets.symmetric(horizontal: 1.0),
-                      itemBuilder: (context, _) => const Icon(
+                      itemBuilder: (context, _) =>
+                      const Icon(
                         Icons.star,
                         color: Colors.amber,
                       ),
@@ -534,7 +543,9 @@ class HotelCard extends StatelessWidget {
                     const Spacer(),
                     Text(
                       'USD ${(hotel['price'] ?? 0.0)}',
-                      style: const TextStyle(fontSize: 18, color: TColors.text, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18,
+                          color: TColors.text,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -544,12 +555,16 @@ class HotelCard extends StatelessWidget {
           Container(
             height: 60,
             padding:
-                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: ElevatedButton(
               onPressed: () {
+                controller.hotelCode.value = hotel['hotelCode'];
+
                 controller.roomsdata.clear();
-                ApiService().fetch_slectroom_data(hotel['hotelCode']);
-                Get.to(const SelectRoomScreen());
+
+                ApiService().fetchRoomDetails(
+                    hotel['hotelCode'], controller.sessionId.value);
+                Get.to(() => const SelectRoomScreen());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: TColors.primary,
@@ -578,20 +593,22 @@ class HotelCard extends StatelessWidget {
         height: 200,
         width: double.infinity,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          color: Colors.grey[300],
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: TColors.primary,
+        placeholder: (context, url) =>
+            Container(
+              color: Colors.grey[300],
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: TColors.primary,
+                ),
+              ),
             ),
-          ),
-        ),
-        errorWidget: (context, url, error) => Image.asset(
-          'assets/img/cardbg/broken-image.png',
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
+        errorWidget: (context, url, error) =>
+            Image.asset(
+              'assets/img/cardbg/broken-image.png',
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
       );
     } else {
       // If not a URL, assume it's a local asset path

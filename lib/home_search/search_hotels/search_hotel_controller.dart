@@ -97,8 +97,8 @@ class SearchHotelController extends GetxController {
     // Initialize lists with proper type casting
     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
-
   }
+
 
   void filterByRating() {
     List<int> selectedStars = [];
@@ -211,8 +211,11 @@ class SearchHotelController extends GetxController {
 
   var roomsdata = [].obs;
 
-  var hotlename = ''.obs;
+  var hotelName = ''.obs;
   var image = ''.obs;
+  var hotelCode =''.obs;
+  var sessionId =''.obs;
+
 
   final RxInt nights = RxInt(1);
   final Rx<DateTimeRange> dateRange = Rx<DateTimeRange>(
