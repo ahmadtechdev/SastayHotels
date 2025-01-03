@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../home_search/search_hotels/search_hotel_controller.dart';
 
 class ApiService extends GetxService {
+  var dio = Dio();
   final String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
-  final String _apiUrl = 'http://uat-apiv2.giinfotech.ae/api/v2/Hotel/Search';
+  final String apiUrl = 'http://uat-apiv2.giinfotech.ae/api/v2/Hotel/Search';
 
   // Initialize the existing SearchHotelController
   ApiService() {
@@ -72,9 +73,9 @@ class ApiService extends GetxService {
         "Rooms": {
           "Room": rooms
               .map((room) => {
-                    "RoomIdentifier": room["RoomIdentifier"],
-                    "Adult": room["Adult"],
-                  })
+            "RoomIdentifier": room["RoomIdentifier"],
+            "Adult": room["Adult"],
+          })
               .toList(),
         },
         "TassProInfo": {"CustomerCode": "4805", "RegionID": "123"}
@@ -85,21 +86,16 @@ class ApiService extends GetxService {
     print(json.encode(requestBody));
 
     try {
-      print('\nInitiating API request...');
-      var request = http.Request('POST', Uri.parse(_apiUrl));
-      request.body = json.encode(requestBody);
-      request.headers.addAll(headers);
-
-      print('\nSending request...');
-      http.StreamedResponse response = await request.send();
-      print('\nResponse Status Code: ${response.statusCode}');
-
-      String responseBody = await response.stream.bytesToString();
-      print('\nRaw Response Body:');
-      print(responseBody);
+      var response = await dio.post(
+        apiUrl,
+        data: requestBody,
+        options: Options(
+          headers: headers,
+        ),
+      );
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = json.decode(responseBody);
+        Map<String, dynamic> responseData = response.data;
 
         if (responseData['hotels'] != null) {
           print('\nHotels data found in response');
@@ -111,12 +107,15 @@ class ApiService extends GetxService {
               'name': hotel['name'] ?? 'Unknown Hotel',
               'price': hotel['minPrice']?.toString() ?? '0',
               'address': hotel['hotelInfo']['add1'] ?? 'Address not available',
-              'image': hotel['hotelInfo']['image'] ?? 'assets/img/cardbg/broken-image.png',
+              'image': hotel['hotelInfo']['image'] ??
+                  'assets/img/cardbg/broken-image.png',
               // Default image or from API
-              'rating': double.tryParse(hotel['hotelInfo']['starRating']?.toString() ?? '') ?? 3.0,
+              'rating': double.tryParse(
+                  hotel['hotelInfo']['starRating']?.toString() ?? '') ??
+                  3.0,
               'latitude': hotel['hotelInfo']['lat'] ?? 0.0,
               'longitude': hotel['hotelInfo']['lon'] ?? 0.0,
-              'hotelCode':hotel['code']??"",
+              'hotelCode': hotel['code'] ?? "",
               // Add any additional fields that your existing controller uses
             };
           }).toList();
@@ -136,8 +135,8 @@ class ApiService extends GetxService {
       } else {
         print('\nAPI request failed');
         print('Status code: ${response.statusCode}');
-        print('Reason: ${response.reasonPhrase}');
-        throw Exception('Failed to fetch hotels: ${response.reasonPhrase}');
+        print('Reason: ${response.statusCode}');
+        throw Exception('Failed to fetch hotels: ${response.statusCode}');
       }
     } catch (e) {
       print('\n=== Error in API Call ===');
@@ -146,6 +145,59 @@ class ApiService extends GetxService {
       rethrow;
     } finally {
       print('\n=== End of Hotel Search API Call ===\n');
+    }
+  }
+  // slect room api
+
+  fetch_slectroom_data(hotlecode) async {
+    try {
+      final searchController = Get.find<SearchHotelController>();
+
+      var headers = {
+        'apikey': 'VSXYTrVlCtVXRAOXGS2==',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      var data = {
+        "SessionId": "e6c0de00d6b14c679d217701246e8709",
+        "SearchParameter": {
+          "HotelCode": hotlecode,
+          "Currency": "USD",
+          "Rooms": {
+            "Room": [
+              {"RoomIdentifier": 1, "Adult": 1}
+            ]
+          }
+        }
+      };
+      var response = await dio.post(
+        'http://uat-apiv2.giinfotech.ae/api/v2/hotel/RoomDetails',
+        options: Options(
+          headers: headers,
+        ),
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        var responseData = response.data;
+        // Extract room information
+        var data = responseData['hotel']['hotelInfo'];
+        var roomData = responseData['hotel']['rooms']['room'];
+
+        if (data != null) {
+          searchController.hotlename.value = data['name'];
+          searchController.image.value = data['image'];
+          searchController.roomsdata.value = roomData;
+
+          print(roomData);
+        } else {
+          print('No room information available');
+        }
+      } else {
+        print(response.statusMessage);
+      }
+    } catch (e) {
+      print(e);
     }
   }
 }

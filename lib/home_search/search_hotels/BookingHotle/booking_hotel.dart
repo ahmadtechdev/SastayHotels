@@ -1,223 +1,511 @@
-import 'package:flight_bocking/home_search/search_hotels/BookingHotle/booking_controller.dart';
-import 'package:flight_bocking/widgets/colors.dart';
-import 'package:flight_bocking/widgets/snackbar.dart';
-import 'package:flight_bocking/widgets/thankuscreen.dart';
+import 'package:flight_bocking/home_search/search_hotels/BookingHotle/widget/important_booking_details_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 
-class BookingScreen extends StatelessWidget {
+import '../../../widgets/colors.dart';
+import '../../../widgets/snackbar.dart';
+import '../../../widgets/thankuscreen.dart';
+import '../../booking_card/forms/hotel/guests/guests_controller.dart';
+import 'booking_controller.dart';
+
+class BookingHotelScreen extends StatelessWidget {
   final BookingController bookingController = Get.put(BookingController());
+  final GuestsController guestsController = Get.put(GuestsController());
 
-  BookingScreen({super.key});
+  BookingHotelScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsiveness
-    final screenSize = MediaQuery.of(context).size;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Complete Your Booking"),
+        elevation: 0,
+        backgroundColor: const Color(0xFFFFAB00),
+        title: const Text(
+          "Complete Your Booking",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: TColors.text),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Get.back(),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          color: TColors.primary.withOpacity(0.1),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: Obx(() => Stack(
+        children: [
+          SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: Colors.grey[50],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ImportantBookingDetailsCard(),
+                  _buildRoomCards(),
+                  const SizedBox(height: 20),
+                  _buildBookerInfoCard(),
+                  const SizedBox(height: 20),
+                  _buildSpecialRequestsCard(),
+                  const SizedBox(height: 20),
+                  _buildTermsAndConditions(),
+                  const SizedBox(height: 30),
+                  _buildSubmitButton(),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+          if (bookingController.isLoading.value)
+            const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFFFAB00),
+              ),
+            ),
+        ],
+      )),
+    );
+  }
+
+  Widget _buildRoomCards() {
+    return Column(
+      children: List.generate(
+        bookingController.roomGuests.length,
+            (roomIndex) => _buildRoomCard(roomIndex),
+      ),
+    );
+  }
+
+
+  Widget _buildRoomCard(int roomIndex) {
+    final roomGuests = bookingController.roomGuests[roomIndex];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Room ${roomIndex + 1}',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFFFAB00),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(
+              roomGuests.adults.length,
+                  (adultIndex) => _buildGuestField(
+                guestInfo: roomGuests.adults[adultIndex],
+                index: adultIndex,
+                isAdult: true,
+              ),
+            ),
+            ...List.generate(
+              roomGuests.children.length,
+                  (childIndex) => _buildGuestField(
+                guestInfo: roomGuests.children[childIndex],
+                index: childIndex,
+                isAdult: false,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGuestField({
+    required HotelGuestInfo guestInfo,
+    required int index,
+    required bool isAdult,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(height: 10),
-              // Form Fields
-              _buildTextField(
-                controller: bookingController.firstNameController,
-                label: "First Name",
-                hintText: "Enter your first name",
-                icon: Icons.person,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: bookingController.lastNameController,
-                label: "Last Name",
-                hintText: "Enter your last name",
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: bookingController.emailController,
-                label: "Email",
-                hintText: "Enter your email",
-                keyboardType: TextInputType.emailAddress,
-                icon: Icons.email,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: bookingController.phoneController,
-                label: "Phone Number",
-                hintText: "Enter your phone number",
-                keyboardType: TextInputType.phone,
-                icon: Icons.phone,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: bookingController.addressController,
-                label: "Address",
-                hintText: "Enter your address",
-                icon: Icons.home,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: bookingController.cityController,
-                label: "City",
-                hintText: "Enter your city",
-                icon: Icons.location_city,
-              ),
-              const SizedBox(height: 20),
-              // Checkbox Section
-              Text(
-                "Special Requests",
-                style: TextStyle(
-                  fontSize: screenSize.width * 0.05,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              Expanded(
+                flex: 2,
+                child: _buildDropdown(
+                  controller: guestInfo.titleController,
+                  hint: 'Title',
+                  items: isAdult ? ['Mr.', 'Mrs.', 'Ms.'] : ['Mstr.', 'Miss.'],
                 ),
               ),
-              const SizedBox(height: 10),
-              Obx(() => Column(
-                    children: [
-                      _buildCheckbox(
-                        title: "Ground Floor",
-                        value: bookingController.isGroundFloor.value,
-                        onChanged: (value) =>
-                            bookingController.isGroundFloor.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "High Floor",
-                        value: bookingController.isHighFloor.value,
-                        onChanged: (value) =>
-                            bookingController.isHighFloor.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Late Checkout",
-                        value: bookingController.isLateCheckout.value,
-                        onChanged: (value) =>
-                            bookingController.isLateCheckout.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Early Checkin",
-                        value: bookingController.isEarlyCheckin.value,
-                        onChanged: (value) =>
-                            bookingController.isEarlyCheckin.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Twin Bed",
-                        value: bookingController.isTwinBed.value,
-                        onChanged: (value) =>
-                            bookingController.isTwinBed.value = value!,
-                      ),
-                      _buildCheckbox(
-                        title: "Smoking",
-                        value: bookingController.isSmoking.value,
-                        onChanged: (value) =>
-                            bookingController.isSmoking.value = value!,
-                      ),
-                    ],
-                  )),
-              const SizedBox(height: 20),
-              // Submit Button
-              Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(const ThankYouScreen());
-                      // Validate input and handle submission
-                      if (_validateFields()) {
-                        CustomSnackBar(
-                                message: "Booking Confirmed!",
-                                backgroundColor: Colors.green)
-                            .show();
-                      } else {
-                        CustomSnackBar(
-                                message: "Please fill all required fields!",
-                                backgroundColor: TColors.third)
-                            .show();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: TColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: Text(
-                      "Proceed to Complete Booking",
-                      style: TextStyle(fontSize: screenSize.width * 0.045),
-                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  isAdult ? "Adult ${index + 1}" : "Child ${index + 1}",
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: TColors.primary,
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: guestInfo.firstNameController,
+                  hint: 'First Name',
+                  prefixIcon: Icons.person_outline,
+                  iconColor: const Color(0xFFFFAB00),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: guestInfo.lastNameController,
+                  hint: 'Last Name',
+                  prefixIcon: Icons.person_outline,
+                  iconColor: const Color(0xFFFFAB00),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookerInfoCard() {
+    return Card(
+      elevation: 4,
+      color: TColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Booker Information',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFFFAB00),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: _buildDropdown(
+                    controller: bookingController.titleController,
+                    hint: 'Title',
+                    items: ['Mr.', 'Mrs.', 'Ms.'],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.firstNameController,
+                    hint: 'First Name',
+                    prefixIcon: Icons.person_outline,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.lastNameController,
+                    hint: 'Last Name',
+                    prefixIcon: Icons.person_outline,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: bookingController.emailController,
+              hint: 'Email',
+              prefixIcon: Icons.email_outlined,
+              iconColor: const Color(0xFFFFAB00),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: bookingController.phoneController,
+              hint: 'Phone Number',
+              prefixIcon: Icons.phone_outlined,
+              iconColor: const Color(0xFFFFAB00),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.addressController,
+                    hint: 'Address Line',
+                    prefixIcon: Icons.location_on_outlined,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.cityController,
+                    hint: 'City',
+                    prefixIcon: Icons.location_city_outlined,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecialRequestsCard() {
+    return Card(
+      color: Colors.white,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Special Requests',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: TColors.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: bookingController.specialRequestsController,
+              hint: 'Enter any special requests',
+              prefixIcon: Icons.note_add_outlined,
+              iconColor: const Color(0xFFFFAB00),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            Obx(() => Column(
+              children: [
+                _buildCheckboxTile(
+                  'Ground Floor',
+                  bookingController.isGroundFloor.value,
+                      (value) => bookingController.isGroundFloor.value = value!,
+                ),
+                _buildCheckboxTile(
+                  'High Floor',
+                  bookingController.isHighFloor.value,
+                      (value) => bookingController.isHighFloor.value = value!,
+                ),
+                _buildCheckboxTile(
+                  'Late Checkout',
+                  bookingController.isLateCheckout.value,
+                      (value) => bookingController.isLateCheckout.value = value!,
+                ),
+                _buildCheckboxTile(
+                  'Early Checkin',
+                  bookingController.isEarlyCheckin.value,
+                      (value) => bookingController.isEarlyCheckin.value = value!,
+                ),
+                _buildCheckboxTile(
+                  'Twin Bed',
+                  bookingController.isTwinBed.value,
+                      (value) => bookingController.isTwinBed.value = value!,
+                ),
+                _buildCheckboxTile(
+                  'Smoking Room',
+                  bookingController.isSmoking.value,
+                      (value) => bookingController.isSmoking.value = value!,
+                ),
+              ],
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsAndConditions() {
+    return Obx(() => CheckboxListTile(
+      title: const Text(
+        'I accept the terms and conditions',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.black87,
+        ),
+      ),
+      value: bookingController.acceptedTerms.value,
+      onChanged: (value) => bookingController.acceptedTerms.value = value!,
+      activeColor: const Color(0xFFFFAB00),
+      controlAffinity: ListTileControlAffinity.leading,
+    ));
+  }
+
+  Widget _buildTextField({
+    TextEditingController? controller,
+    required String hint,
+    required IconData prefixIcon,
+    required Color iconColor,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+          prefixIcon: Icon(prefixIcon, color: iconColor),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
           ),
         ),
       ),
     );
   }
 
-  // Helper to build text fields
-  Widget _buildTextField({
+  Widget _buildDropdown({
     required TextEditingController controller,
-    required String label,
-    String? hintText,
-    TextInputType keyboardType = TextInputType.text,
-    required IconData icon,
+    required String hint,
+    required List<String> items,
   }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        fillColor: Colors.white,
-        filled: true,
-        labelText: label,
-        hintText: hintText,
-        prefixIcon: Icon(icon, color: TColors.primary),
-        hintStyle: const TextStyle(color: Colors.grey),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: TColors.primary)),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: TColors.black)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
       ),
-      keyboardType: keyboardType,
+      child: DropdownButtonFormField<String>(
+        value: controller.text.isEmpty ? null : controller.text,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+        ),
+        hint: Text(hint, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        items: items.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            controller.text = value;
+          }
+        },
+      ),
     );
   }
 
-  // Helper to build checkboxes
-  Widget _buildCheckbox({
-    required String title,
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
+  Widget _buildCheckboxTile(
+      String title,
+      bool value,
+      Function(bool?) onChanged,
+      ) {
     return CheckboxListTile(
-      title: Text(title),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14),
+      ),
       value: value,
       onChanged: onChanged,
-      activeColor: TColors.primary,
+      activeColor: const Color(0xFFFFAB00),
       controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
     );
   }
 
-  // Validate form fields
-  bool _validateFields() {
-    return bookingController.firstNameController.text.isNotEmpty &&
-        bookingController.lastNameController.text.isNotEmpty &&
-        bookingController.emailController.text.isNotEmpty &&
-        bookingController.phoneController.text.isNotEmpty;
+  Widget _buildSubmitButton() {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: _handleSubmit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFFAB00),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: const Text(
+          'Complete Booking',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
   }
+
+  void _handleSubmit() async {
+    if (await bookingController.submitBooking()) {
+      Get.to(() => const ThankYouScreen());
+      CustomSnackBar(
+        message: "Booking Confirmed!",
+        backgroundColor: Colors.green,
+      ).show();
+    } else {
+      CustomSnackBar(
+        message: "Please fill all required fields correctly!",
+        backgroundColor: const Color(0xFFFFAB00),
+      ).show();
+    }
+  }
+
+
 }

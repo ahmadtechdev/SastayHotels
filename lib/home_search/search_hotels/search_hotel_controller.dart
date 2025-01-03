@@ -213,59 +213,7 @@ class SearchHotelController extends GetxController {
 
   var hotlename = ''.obs;
   var image = ''.obs;
-  var hotelCode =''.obs;
 
-  fetchSelectRoomData() async {
-    try {
-      var headers = {
-        'apikey': 'VSXYTrVlCtVXRAOXGS2==',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      print(hotelCode.value);
-      print(hotelCode.toString());
-      var data = {
-        "SessionId": "e6c0de00d6b14c679d217701246e8709",
-        "SearchParameter": {
-          "HotelCode": hotelCode.value,
-          "Currency": "USD",
-          "Rooms": {
-            "Room": [
-              {"RoomIdentifier": 1, "Adult": 1}
-            ]
-          }
-        }
-      };
-      var response = await dio.post(
-        'http://uat-apiv2.giinfotech.ae/api/v2/hotel/RoomDetails',
-        options: Options(
-          headers: headers,
-        ),
-        data: data,
-      );
-
-      if (response.statusCode == 200) {
-        var responseData = response.data;
-        // Extract room information
-        var data = responseData['hotel']['hotelInfo'];
-        var roomData = responseData['hotel']['rooms']['room'];
-
-        if (data != null) {
-          hotlename.value = data['name'];
-          image.value = data['image'];
-          roomsdata.value = roomData;
-
-          print(roomData);
-        } else {
-          print('No room information available');
-        }
-      } else {
-        print(response.statusMessage);
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
   final RxInt nights = RxInt(1);
   final Rx<DateTimeRange> dateRange = Rx<DateTimeRange>(
     DateTimeRange(

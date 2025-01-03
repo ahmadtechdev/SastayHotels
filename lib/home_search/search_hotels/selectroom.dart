@@ -61,7 +61,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
           onPressed: () => Get.back(),
         ),
         elevation: 0,
-        bottom: guestsController.roomCount.value > 1
+        bottom: guestsController.roomCount.value >= 1
             ? TabBar(
           controller: _tabController,
           tabs: List.generate(
@@ -167,7 +167,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
           ],
         ),
         child: ElevatedButton(
-          onPressed: () => Get.to(BookingScreen()),
+          onPressed: () => Get.to(BookingHotelScreen()),
           style: ElevatedButton.styleFrom(
             backgroundColor: TColors.primary,
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -357,7 +357,7 @@ class RoomCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _buildPriceSection(pricePerNight, totalPrice),
+                _buildPriceSection(pricePerNight as double, totalPrice),
                 if (room['remarks']?['remark'] != null) ...[
                   const SizedBox(height: 16),
                   Text(

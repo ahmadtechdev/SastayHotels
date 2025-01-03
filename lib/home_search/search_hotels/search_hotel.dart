@@ -7,6 +7,8 @@ import 'package:flight_bocking/widgets/colors.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../services/api_service.dart';
+
 class HotelScreen extends StatefulWidget {
   const HotelScreen({super.key});
 
@@ -545,10 +547,8 @@ class HotelCard extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: ElevatedButton(
               onPressed: () {
-                controller.hotelCode.value =  hotel['hotelCode'];
                 controller.roomsdata.clear();
-                print(controller.hotelCode.value);
-                controller.fetchSelectRoomData();
+                ApiService().fetch_slectroom_data(hotel['hotelCode']);
                 Get.to(const SelectRoomScreen());
               },
               style: ElevatedButton.styleFrom(
