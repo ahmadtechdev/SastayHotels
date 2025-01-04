@@ -14,7 +14,8 @@ class SelectRoomScreen extends StatefulWidget {
   State<SelectRoomScreen> createState() => _SelectRoomScreenState();
 }
 
-class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerProviderStateMixin {
+class _SelectRoomScreenState extends State<SelectRoomScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final controller = Get.put(SearchHotelController());
   final Map<int, dynamic> selectedRooms = {};
@@ -52,20 +53,25 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
         bool isBookable = response['isBookable'] ?? false;
 
         if (isSoldOut) {
-          _showErrorDialog('Sorry, one or more selected rooms are no longer available.');
+          _showErrorDialog(
+              'Sorry, one or more selected rooms are no longer available.');
         } else if (isPriceChanged) {
-          _showErrorDialog('The price for one or more rooms has changed. Please review the updated prices.');
+          _showErrorDialog(
+              'The price for one or more rooms has changed. Please review the updated prices.');
         } else if (!isBookable) {
-          _showErrorDialog('One or more rooms are not currently bookable. Please try different rooms.');
+          _showErrorDialog(
+              'One or more rooms are not currently bookable. Please try different rooms.');
         } else {
           // All validations passed, proceed to booking
           Get.to(() => BookingHotelScreen());
         }
       } else {
-        _showErrorDialog('Failed to validate room availability. Please try again.');
+        _showErrorDialog(
+            'Failed to validate room availability. Please try again.');
       }
     } catch (e) {
-      _showErrorDialog('An error occurred while processing your booking. Please try again.');
+      _showErrorDialog(
+          'An error occurred while processing your booking. Please try again.');
       print('Booking error: $e');
     } finally {
       setState(() {
@@ -93,6 +99,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
       },
     );
   }
+
   @override
   void initState() {
     super.initState();
@@ -137,27 +144,30 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
         elevation: 0,
         bottom: guestsController.roomCount.value > 1
             ? TabBar(
-          controller: _tabController,
-          tabs: List.generate(
-            guestsController.roomCount.value,
-                (index) => Tab(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Room ${index + 1}', style: const TextStyle(fontSize: 14),),
-                    if (selectedRooms.containsKey(index))
-                      const Icon(Icons.check_circle, size: 10),
-                  ],
+                controller: _tabController,
+                tabs: List.generate(
+                  guestsController.roomCount.value,
+                  (index) => Tab(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Room ${index + 1}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          if (selectedRooms.containsKey(index))
+                            const Icon(Icons.check_circle, size: 10),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          labelColor: TColors.primary,
-          unselectedLabelColor: TColors.grey,
-          indicatorColor: TColors.primary,
-        )
+                labelColor: TColors.primary,
+                unselectedLabelColor: TColors.grey,
+                indicatorColor: TColors.primary,
+              )
             : null,
       ),
       body: Obx(() {
@@ -185,20 +195,21 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
                   controller: _tabController,
                   children: List.generate(
                     guestsController.roomCount.value,
-                        (roomIndex) => SingleChildScrollView(
+                    (roomIndex) => SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHotelInfo(),
-                          ...groupedRooms.entries.map((entry) => RoomTypeSection(
-                            roomTypeName: entry.key,
-                            rooms: entry.value,
-                            nights: controller.nights.value,
-                            onRoomSelected: (room) =>
-                                selectRoom(roomIndex, room),
-                            isSelected: (room) =>
-                            selectedRooms[roomIndex] == room,
-                          )),
+                          ...groupedRooms.entries
+                              .map((entry) => RoomTypeSection(
+                                    roomTypeName: entry.key,
+                                    rooms: entry.value,
+                                    nights: controller.nights.value,
+                                    onRoomSelected: (room) =>
+                                        selectRoom(roomIndex, room),
+                                    isSelected: (room) =>
+                                        selectedRooms[roomIndex] == room,
+                                  )),
                         ],
                       ),
                     ),
@@ -215,65 +226,69 @@ class _SelectRoomScreenState extends State<SelectRoomScreen> with SingleTickerPr
               children: [
                 _buildHotelInfo(),
                 ...groupedRooms.entries.map((entry) => RoomTypeSection(
-                  roomTypeName: entry.key,
-                  rooms: entry.value,
-                  nights: controller.nights.value,
-                  onRoomSelected: (room) => selectRoom(0, room),
-                  isSelected: (room) => selectedRooms[0] == room,
-                )),
+                      roomTypeName: entry.key,
+                      rooms: entry.value,
+                      nights: controller.nights.value,
+                      onRoomSelected: (room) => selectRoom(0, room),
+                      isSelected: (room) => selectedRooms[0] == room,
+                    )),
               ],
             ),
           );
         }
       }),
-      bottomNavigationBar: guestsController.roomCount.value >= 1 && allRoomsSelected
-          ? Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: isLoading ? null : handleBookNow,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                isLoading ? 'Checking Availability...' : 'Book Now',
-                style: const TextStyle(
-                  color: TColors.secondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            if (isLoading)
-              const Positioned.fill(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: TColors.secondary,
-                    strokeWidth: 2,
+      bottomNavigationBar:
+          guestsController.roomCount.value >= 1 && allRoomsSelected
+              ? Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-          ],
-        ),
-      )
-          : null,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: Get.width,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : handleBookNow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isLoading ? 'Checking Availability...' : 'Book Now',
+                            style: const TextStyle(
+                              color: TColors.secondary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isLoading)
+                        const Positioned.fill(
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: TColors.secondary,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              : null,
     );
   }
 
@@ -377,11 +392,11 @@ class _RoomTypeSectionState extends State<RoomTypeSection> {
         ),
         if (isExpanded)
           ...widget.rooms.map((room) => RoomCard(
-            room: room,
-            nights: widget.nights,
-            onSelect: widget.onRoomSelected,
-            isSelected: widget.isSelected(room),
-          )),
+                room: room,
+                nights: widget.nights,
+                onSelect: widget.onRoomSelected,
+                isSelected: widget.isSelected(room),
+              )),
       ],
     );
   }
@@ -438,6 +453,8 @@ class RoomCard extends StatelessWidget {
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -465,7 +482,7 @@ class RoomCard extends StatelessWidget {
                     onPressed: () => onSelect(room),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                      isSelected ? Colors.green: TColors.primary,
+                          isSelected ? Colors.green : TColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

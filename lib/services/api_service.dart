@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../home_search/booking_card/forms/hotel/guests/guests_controller.dart';
-import '../home_search/search_hotels/BookingHotle/booking_hotel.dart';
 import '../home_search/search_hotels/search_hotel_controller.dart';
 
 class ApiService extends GetxService {
@@ -61,10 +60,12 @@ class ApiService extends GetxService {
         "CheckInDate": _formatDate(checkInDate),
         "CheckOutDate": _formatDate(checkOutDate),
         "Rooms": {
-          "Room": rooms.map((room) => {
-            "RoomIdentifier": room["RoomIdentifier"],
-            "Adult": room["Adult"],
-          }).toList(),
+          "Room": rooms
+              .map((room) => {
+                    "RoomIdentifier": room["RoomIdentifier"],
+                    "Adult": room["Adult"],
+                  })
+              .toList(),
         },
         "TassProInfo": {"CustomerCode": "4805", "RegionID": "123"}
       }
@@ -84,7 +85,8 @@ class ApiService extends GetxService {
         final sessionId = data['generalInfo']?['sessionId'];
 
         searchController.sessionId.value = sessionId ?? '';
-        searchController.hotels.value = hotels.map<Map<String, dynamic>>((hotel) {
+        searchController.hotels.value =
+            hotels.map<Map<String, dynamic>>((hotel) {
           return {
             'name': hotel['name'] ?? 'Unknown Hotel',
             'price': hotel['minPrice']?.toString() ?? '0',
@@ -92,7 +94,7 @@ class ApiService extends GetxService {
             'image': hotel['hotelInfo']?['image'] ??
                 'assets/img/cardbg/broken-image.png',
             'rating': double.tryParse(
-                hotel['hotelInfo']?['starRating']?.toString() ?? '0') ??
+                    hotel['hotelInfo']?['starRating']?.toString() ?? '0') ??
                 3.0,
             'latitude': hotel['hotelInfo']?['lat'] ?? 0.0,
             'longitude': hotel['hotelInfo']?['lon'] ?? 0.0,
@@ -113,10 +115,8 @@ class ApiService extends GetxService {
   Future<void> fetchRoomDetails(String hotelCode, String sessionId) async {
     final guestsController = Get.put(GuestsController());
 
-    List<Map<String, dynamic>> rooms = guestsController.rooms
-        .asMap()
-        .entries
-        .map((entry) {
+    List<Map<String, dynamic>> rooms =
+        guestsController.rooms.asMap().entries.map((entry) {
       final index = entry.key;
       final room = entry.value;
       return {
@@ -124,8 +124,7 @@ class ApiService extends GetxService {
         "Adult": room.adults.value,
         if (room.children.value > 0) "child": room.children.value,
       };
-    })
-        .toList();
+    }).toList();
 
     final requestBody = {
       "SessionId": sessionId,
@@ -147,7 +146,8 @@ class ApiService extends GetxService {
       if (response.statusCode == 200) {
         final data = response.data;
         final hotelInfo = data['hotel']?['hotelInfo'];
-        final roomData = data['hotel']?['rooms']?['room'];
+        final roomData = data['hotel']['rooms']?['room'];
+        print(roomData);
 
         if (hotelInfo != null) {
           final searchController = Get.find<SearchHotelController>();

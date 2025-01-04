@@ -95,7 +95,10 @@ class SearchHotelController extends GetxController {
   void onInit() {
     super.onInit();
     // Initialize lists with proper type casting
-    originalHotels.value = List<Map<String, dynamic>>.from(hotels);
+   
+  }
+  filterhotler(){
+     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
   }
 
