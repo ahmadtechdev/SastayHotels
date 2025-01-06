@@ -3,6 +3,7 @@ import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
+import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
 import '../booking_card/forms/hotel/guests/guests_controller.dart';
@@ -416,6 +417,323 @@ class RoomCard extends StatelessWidget {
     required this.isSelected,
   });
 
+  void _showCancellationPolicy(BuildContext context) async {
+    final apiService = ApiService();
+    final controller = Get.put(SearchHotelController());
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: TColors.primary),
+      ),
+    );
+
+    try {
+      final response = await apiService.getCancellationPolicy(
+        sessionId: controller.sessionId.value,
+        hotelCode: controller.hotelCode.value,
+        groupCode: room['groupCode'] as int,
+        currency: "USD",
+        rateKeys: [room['rateKey']],
+      );
+
+      // Dismiss loading dialog
+      Navigator.pop(context);
+
+      if (response != null) {
+        final rooms = response['rooms']?['room'] as List?;
+        if (rooms?.isNotEmpty ?? false) {
+          final roomData = rooms![0];
+          final isCancellationAvailable =
+              roomData['isCancelationPolicyAvailble'] ?? false;
+          final policies = roomData['policies']?['policy'] as List?;
+
+          showDialog(
+            context: context,
+            builder: (context) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: TColors.background,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cancellation Policy',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: TColors.text,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: TColors.third,),
+                          onPressed: () => Navigator.pop(context),
+                          color: TColors.grey,
+                        ),
+                      ],
+                    ),
+                    const Divider(color: TColors.background3),
+                    const SizedBox(height: 12),
+                    if (!isCancellationAvailable)
+                      const Text(
+                        'Cancellation policy is not available for this room.',
+                        style: TextStyle(color: TColors.grey),
+                      )
+                    else if (policies == null || policies.isEmpty)
+                      const Text(
+                        'No cancellation policy details available.',
+                        style: TextStyle(color: TColors.grey),
+                      )
+                    else
+                      ...policies.map((policy) {
+                        final conditions = policy['condition'] as List?;
+                        if (conditions == null || conditions.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: conditions.map((condition) {
+                            final fromDate =
+                                DateTime.tryParse(condition['fromDate'] ?? '');
+                            final toDate =
+                                DateTime.tryParse(condition['toDate'] ?? '');
+                            final percentage = condition['percentage'];
+                            final timezone = condition['timezone'];
+
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: TColors.background2,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: TColors.primary.withOpacity(0.1)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: TColors.primary.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Date Range Section
+                                    if (fromDate != null && toDate != null)
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: TColors.primary.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              Icons.calendar_today,
+                                              color: TColors.primary,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  'Valid Period',
+                                                  style: TextStyle(
+                                                    color: TColors.grey,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${DateFormat('MMM dd, yyyy').format(fromDate)} - ${DateFormat('MMM dd, yyyy').format(toDate)}',
+                                                  style: const TextStyle(
+                                                    color: TColors.text,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (fromDate != null) const SizedBox(height: 16),
+
+                                    // Time Section
+                                    if (condition['fromTime'] != null && condition['toTime'] != null)
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: TColors.primary.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              Icons.access_time,
+                                              color: TColors.primary,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  'Time Window',
+                                                  style: TextStyle(
+                                                    color: TColors.grey,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${condition['fromTime']} - ${condition['toTime']}',
+                                                  style: const TextStyle(
+                                                    color: TColors.text,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                    if (condition['fromTime'] != null) const SizedBox(height: 16),
+
+                                    // Cancellation Amount Section
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: TColors.primary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.payments_outlined,
+                                            color: TColors.primary,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Refund Amount',
+                                                style: TextStyle(
+                                                  color: TColors.grey,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: percentage == '100'
+                                                          ? Colors.green.withOpacity(0.1)
+                                                          : percentage == '0'
+                                                          ? TColors.third.withOpacity(0.1)
+                                                          : TColors.primary.withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      '$percentage% Return',
+                                                      style: TextStyle(
+                                                        color: percentage == '100'
+                                                            ? Colors.green
+                                                            : percentage == '0'
+                                                            ? TColors.third
+                                                            : TColors.primary,
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (timezone != null) ...[
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.public,
+                                            size: 16,
+                                            color: TColors.grey,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Timezone: $timezone',
+                                            style: const TextStyle(
+                                              color: TColors.grey,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }),
+                    const SizedBox(height: 16),
+
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Dismiss loading dialog if still showing
+      Navigator.pop(context);
+      print('Error showing cancellation policy: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pricePerNight = room['price']['net'] ?? 0.0;
@@ -475,7 +793,24 @@ class RoomCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 4),
+                // Add Cancellation Policy Button
+                TextButton.icon(
+                  onPressed: () => _showCancellationPolicy(context),
+                  icon: const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: TColors.primary,
+                  ),
+                  label: const Text(
+                    'View Cancellation Policy',
+                    style: TextStyle(
+                      color: TColors.primary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

@@ -203,4 +203,42 @@ class ApiService extends GetxService {
     }
     return null;
   }
+
+  Future<Map<String, dynamic>?> getCancellationPolicy({
+    required String sessionId,
+    required String hotelCode,
+    required int groupCode,
+    required String currency,
+    required List<String> rateKeys,
+  }) async {
+    final requestBody = {
+      "SessionId": sessionId,
+      "SearchParameter": {
+        "HotelCode": hotelCode,
+        "GroupCode": groupCode,
+        "Currency": currency,
+        "RateKeys": {"RateKey": rateKeys},
+      }
+    };
+
+    print(
+        'Fetching Cancellation Policy with Request: ${json.encode(requestBody)}');
+    try {
+      final response = await dio.post(
+        '/hotel/CancellationPolicy',
+        data: requestBody,
+        options: _defaultHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        print('Cancellation Policy Response: ${response.data}');
+        return response.data as Map<String, dynamic>;
+      } else {
+        print('Cancellation Policy Failed: ${response.statusMessage}');
+      }
+    } catch (e) {
+      print('Error fetching cancellation policy: $e');
+    }
+    return null;
+  }
 }
