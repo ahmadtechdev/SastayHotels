@@ -241,4 +241,44 @@ class ApiService extends GetxService {
     }
     return null;
   }
+
+  Future<Map<String, dynamic>?> getPriceBreakup({
+    required String sessionId,
+    required String hotelCode,
+    required int groupCode,
+    required String currency,
+    required List<String> rateKeys,
+  }) async {
+    final requestBody = {
+      "SessionId": sessionId,
+      "SearchParameter": {
+        "HotelCode": hotelCode,
+        "GroupCode": groupCode,
+        "Currency": currency,
+        "RateKeys": {"RateKey": rateKeys},
+      }
+    };
+
+    print('Fetching Price Breakup with Request: ${json.encode(requestBody)}');
+    try {
+      final response = await dio.post(
+        '/hotel/PriceBreakup',
+        data: requestBody,
+        options: _defaultHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        print('Price Breakup Response: ${response.data}');
+        return response.data as Map<String, dynamic>;
+      } else {
+        print('Price Breakup Failed: ${response.statusMessage}');
+      }
+    } catch (e) {
+      print('Error fetching price breakup: $e');
+    }
+    return null;
+  }
+
 }
+
+

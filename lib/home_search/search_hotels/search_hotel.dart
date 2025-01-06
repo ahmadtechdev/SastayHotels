@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flight_bocking/home_search/search_hotels/selectroom.dart';
+import 'package:flight_bocking/home_search/search_hotels/select_room/selectroom.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';

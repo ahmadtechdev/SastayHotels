@@ -1,4 +1,4 @@
-import 'package:flight_bocking/home_search/search_hotels/BookingHotle/widget/important_booking_details_card.dart';
+import 'package:flight_bocking/home_search/search_hotels/booking_hotel/widget/important_booking_details_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
