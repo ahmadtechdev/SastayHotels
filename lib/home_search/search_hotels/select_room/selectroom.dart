@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../services/api_service.dart';
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
+import '../../booking_card/forms/hotel/hotel_date_controller.dart';
 
 class SelectRoomScreen extends StatefulWidget {
   const SelectRoomScreen({super.key});
@@ -19,6 +20,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final controller = Get.put(SearchHotelController());
+  final dateController = Get.put(HotelDateController());
   final Map<int, dynamic> selectedRooms = {};
   final guestsController = Get.find<GuestsController>();
   final apiService = ApiService();
@@ -205,7 +207,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                               .map((entry) => RoomTypeSection(
                                     roomTypeName: entry.key,
                                     rooms: entry.value,
-                                    nights: controller.nights.value,
+                                    nights: dateController.nights.value,
                                     onRoomSelected: (room) =>
                                         selectRoom(roomIndex, room),
                                     isSelected: (room) =>
@@ -229,7 +231,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                 ...groupedRooms.entries.map((entry) => RoomTypeSection(
                       roomTypeName: entry.key,
                       rooms: entry.value,
-                      nights: controller.nights.value,
+                      nights: dateController.nights.value,
                       onRoomSelected: (room) => selectRoom(0, room),
                       isSelected: (room) => selectedRooms[0] == room,
                     )),

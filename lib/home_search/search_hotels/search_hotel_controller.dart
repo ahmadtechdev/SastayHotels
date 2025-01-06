@@ -147,37 +147,4 @@ class SearchHotelController extends GetxController {
   var sessionId =''.obs;
 
 
-  final RxInt nights = RxInt(1);
-  final Rx<DateTimeRange> dateRange = Rx<DateTimeRange>(
-    DateTimeRange(
-      start: DateTime.now(),
-      end: DateTime.now().add(const Duration(days: 1)),
-    ),
-  );
-
-  void updateDateRange(DateTimeRange newRange) {
-    dateRange.value = newRange;
-    nights.value = newRange.duration.inDays;
-
-  }
-
-  void updateNights(int newNights) {
-    if (newNights > 0) {
-      nights.value = newNights;
-      dateRange.value = DateTimeRange(
-        start: dateRange.value.start,
-        end: dateRange.value.start.add(Duration(days: newNights)),
-      );
-    }
-  }
-
-  void incrementNights() {
-    updateNights(nights.value + 1);
-  }
-
-  void decrementNights() {
-    if (nights.value > 1) {
-      updateNights(nights.value - 1);
-    }
-  }
 }

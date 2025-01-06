@@ -1,3 +1,4 @@
+
 import 'package:flight_bocking/home_search/search_hotels/search_hotel.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:flight_bocking/widgets/date_range_slector.dart';
@@ -13,14 +14,16 @@ import 'guests/guests_field.dart';
 
 class HotelForm extends StatelessWidget {
   HotelForm({super.key}) {
-    // Initialize the controller
+    // Initialize both controllers
     Get.put(HotelDateController());
+    Get.put(SearchHotelController());
   }
 
   @override
   Widget build(BuildContext context) {
     final cityController = TextEditingController();
-    SearchHotelController searchhotelController = Get.put(SearchHotelController());
+    final hotelDateController = Get.find<HotelDateController>();
+    final searchHotelController = Get.find<SearchHotelController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,10 +36,10 @@ class HotelForm extends StatelessWidget {
         const SizedBox(height: 16),
         Obx(
               () => CustomDateRangeSelector(
-            dateRange: searchhotelController.dateRange.value,
-            onDateRangeChanged: searchhotelController.updateDateRange,
-            nights: searchhotelController.nights.value,
-            onNightsChanged: searchhotelController.updateNights,
+            dateRange: hotelDateController.dateRange.value,
+            onDateRangeChanged: hotelDateController.updateDateRange,
+            nights: hotelDateController.nights.value,
+            onNightsChanged: hotelDateController.updateNights,
           ),
         ),
         const SizedBox(height: 16),
@@ -89,7 +92,7 @@ class HotelForm extends StatelessWidget {
               Get.back();
 
               // Navigate to the hotel listing screen
-              Get.to(()=>const HotelScreen());
+              Get.to(() => const HotelScreen());
             } catch (e) {
               // Close loading dialog
               Get.back();
