@@ -207,7 +207,7 @@ class _ImportantBookingDetailsCardState
       ),
       child: Column(
         children: [
-          Text("Your time to proceed booking will expire in 15 minutes."),
+          const Text("Your time to proceed booking will expire in 15 minutes."),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,

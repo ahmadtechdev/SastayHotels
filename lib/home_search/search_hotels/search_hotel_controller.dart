@@ -145,6 +145,9 @@ class SearchHotelController extends GetxController {
   var image = ''.obs;
   var hotelCode =''.obs;
   var sessionId =''.obs;
+  var destinationCode =''.obs;
+  var hotelCity =''.obs;
+
 
 
 }

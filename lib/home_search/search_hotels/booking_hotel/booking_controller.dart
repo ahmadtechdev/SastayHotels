@@ -1,3 +1,5 @@
+import 'package:flight_bocking/home_search/booking_card/forms/hotel/hotel_date_controller.dart';
+import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -48,6 +50,10 @@ class RoomGuests {
 class BookingController extends GetxController {
   // Room guest information
   final RxList<RoomGuests> roomGuests = <RoomGuests>[].obs;
+  SearchHotelController searchHotelController =
+      Get.put(SearchHotelController());
+  HotelDateController hotelDateController = Get.put(HotelDateController());
+  GuestsController guestsController = Get.put(GuestsController());
 
   // Booker Information
   final titleController = TextEditingController();
@@ -87,12 +93,12 @@ class BookingController extends GetxController {
     for (var room in guestsController.rooms) {
       final adults = List.generate(
         room.adults.value,
-            (_) => HotelGuestInfo(),
+        (_) => HotelGuestInfo(),
       );
 
       final children = List.generate(
         room.children.value,
-            (_) => HotelGuestInfo(),
+        (_) => HotelGuestInfo(),
       );
 
       roomGuests.add(RoomGuests(adults: adults, children: children));
@@ -161,16 +167,20 @@ class BookingController extends GetxController {
           return MapEntry(
             'room_${index + 1}',
             {
-              'adults': room.adults.map((adult) => {
-                'title': adult.titleController.text,
-                'firstName': adult.firstNameController.text,
-                'lastName': adult.lastNameController.text,
-              }).toList(),
-              'children': room.children.map((child) => {
-                'title': child.titleController.text,
-                'firstName': child.firstNameController.text,
-                'lastName': child.lastNameController.text,
-              }).toList(),
+              'adults': room.adults
+                  .map((adult) => {
+                        'title': adult.titleController.text,
+                        'firstName': adult.firstNameController.text,
+                        'lastName': adult.lastNameController.text,
+                      })
+                  .toList(),
+              'children': room.children
+                  .map((child) => {
+                        'title': child.titleController.text,
+                        'firstName': child.firstNameController.text,
+                        'lastName': child.lastNameController.text,
+                      })
+                  .toList(),
             },
           );
         }),
@@ -240,5 +250,81 @@ class BookingController extends GetxController {
     }
 
     super.onClose();
+  }
+
+  Future<void> saveHotelBookingToDB() async {
+    final Map<String, dynamic> requestBody = {
+      "bookeremail": emailController.value,
+      "bookerfirst": firstNameController,
+      "bookerlast": lastNameController,
+      "bookertel": phoneController,
+      "bookeraddress": addressController,
+      "bookercompany": "",
+      "bookercountry": "",
+      "bookercity": cityController,
+      "om_ordate": DateTime.now().toIso8601String().split('T').first,
+      "cancellation_buffer": "",
+      "session_id": searchHotelController.sessionId,
+      "group_code": searchHotelController.roomsdata[0]['groupCode'],
+      "rate_key":
+          "start+${searchHotelController.roomsdata.map((room) => room['rateKey']) // Assuming `rateKey` is a key in each `room`
+              .join('za,in')}",
+      "om_hid": searchHotelController.hotelCode,
+
+      /// Hotel Code
+      "om_nights": hotelDateController.nights,
+      "buying_price": "",
+      "om_regid": searchHotelController.destinationCode,
+
+      /// Destination Ccode Like Dubai (160-1)
+      "om_hname": searchHotelController.hotelName,
+
+      /// Hotel Name
+      "om_destination": searchHotelController.hotelCity,
+
+      /// City, Country
+      "om_trooms": guestsController.roomCount,
+      "om_chindate": hotelDateController.checkInDate,
+      "om_choutdate": hotelDateController.checkOutDate,
+
+      "om_spreq": [
+        if (isGroundFloor.value) "Ground Floor",
+        if (isHighFloor.value) "High Floor",
+        if (isLateCheckout.value) "Late checkout",
+        if (isEarlyCheckin.value) "Early checkin",
+        if (isTwinBed.value) "Twin Bed",
+        if (isSmoking.value) "Smoking",
+      ].join(', '), //Comma Seprarted String
+      "om_smoking": "", //Comma Seprarted String
+      "om_status": "0",
+      "payment_status": "Pending",
+      "om_suppliername": "Arabian",
+      "Rooms": {
+        "p_nature": "", //"Refundable OR Non Refundable"
+        "p_type": "CAN",
+        "p_end_date": "",
+        "p_end_time": "",
+        "room_name": "",
+        "room_bordbase": "",
+        "policy_details": {
+          "from_date": "",
+          "to_date": "",
+          "timezone": "",
+          "from_time": "",
+          "to_time": "",
+          "percentage": "",
+          "nights": "",
+          "fixed": "",
+          "applicableOn": ""
+        },
+        "pax_details": {
+          "type": "",
+          "title": "",
+          "first": "",
+          "last": "",
+          "age": ""
+        }
+      }
+    };
   }
 }

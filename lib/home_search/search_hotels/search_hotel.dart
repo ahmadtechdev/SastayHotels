@@ -552,6 +552,7 @@ class HotelCard extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {
                 controller.hotelCode.value = hotel['hotelCode'];
+                controller.hotelCity.value = hotel['hotelCity'];
 
                 controller.roomsdata.clear();
 

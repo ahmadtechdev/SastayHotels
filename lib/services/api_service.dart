@@ -83,8 +83,10 @@ class ApiService extends GetxService {
         final data = response.data;
         final hotels = data['hotels']?['hotel'] ?? [];
         final sessionId = data['generalInfo']?['sessionId'];
+        final destinationCode = data['audit']?['destination']['code'];
 
         searchController.sessionId.value = sessionId ?? '';
+        searchController.destinationCode.value = destinationCode ?? '';
         searchController.hotels.value =
             hotels.map<Map<String, dynamic>>((hotel) {
           return {
@@ -99,6 +101,7 @@ class ApiService extends GetxService {
             'latitude': hotel['hotelInfo']?['lat'] ?? 0.0,
             'longitude': hotel['hotelInfo']?['lon'] ?? 0.0,
             'hotelCode': hotel['code'] ?? '',
+            'hotelCity': hotel['hotelInfo']?['city'] ?? '',
           };
         }).toList();
 
