@@ -54,6 +54,7 @@ class BookingController extends GetxController {
       Get.put(SearchHotelController());
   HotelDateController hotelDateController = Get.put(HotelDateController());
   GuestsController guestsController = Get.put(GuestsController());
+  HotelDateController hotelDatecontroller = Get.put(HotelDateController());
 
   // Booker Information
   final titleController = TextEditingController();
@@ -253,40 +254,93 @@ class BookingController extends GetxController {
   }
 
   Future<void> saveHotelBookingToDB() async {
+    List<Map<String, dynamic>> roomsList = [];
+
+    // Get the selected rooms from the SelectRoomScreen
+    final selectedRoomsData =
+        Get.find<SearchHotelController>().selectedRoomsData;
+
+    // Iterate through each selected room
+    for (var i = 0; i < roomGuests.length; i++) {
+      // Get the selected room data for this specific room
+      var roomData = selectedRoomsData[i];
+
+      // Prepare pax details for both adults and children
+      List<Map<String, dynamic>> paxDetails = [];
+
+      // Add adults
+      for (var adult in roomGuests[i].adults) {
+        paxDetails.add({
+          "type": "ADT",
+          "title": adult.titleController.text,
+          "first": adult.firstNameController.text,
+          "last": adult.lastNameController.text,
+          "age": ""
+        });
+      }
+
+      // Add children
+      for (var j = 0; j < roomGuests[i].children.length; j++) {
+        var child = roomGuests[i].children[j];
+        paxDetails.add({
+          "type": "CHD",
+          "title": child.titleController.text,
+          "first": child.firstNameController.text,
+          "last": child.lastNameController.text,
+          "age": guestsController.rooms[i].childrenAges[j].toString()
+        });
+      }
+
+      // Create room object with the correct room name and meal for each selected room
+      Map<String, dynamic> roomObject = {
+        "p_nature": "",
+        "p_type": "CAN",
+        "p_end_date": "",
+        "p_end_time": "",
+        "room_name": roomData['roomName'] ?? "", // Use the selected room's name
+        "room_bordbase": roomData['meal'] ?? "", // Use the selected room's meal
+        "policy_details": [
+          {
+            "from_date": hotelDatecontroller.checkInDate.toString(),
+            "to_date": hotelDatecontroller.checkOutDate.toString(),
+            "timezone": "",
+            "from_time": "",
+            "to_time": "",
+            "percentage": "",
+            "nights": hotelDateController.nights.toString(),
+            "fixed": "",
+            "applicableOn": ""
+          }
+        ],
+        "pax_details": paxDetails
+      };
+
+      roomsList.add(roomObject);
+    }
     final Map<String, dynamic> requestBody = {
-      "bookeremail": emailController.value,
-      "bookerfirst": firstNameController,
-      "bookerlast": lastNameController,
-      "bookertel": phoneController,
-      "bookeraddress": addressController,
+      "bookeremail": emailController.text,
+      "bookerfirst": firstNameController.text,
+      "bookerlast": lastNameController.text,
+      "bookertel": phoneController.text,
+      "bookeraddress": addressController.text,
       "bookercompany": "",
       "bookercountry": "",
-      "bookercity": cityController,
+      "bookercity": cityController.text,
       "om_ordate": DateTime.now().toIso8601String().split('T').first,
       "cancellation_buffer": "",
       "session_id": searchHotelController.sessionId,
       "group_code": searchHotelController.roomsdata[0]['groupCode'],
       "rate_key":
-          "start+${searchHotelController.roomsdata.map((room) => room['rateKey']) // Assuming `rateKey` is a key in each `room`
-              .join('za,in')}",
+          "start+${searchHotelController.roomsdata.map((room) => room['rateKey']).join('za,in')}",
       "om_hid": searchHotelController.hotelCode,
-
-      /// Hotel Code
       "om_nights": hotelDateController.nights,
       "buying_price": "",
       "om_regid": searchHotelController.destinationCode,
-
-      /// Destination Ccode Like Dubai (160-1)
       "om_hname": searchHotelController.hotelName,
-
-      /// Hotel Name
       "om_destination": searchHotelController.hotelCity,
-
-      /// City, Country
       "om_trooms": guestsController.roomCount,
       "om_chindate": hotelDateController.checkInDate,
       "om_choutdate": hotelDateController.checkOutDate,
-
       "om_spreq": [
         if (isGroundFloor.value) "Ground Floor",
         if (isHighFloor.value) "High Floor",
@@ -294,37 +348,16 @@ class BookingController extends GetxController {
         if (isEarlyCheckin.value) "Early checkin",
         if (isTwinBed.value) "Twin Bed",
         if (isSmoking.value) "Smoking",
-      ].join(', '), //Comma Seprarted String
-      "om_smoking": "", //Comma Seprarted String
+      ].join(', '),
+      "om_smoking": "",
       "om_status": "0",
       "payment_status": "Pending",
       "om_suppliername": "Arabian",
-      "Rooms": {
-        "p_nature": "", //"Refundable OR Non Refundable"
-        "p_type": "CAN",
-        "p_end_date": "",
-        "p_end_time": "",
-        "room_name": "",
-        "room_bordbase": "",
-        "policy_details": {
-          "from_date": "",
-          "to_date": "",
-          "timezone": "",
-          "from_time": "",
-          "to_time": "",
-          "percentage": "",
-          "nights": "",
-          "fixed": "",
-          "applicableOn": ""
-        },
-        "pax_details": {
-          "type": "",
-          "title": "",
-          "first": "",
-          "last": "",
-          "age": ""
-        }
-      }
+      "Rooms": roomsList
     };
+    print(requestBody['Rooms']);
+    // Here you would typically send the requestBody to your API
   }
+
+  // Rest of your code remains the same...
 }

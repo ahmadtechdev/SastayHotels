@@ -124,13 +124,15 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   }
 
   void selectRoom(int roomIndex, dynamic room) {
-    setState(() {
-      selectedRooms[roomIndex] = room;
-      if (roomIndex < guestsController.roomCount.value - 1) {
-        _tabController.animateTo(roomIndex + 1);
-      }
-    });
-  }
+  setState(() {
+    selectedRooms[roomIndex] = room;
+    // Update the selected room data in the controller
+    Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
+    if (roomIndex < guestsController.roomCount.value - 1) {
+      _tabController.animateTo(roomIndex + 1);
+    }
+  });
+}
 
   bool get allRoomsSelected =>
       selectedRooms.length == guestsController.roomCount.value;
@@ -480,7 +482,10 @@ class RoomCard extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: TColors.third,),
+                          icon: const Icon(
+                            Icons.close,
+                            color: TColors.third,
+                          ),
                           onPressed: () => Navigator.pop(context),
                           color: TColors.grey,
                         ),
@@ -515,7 +520,6 @@ class RoomCard extends StatelessWidget {
                             final percentage = condition['percentage'];
                             final timezone = condition['timezone'];
 
-
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Container(
@@ -523,7 +527,8 @@ class RoomCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: TColors.background2,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: TColors.primary.withOpacity(0.1)),
+                                  border: Border.all(
+                                      color: TColors.primary.withOpacity(0.1)),
                                   boxShadow: [
                                     BoxShadow(
                                       color: TColors.primary.withOpacity(0.05),
@@ -542,8 +547,10 @@ class RoomCard extends StatelessWidget {
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: TColors.primary.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: TColors.primary
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: const Icon(
                                               Icons.calendar_today,
@@ -554,7 +561,8 @@ class RoomCard extends StatelessWidget {
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 const Text(
                                                   'Valid Period',
@@ -579,17 +587,21 @@ class RoomCard extends StatelessWidget {
                                         ],
                                       ),
 
-                                    if (fromDate != null) const SizedBox(height: 16),
+                                    if (fromDate != null)
+                                      const SizedBox(height: 16),
 
                                     // Time Section
-                                    if (condition['fromTime'] != null && condition['toTime'] != null)
+                                    if (condition['fromTime'] != null &&
+                                        condition['toTime'] != null)
                                       Row(
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: TColors.primary.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: TColors.primary
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: const Icon(
                                               Icons.access_time,
@@ -600,7 +612,8 @@ class RoomCard extends StatelessWidget {
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 const Text(
                                                   'Time Window',
@@ -625,7 +638,8 @@ class RoomCard extends StatelessWidget {
                                         ],
                                       ),
 
-                                    if (condition['fromTime'] != null) const SizedBox(height: 16),
+                                    if (condition['fromTime'] != null)
+                                      const SizedBox(height: 16),
 
                                     // Cancellation Amount Section
                                     Row(
@@ -633,8 +647,10 @@ class RoomCard extends StatelessWidget {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: TColors.primary.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: TColors.primary
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: const Icon(
                                             Icons.payments_outlined,
@@ -645,7 +661,8 @@ class RoomCard extends StatelessWidget {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               const Text(
                                                 'Refund Amount',
@@ -659,27 +676,38 @@ class RoomCard extends StatelessWidget {
                                               Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                       horizontal: 8,
                                                       vertical: 4,
                                                     ),
                                                     decoration: BoxDecoration(
                                                       color: percentage == '100'
-                                                          ? Colors.green.withOpacity(0.1)
+                                                          ? Colors.green
+                                                              .withOpacity(0.1)
                                                           : percentage == '0'
-                                                          ? TColors.third.withOpacity(0.1)
-                                                          : TColors.primary.withOpacity(0.1),
-                                                      borderRadius: BorderRadius.circular(4),
+                                                              ? TColors.third
+                                                                  .withOpacity(
+                                                                      0.1)
+                                                              : TColors.primary
+                                                                  .withOpacity(
+                                                                      0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
                                                     ),
                                                     child: Text(
                                                       '$percentage% Return',
                                                       style: TextStyle(
-                                                        color: percentage == '100'
+                                                        color: percentage ==
+                                                                '100'
                                                             ? Colors.green
                                                             : percentage == '0'
-                                                            ? TColors.third
-                                                            : TColors.primary,
-                                                        fontWeight: FontWeight.w600,
+                                                                ? TColors.third
+                                                                : TColors
+                                                                    .primary,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                         fontSize: 14,
                                                       ),
                                                     ),
@@ -721,7 +749,6 @@ class RoomCard extends StatelessWidget {
                         );
                       }),
                     const SizedBox(height: 16),
-
                   ],
                 ),
               ),
@@ -766,8 +793,9 @@ class RoomCard extends StatelessWidget {
         if (priceBreakdown?.isNotEmpty ?? false) {
           final roomData = priceBreakdown![0];
           print(roomData['dateRange']);
-          final dateRanges = roomData['dateRange'] != null ? List<Map<String, dynamic>>.from(roomData['dateRange']) : null;
-
+          final dateRanges = roomData['dateRange'] != null
+              ? List<Map<String, dynamic>>.from(roomData['dateRange'])
+              : null;
 
           showDialog(
             context: context,
@@ -815,7 +843,6 @@ class RoomCard extends StatelessWidget {
                         ),
                       )
                     else
-
                       Flexible(
                         child: SingleChildScrollView(
                           child: Column(
@@ -835,7 +862,8 @@ class RoomCard extends StatelessWidget {
                                   children: [
                                     _buildSummaryRow(
                                       'Gross Amount',
-                                      roomData['grossAmount']?.toString() ?? '0',
+                                      roomData['grossAmount']?.toString() ??
+                                          '0',
                                       Icons.monetization_on_outlined,
                                     ),
                                     const SizedBox(height: 8),
@@ -856,8 +884,10 @@ class RoomCard extends StatelessWidget {
                               // Daily Price Breakdown
                               ...dateRanges.map((dateRange) {
                                 print(dateRanges);
-                                final fromDate = DateTime.tryParse(dateRange['fromDate'] ?? '');
-                                if (fromDate == null) return const SizedBox.shrink();
+                                final fromDate = DateTime.tryParse(
+                                    dateRange['fromDate'] ?? '');
+                                if (fromDate == null)
+                                  return const SizedBox.shrink();
 
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 12),
@@ -870,15 +900,18 @@ class RoomCard extends StatelessWidget {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: TColors.primary.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: TColors.primary
+                                                  .withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: const Icon(
                                               Icons.calendar_today,
@@ -889,7 +922,8 @@ class RoomCard extends StatelessWidget {
                                           const SizedBox(width: 12),
                                           Expanded(
                                             child: Text(
-                                              DateFormat('MMM dd, yyyy').format(fromDate),
+                                              DateFormat('MMM dd, yyyy')
+                                                  .format(fromDate),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -899,7 +933,8 @@ class RoomCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 12),
                                       Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           const Text(
                                             'Price for this night',
@@ -970,7 +1005,6 @@ class RoomCard extends StatelessWidget {
       ],
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1069,7 +1103,6 @@ class RoomCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
                   ],
                 ),
                 const SizedBox(height: 4),

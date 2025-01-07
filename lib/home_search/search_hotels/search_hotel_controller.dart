@@ -148,6 +148,16 @@ class SearchHotelController extends GetxController {
   var destinationCode =''.obs;
   var hotelCity =''.obs;
 
+// Add this property to store selected rooms data
+  final RxList<Map<String, dynamic>> selectedRoomsData = <Map<String, dynamic>>[].obs;
 
+  // Add this method to update selected rooms data
+  void updateSelectedRoom(int index, Map<String, dynamic> roomData) {
+    if (selectedRoomsData.length <= index) {
+      selectedRoomsData.add(roomData);
+    } else {
+      selectedRoomsData[index] = roomData;
+    }
+  }
 
 }

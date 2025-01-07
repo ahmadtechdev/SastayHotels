@@ -477,11 +477,15 @@ class BookingHotelScreen extends StatelessWidget {
   }
 
   Widget _buildSubmitButton() {
+    final bookingconroller = Get.put(BookingController());
     return Container(
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
-        onPressed: _handleSubmit,
+        onPressed: () {
+          _handleSubmit();
+          bookingconroller.saveHotelBookingToDB();
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFAB00),
           shape: RoundedRectangleBorder(

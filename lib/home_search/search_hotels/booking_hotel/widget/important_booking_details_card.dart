@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'package:flight_bocking/home_search/booking_card/forms/hotel/guests/guests_controller.dart';
+import 'package:flight_bocking/home_search/booking_card/forms/hotel/hotel_date_controller.dart';
+import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class ImportantBookingDetailsCard extends StatefulWidget {
   const ImportantBookingDetailsCard({super.key});
@@ -47,8 +51,16 @@ class _ImportantBookingDetailsCardState
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  String formatDate(DateTime date) {
+    return DateFormat('EEE, dd MMM yyyy').format(date);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final searchhomecontroller = Get.put(SearchHotelController());
+    final hoteldateController = Get.put(HotelDateController());
+    final Guestscontroller = Get.put(GuestsController());
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       color: TColors.background,
@@ -109,34 +121,30 @@ class _ImportantBookingDetailsCardState
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
-              Icons.hotel,
-              'Hotel',
-              'Hilton Garden Inn',
-              'Superior Room',
-            ),
+                Icons.hotel, 'Hotel', searchhomecontroller.hotelName.value, ''),
             const Divider(height: 24),
             _buildInfoRow(
               Icons.calendar_today,
               'Check-in',
-              'Mon, 15 Jan 2024',
-              '2:00 PM',
+              formatDate(hoteldateController.checkInDate.value),
+              '',
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               Icons.calendar_today,
               'Check-out',
-              'Wed, 17 Jan 2024',
-              '12:00 PM',
+              formatDate(hoteldateController.checkOutDate.value),
+              '',
             ),
             const Divider(height: 24),
             _buildInfoRow(
               Icons.people_outline,
               'Guests',
-              '2 Adults, 1 Child',
-              '1 Room',
+              '${Guestscontroller.totalAdults.toString()} Adults, ${Guestscontroller.totalChildren} Child',
+              '${Guestscontroller.roomCount.toString()} Room',
             ),
             const Divider(height: 24),
-            _buildPriceSection(),
+            _buildPriceSection('14'),
           ],
         ),
       ),
@@ -198,7 +206,7 @@ class _ImportantBookingDetailsCardState
     );
   }
 
-  Widget _buildPriceSection() {
+  Widget _buildPriceSection(price) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -207,15 +215,15 @@ class _ImportantBookingDetailsCardState
       ),
       child: Column(
         children: [
-          const Text("Your time to proceed booking will expire in 15 minutes."),
+          Text("Your time to proceed booking will expire in 15 minutes."),
           const SizedBox(height: 8),
           Align(
-            alignment: Alignment.centerRight,
+              alignment: Alignment.centerRight,
               child: _buildBadge("Refundable")),
           const Divider(height: 16),
           _buildPriceRow(
             'Price',
-            '\$ 14',
+            '\$ ${price}',
             isTotal: true,
           ),
         ],
