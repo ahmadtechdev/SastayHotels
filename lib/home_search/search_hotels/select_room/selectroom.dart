@@ -21,10 +21,10 @@ class SelectRoomScreen extends StatefulWidget {
 class _SelectRoomScreenState extends State<SelectRoomScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final controller = Get.put(SearchHotelController());
-  final dateController = Get.put(HotelDateController());
+  final controller = Get.find<SearchHotelController>();
+  final dateController = Get.find<HotelDateController>();
   final Map<int, dynamic> selectedRooms = {};
-  final guestsController = Get.put(GuestsController());
+  final guestsController = Get.find<GuestsController>();
   final selectRoomController = Get.put(SelectRoomController());
   final apiService = ApiService();
   bool isLoading = false;

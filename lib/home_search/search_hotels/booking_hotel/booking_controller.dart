@@ -56,10 +56,9 @@ class BookingController extends GetxController {
   // Room guest information
   final RxList<RoomGuests> roomGuests = <RoomGuests>[].obs;
   SearchHotelController searchHotelController =
-      Get.put(SearchHotelController());
-  HotelDateController hotelDateController = Get.put(HotelDateController());
-  GuestsController guestsController = Get.put(GuestsController());
-  HotelDateController hotelDatecontroller = Get.put(HotelDateController());
+      Get.find<SearchHotelController>();
+  HotelDateController hotelDateController = Get.find<HotelDateController>();
+  GuestsController guestsController = Get.find<GuestsController>();
 
   ApiService apiService = ApiService();
 
@@ -95,7 +94,7 @@ class BookingController extends GetxController {
   }
 
   void initializeRoomGuests() {
-    final guestsController = Get.put(GuestsController());
+    final guestsController = Get.find<GuestsController>();
 
     roomGuests.clear();
     for (var room in guestsController.rooms) {
@@ -203,9 +202,19 @@ class BookingController extends GetxController {
     List<Map<String, dynamic>> roomsList = [];
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-    final selectedRoomsData = searchHotelController.selectedRoomsData;
-
     try {
+
+      // Calculate total buying price from selected rooms
+      double totalBuyingPrice = 0;
+      for (var roomData in searchHotelController.selectedRoomsData) {
+        if (roomData != null && roomData['price'] != null) {
+          // Get price per night
+          double pricePerNight = double.tryParse(roomData['price']['net'].toString()) ?? 0;
+          // Multiply by number of nights
+          totalBuyingPrice += pricePerNight * hotelDateController.nights.value;
+        }
+      }
+
       for (var i = 0; i < roomGuests.length; i++) {
         List<Map<String, dynamic>> paxDetails = [];
 
@@ -305,7 +314,7 @@ class BookingController extends GetxController {
         "rate_key": _buildRateKey(),
         "om_hid": searchHotelController.hotelCode.value,
         "om_nights": hotelDateController.nights.value,
-        "buying_price": "",
+        "buying_price": double.parse(totalBuyingPrice.toStringAsFixed(2)),
         "om_regid": searchHotelController.destinationCode.value,
         "om_hname": searchHotelController.hotelName.value,
         "om_destination": searchHotelController.hotelCity.value,
@@ -320,28 +329,6 @@ class BookingController extends GetxController {
         "Rooms": roomsList
       };
 
-      print('\n=== BOOKING REQUEST BODY ===');
-      requestBody.forEach((key, value) {
-        if (key != 'Rooms') {
-          print('$key: $value');
-        }
-      });
-
-      print('\n=== ROOMS DETAILS ===');
-      for (var i = 0; i < roomsList.length; i++) {
-        print('\nRoom ${i + 1}:');
-        roomsList[i].forEach((key, value) {
-          if (key == 'pax_details') {
-            print('$key:');
-            for (var pax in value) {
-              print('  - ${pax['type']}: ${pax['first']} ${pax['last']}');
-            }
-          } else {
-            print('$key: $value');
-          }
-        });
-      }
-
       isLoading.value = true;
       // Send the booking request
       final bool success = await apiService.bookHotel(requestBody);
@@ -349,7 +336,6 @@ class BookingController extends GetxController {
       isLoading.value = false;
       return success;
     } catch (e) {
-      print('Error creating booking request: $e');
       rethrow;
     }
   }

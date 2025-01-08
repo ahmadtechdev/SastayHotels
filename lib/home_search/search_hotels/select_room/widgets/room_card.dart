@@ -22,7 +22,7 @@ class RoomCard extends StatelessWidget {
 
   void _showCancellationPolicy(BuildContext context) async {
     final apiService = ApiService();
-    final controller = Get.put(SearchHotelController());
+    final controller = Get.find<SearchHotelController>();
 
     // Show loading dialog
     showDialog(
@@ -364,7 +364,7 @@ class RoomCard extends StatelessWidget {
 
   void _showPriceBreakup(BuildContext context) async {
     final apiService = ApiService();
-    final controller = Get.put(SearchHotelController());
+    final controller = Get.find<SearchHotelController>();
 
     // Show loading dialog
     showDialog(

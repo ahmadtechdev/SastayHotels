@@ -11,7 +11,8 @@ class GuestsField extends StatefulWidget {
 }
 
 class _GuestsFieldState extends State<GuestsField> {
-  final GuestsController controller = Get.put(GuestsController());
+
+  final GuestsController controller = Get.find<GuestsController>();
 
   @override
   Widget build(BuildContext context) {

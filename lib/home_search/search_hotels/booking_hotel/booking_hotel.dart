@@ -11,7 +11,7 @@ import 'booking_controller.dart';
 
 class BookingHotelScreen extends StatelessWidget {
   final BookingController bookingController = Get.put(BookingController());
-  final GuestsController guestsController = Get.put(GuestsController());
+  final GuestsController guestsController = Get.find<GuestsController>();
 
 
   BookingHotelScreen({super.key});
@@ -19,7 +19,6 @@ class BookingHotelScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-   bookingController.saveHotelBookingToDB();
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -481,14 +480,13 @@ class BookingHotelScreen extends StatelessWidget {
   }
 
   Widget _buildSubmitButton() {
-    final bookingconroller = Get.put(BookingController());
+
     return Container(
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
         onPressed: () {
           _handleSubmit();
-          bookingconroller.saveHotelBookingToDB();
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFAB00),
@@ -525,7 +523,7 @@ class BookingHotelScreen extends StatelessWidget {
       final bool success = await bookingController.saveHotelBookingToDB();
 
       if (success) {
-        Get.to(() => const ThankYouScreen());
+        // Get.to(() => const ThankYouScreen());
         CustomSnackBar(
           message: "Booking Confirmed Successfully!",
           backgroundColor: Colors.green,

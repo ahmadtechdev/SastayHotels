@@ -57,9 +57,9 @@ class _ImportantBookingDetailsCardState
 
   @override
   Widget build(BuildContext context) {
-    final searchhomecontroller = Get.put(SearchHotelController());
-    final hoteldateController = Get.put(HotelDateController());
-    final Guestscontroller = Get.put(GuestsController());
+    final searchhomecontroller = Get.find<SearchHotelController>();
+    final hoteldateController = Get.find<HotelDateController>();
+    final Guestscontroller = Get.find<GuestsController>();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),

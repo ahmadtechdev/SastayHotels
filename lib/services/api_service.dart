@@ -116,7 +116,7 @@ class ApiService extends GetxService {
 
   /// Fetch room details.
   Future<void> fetchRoomDetails(String hotelCode, String sessionId) async {
-    final guestsController = Get.put(GuestsController());
+    final guestsController = Get.find<GuestsController>();
 
     List<Map<String, dynamic>> rooms =
         guestsController.rooms.asMap().entries.map((entry) {
@@ -287,7 +287,7 @@ class ApiService extends GetxService {
 
     try {
       // Log the request for debugging
-      print('\n=== SENDING BOOKING REQUEST ===');
+      print('\n=== SENDING BOOKING REQUEST1 ===');
       print('Endpoint: $bookingEndpoint');
       print('Request Body: ${json.encode(requestBody)}');
 

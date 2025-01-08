@@ -19,7 +19,7 @@ class HotelScreen extends StatefulWidget {
 class _HotelScreenState extends State<HotelScreen> {
   @override
   Widget build(BuildContext context) {
-    final SearchHotelController controller = Get.put(SearchHotelController());
+    final SearchHotelController controller = Get.find<SearchHotelController>();
     Widget buildRatingBar(double rating) {
       return RatingBarIndicator(
         rating: rating,
@@ -443,7 +443,7 @@ class HotelCard extends StatelessWidget {
 
   HotelCard({super.key, required this.hotel});
 
-  final SearchHotelController controller = Get.put(SearchHotelController());
+  final SearchHotelController controller = Get.find<SearchHotelController>();
 
   @override
   Widget build(BuildContext context) {

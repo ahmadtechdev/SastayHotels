@@ -15,15 +15,14 @@ import 'guests/guests_field.dart';
 class HotelForm extends StatelessWidget {
   HotelForm({super.key}) {
     // Initialize both controllers
-    Get.put(HotelDateController());
-    Get.put(SearchHotelController());
+    Get.find<HotelDateController>();
+    Get.find<SearchHotelController>();
   }
 
   @override
   Widget build(BuildContext context) {
     final cityController = TextEditingController();
     final hotelDateController = Get.find<HotelDateController>();
-    final searchHotelController = Get.find<SearchHotelController>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
