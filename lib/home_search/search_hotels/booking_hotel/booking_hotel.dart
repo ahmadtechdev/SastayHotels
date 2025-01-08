@@ -13,10 +13,13 @@ class BookingHotelScreen extends StatelessWidget {
   final BookingController bookingController = Get.put(BookingController());
   final GuestsController guestsController = Get.put(GuestsController());
 
+
   BookingHotelScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+
+   bookingController.saveHotelBookingToDB();
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -206,6 +209,7 @@ class BookingHotelScreen extends StatelessWidget {
   }
 
   Widget _buildBookerInfoCard() {
+
     return Card(
       elevation: 4,
       color: TColors.background,
@@ -505,21 +509,43 @@ class BookingHotelScreen extends StatelessWidget {
     );
   }
 
+  // In booking_hotel.dart
   void _handleSubmit() async {
-    if (await bookingController.submitBooking()) {
-      Get.to(() => const ThankYouScreen());
+    try {
+      bookingController.isLoading.value = true;
+
+      if (!bookingController.validateAll()) {
+        CustomSnackBar(
+          message: "Please fill all required fields correctly",
+          backgroundColor: Colors.red,
+        ).show();
+        return;
+      }
+
+      final bool success = await bookingController.saveHotelBookingToDB();
+
+      if (success) {
+        Get.to(() => const ThankYouScreen());
+        CustomSnackBar(
+          message: "Booking Confirmed Successfully!",
+          backgroundColor: Colors.green,
+        ).show();
+        bookingController.resetForm();
+      } else {
+        CustomSnackBar(
+          message: "Booking failed. Please try again.",
+          backgroundColor: Colors.red,
+        ).show();
+      }
+    } catch (e) {
       CustomSnackBar(
-        message: "Booking Confirmed!",
-        backgroundColor: Colors.green,
+        message: "An error occurred. Please try again.",
+        backgroundColor: Colors.red,
       ).show();
-    } else {
-      CustomSnackBar(
-        message: "Please fill all required fields correctly!",
-        backgroundColor: const Color(0xFFFFAB00),
-      ).show();
+    } finally {
+      bookingController.isLoading.value = false;
     }
   }
-
   Widget _buildBadge(String text) {
     final isRefundable = text.toLowerCase() == 'refundable';
     return Container(

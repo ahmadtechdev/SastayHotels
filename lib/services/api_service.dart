@@ -282,6 +282,69 @@ class ApiService extends GetxService {
     return null;
   }
 
+  Future<bool> bookHotel(Map<String, dynamic> requestBody) async {
+    const String bookingEndpoint = 'https://sastayhotels.pk/mobile_thankyou.php';
+
+    try {
+      // Log the request for debugging
+      print('\n=== SENDING BOOKING REQUEST ===');
+      print('Endpoint: $bookingEndpoint');
+      print('Request Body: ${json.encode(requestBody)}');
+
+      final response = await dio.post(
+        bookingEndpoint,
+        data: requestBody,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
+      );
+
+      // Log the response
+      print('\n=== BOOKING RESPONSE ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        // Check if the response indicates success
+        // You might need to adjust this based on the actual response structure
+        if (response.data != null) {
+          if (response.data is Map) {
+            if (response.data['status'] == 'success' ||
+                response.data['success'] == true ||
+                response.data['code'] == 200) {
+              return true;
+            }
+          } else if (response.data.toString().toLowerCase().contains('success')) {
+            return true;
+          }
+        }
+        return true; // Return true if we get 200 but can't determine more specific success
+      } else {
+        print('Booking failed with status: ${response.statusCode}');
+        print('Error message: ${response.statusMessage}');
+        return false;
+      }
+    } on DioError catch (e) {
+      print('\n=== BOOKING ERROR ===');
+      print('DioError Type: ${e.type}');
+      print('Error Message: ${e.message}');
+      if (e.response != null) {
+        print('Error Response: ${e.response?.data}');
+        print('Error Status Code: ${e.response?.statusCode}');
+      }
+      return false;
+    } catch (e) {
+      print('\n=== UNEXPECTED ERROR ===');
+      print('Error: $e');
+      return false;
+    }
+  }
+
 }
 
 

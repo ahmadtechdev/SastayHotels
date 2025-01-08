@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flight_bocking/home_search/booking_card/forms/hotel/hotel_date_controller.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
+import 'package:flight_bocking/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
+import '../select_room/controller/select_room_controller.dart';
 
 class HotelGuestInfo {
   final TextEditingController titleController;
@@ -55,6 +60,8 @@ class BookingController extends GetxController {
   HotelDateController hotelDateController = Get.put(HotelDateController());
   GuestsController guestsController = Get.put(GuestsController());
   HotelDateController hotelDatecontroller = Get.put(HotelDateController());
+
+  ApiService apiService = ApiService();
 
   // Booker Information
   final titleController = TextEditingController();
@@ -144,68 +151,6 @@ class BookingController extends GetxController {
         acceptedTerms.value;
   }
 
-  // Submit booking
-  Future<bool> submitBooking() async {
-    if (!validateAll()) {
-      return false;
-    }
-
-    try {
-      isLoading.value = true;
-
-      // Create booking data model
-      final bookingData = {
-        'booker': {
-          'title': titleController.text,
-          'firstName': firstNameController.text,
-          'lastName': lastNameController.text,
-          'email': emailController.text,
-          'phone': phoneController.text,
-          'address': addressController.text,
-          'city': cityController.text,
-        },
-        'rooms': roomGuests.asMap().map((index, room) {
-          return MapEntry(
-            'room_${index + 1}',
-            {
-              'adults': room.adults
-                  .map((adult) => {
-                        'title': adult.titleController.text,
-                        'firstName': adult.firstNameController.text,
-                        'lastName': adult.lastNameController.text,
-                      })
-                  .toList(),
-              'children': room.children
-                  .map((child) => {
-                        'title': child.titleController.text,
-                        'firstName': child.firstNameController.text,
-                        'lastName': child.lastNameController.text,
-                      })
-                  .toList(),
-            },
-          );
-        }),
-        'specialRequests': {
-          'text': specialRequestsController.text,
-          'groundFloor': isGroundFloor.value,
-          'highFloor': isHighFloor.value,
-          'lateCheckout': isLateCheckout.value,
-          'earlyCheckin': isEarlyCheckin.value,
-          'twinBed': isTwinBed.value,
-          'smoking': isSmoking.value,
-        },
-      };
-
-      // Here you would typically send bookingData to your backend
-      // await bookingService.createBooking(bookingData);
-
-      return true;
-    } catch (e) {
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   void resetForm() {
     // Reset booker information
@@ -253,111 +198,179 @@ class BookingController extends GetxController {
     super.onClose();
   }
 
-  Future<void> saveHotelBookingToDB() async {
+  Future<bool> saveHotelBookingToDB() async  {
+    final selectRoomController = Get.put(SelectRoomController());
     List<Map<String, dynamic>> roomsList = [];
+    final dateFormat = DateFormat('yyyy-MM-dd');
 
-    // Get the selected rooms from the SelectRoomScreen
-    final selectedRoomsData =
-        Get.find<SearchHotelController>().selectedRoomsData;
+    final selectedRoomsData = searchHotelController.selectedRoomsData;
 
-    // Iterate through each selected room
-    for (var i = 0; i < roomGuests.length; i++) {
-      // Get the selected room data for this specific room
-      var roomData = selectedRoomsData[i];
+    try {
+      for (var i = 0; i < roomGuests.length; i++) {
+        List<Map<String, dynamic>> paxDetails = [];
 
-      // Prepare pax details for both adults and children
-      List<Map<String, dynamic>> paxDetails = [];
-
-      // Add adults
-      for (var adult in roomGuests[i].adults) {
-        paxDetails.add({
-          "type": "ADT",
-          "title": adult.titleController.text,
-          "first": adult.firstNameController.text,
-          "last": adult.lastNameController.text,
-          "age": ""
-        });
-      }
-
-      // Add children
-      for (var j = 0; j < roomGuests[i].children.length; j++) {
-        var child = roomGuests[i].children[j];
-        paxDetails.add({
-          "type": "CHD",
-          "title": child.titleController.text,
-          "first": child.firstNameController.text,
-          "last": child.lastNameController.text,
-          "age": guestsController.rooms[i].childrenAges[j].toString()
-        });
-      }
-
-      // Create room object with the correct room name and meal for each selected room
-      Map<String, dynamic> roomObject = {
-        "p_nature": "",
-        "p_type": "CAN",
-        "p_end_date": "",
-        "p_end_time": "",
-        "room_name": roomData['roomName'] ?? "", // Use the selected room's name
-        "room_bordbase": roomData['meal'] ?? "", // Use the selected room's meal
-        "policy_details": [
-          {
-            "from_date": hotelDatecontroller.checkInDate.toString(),
-            "to_date": hotelDatecontroller.checkOutDate.toString(),
-            "timezone": "",
-            "from_time": "",
-            "to_time": "",
-            "percentage": "",
-            "nights": hotelDateController.nights.toString(),
-            "fixed": "",
-            "applicableOn": ""
+        // Add adults
+        for (var adult in roomGuests[i].adults) {
+          if (adult.titleController.text.isEmpty ||
+              adult.firstNameController.text.isEmpty ||
+              adult.lastNameController.text.isEmpty) {
+            throw Exception('Adult details missing for room ${i + 1}');
           }
-        ],
-        "pax_details": paxDetails
+
+          paxDetails.add({
+            "type": "Adult",
+            "title": adult.titleController.text.trim(),
+            "first": adult.firstNameController.text.trim(),
+            "last": adult.lastNameController.text.trim(),
+            "age": ""
+          });
+        }
+
+        // Add children with null safety
+        if (roomGuests[i].children.isNotEmpty) {
+          for (var j = 0; j < roomGuests[i].children.length; j++) {
+            var child = roomGuests[i].children[j];
+            var childAge = guestsController.rooms[i].childrenAges.isNotEmpty &&
+                j < guestsController.rooms[i].childrenAges.length
+                ? guestsController.rooms[i].childrenAges[j].toString()
+                : "0";
+
+            if (child.titleController.text.isEmpty ||
+                child.firstNameController.text.isEmpty ||
+                child.lastNameController.text.isEmpty) {
+              throw Exception('Child details missing for room ${i + 1}');
+            }
+
+            paxDetails.add({
+              "type": "Child",
+              "title": child.titleController.text.trim(),
+              "first": child.firstNameController.text.trim(),
+              "last": child.lastNameController.text.trim(),
+              "age": childAge
+            });
+          }
+        }
+
+        // Get the policy details for the room
+        final policyDetails = selectRoomController.getPolicyDetailsForRoom(i);
+        String pEndDate = "";
+        String pEndTime = "";
+
+        if (policyDetails.isNotEmpty) {
+          final firstPolicy = policyDetails.first;
+          pEndDate = firstPolicy['from_date']?.split('T')?.first ?? "";
+          pEndTime = firstPolicy['from_time'] ?? "";
+        }
+
+        // Create room object with null safety
+        Map<String, dynamic> roomObject = {
+          "p_nature": selectRoomController.getRateType(i),
+          "p_type": "CAN",
+          "p_end_date": pEndDate,
+          "p_end_time": pEndTime,
+          "room_name": selectRoomController.getRoomName(i) ?? "Standard Room",
+          "room_bordbase": selectRoomController.getRoomMeal(i) ?? "RO",
+          "policy_details": policyDetails,
+          "pax_details": paxDetails
+        };
+
+        roomsList.add(roomObject);
+      }
+
+      // Prepare special requests list
+      List<String> specialRequests = [];
+      if (isGroundFloor.value) specialRequests.add("Ground Floor");
+      if (isHighFloor.value) specialRequests.add("High Floor");
+      if (isLateCheckout.value) specialRequests.add("Late checkout");
+      if (isEarlyCheckin.value) specialRequests.add("Early checkin");
+      if (isTwinBed.value) specialRequests.add("Twin Bed");
+      if (isSmoking.value) specialRequests.add("Smoking");
+
+      // Create request body with null safety
+      final Map<String, dynamic> requestBody = {
+        "bookeremail": emailController.text.trim(),
+        "bookerfirst": firstNameController.text.trim(),
+        "bookerlast": lastNameController.text.trim(),
+        "bookertel": phoneController.text.trim(),
+        "bookeraddress": addressController.text.trim(),
+        "bookercompany": "",
+        "bookercountry": "",
+        "bookercity": cityController.text.trim(),
+        "om_ordate": DateTime.now().toIso8601String().split('T')[0].toString(),
+        "cancellation_buffer": "",
+        "session_id": searchHotelController.sessionId.value,
+        "group_code": searchHotelController.roomsdata.isNotEmpty
+            ? searchHotelController.roomsdata[0]['groupCode'] ?? ""
+            : "",
+        "rate_key": _buildRateKey(),
+        "om_hid": searchHotelController.hotelCode.value,
+        "om_nights": hotelDateController.nights.value,
+        "buying_price": "",
+        "om_regid": searchHotelController.destinationCode.value,
+        "om_hname": searchHotelController.hotelName.value,
+        "om_destination": searchHotelController.hotelCity.value,
+        "om_trooms": guestsController.roomCount.value,
+        "om_chindate": dateFormat.format(hotelDateController.checkInDate.value),
+        "om_choutdate": dateFormat.format(hotelDateController.checkOutDate.value),
+        "om_spreq": specialRequests.isEmpty ? "" : specialRequests.join(', '),
+        "om_smoking": "",
+        "om_status": "0",
+        "payment_status": "Pending",
+        "om_suppliername": "Arabian",
+        "Rooms": roomsList
       };
 
-      roomsList.add(roomObject);
+      print('\n=== BOOKING REQUEST BODY ===');
+      requestBody.forEach((key, value) {
+        if (key != 'Rooms') {
+          print('$key: $value');
+        }
+      });
+
+      print('\n=== ROOMS DETAILS ===');
+      for (var i = 0; i < roomsList.length; i++) {
+        print('\nRoom ${i + 1}:');
+        roomsList[i].forEach((key, value) {
+          if (key == 'pax_details') {
+            print('$key:');
+            for (var pax in value) {
+              print('  - ${pax['type']}: ${pax['first']} ${pax['last']}');
+            }
+          } else {
+            print('$key: $value');
+          }
+        });
+      }
+
+      isLoading.value = true;
+      // Send the booking request
+      final bool success = await apiService.bookHotel(requestBody);
+
+      isLoading.value = false;
+      return success;
+    } catch (e) {
+      print('Error creating booking request: $e');
+      rethrow;
     }
-    final Map<String, dynamic> requestBody = {
-      "bookeremail": emailController.text,
-      "bookerfirst": firstNameController.text,
-      "bookerlast": lastNameController.text,
-      "bookertel": phoneController.text,
-      "bookeraddress": addressController.text,
-      "bookercompany": "",
-      "bookercountry": "",
-      "bookercity": cityController.text,
-      "om_ordate": DateTime.now().toIso8601String().split('T').first,
-      "cancellation_buffer": "",
-      "session_id": searchHotelController.sessionId,
-      "group_code": searchHotelController.roomsdata[0]['groupCode'],
-      "rate_key":
-          "start+${searchHotelController.roomsdata.map((room) => room['rateKey']).join('za,in')}",
-      "om_hid": searchHotelController.hotelCode,
-      "om_nights": hotelDateController.nights,
-      "buying_price": "",
-      "om_regid": searchHotelController.destinationCode,
-      "om_hname": searchHotelController.hotelName,
-      "om_destination": searchHotelController.hotelCity,
-      "om_trooms": guestsController.roomCount,
-      "om_chindate": hotelDateController.checkInDate,
-      "om_choutdate": hotelDateController.checkOutDate,
-      "om_spreq": [
-        if (isGroundFloor.value) "Ground Floor",
-        if (isHighFloor.value) "High Floor",
-        if (isLateCheckout.value) "Late checkout",
-        if (isEarlyCheckin.value) "Early checkin",
-        if (isTwinBed.value) "Twin Bed",
-        if (isSmoking.value) "Smoking",
-      ].join(', '),
-      "om_smoking": "",
-      "om_status": "0",
-      "payment_status": "Pending",
-      "om_suppliername": "Arabian",
-      "Rooms": roomsList
-    };
-    print(requestBody['Rooms']);
-    // Here you would typically send the requestBody to your API
   }
 
-  // Rest of your code remains the same...
+// Helper method to build rate key
+  String _buildRateKey() {
+    try {
+      if (searchHotelController.selectedRoomsData.isEmpty) return "";
+
+      List<String> rateKeys = searchHotelController.selectedRoomsData
+          .map((room) => room['rateKey']?.toString() ?? "")
+          .where((key) => key.isNotEmpty)
+          .toList();
+
+      return rateKeys.isEmpty ? "" : "start${rateKeys.join('za,in')}";
+    } catch (e) {
+      print('Error building rate key: $e');
+      return "";
+    }
+  }
+
+
+// Rest of your code remains the same...
 }
