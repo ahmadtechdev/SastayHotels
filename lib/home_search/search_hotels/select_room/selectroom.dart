@@ -3,7 +3,6 @@ import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
-import 'package:intl/intl.dart';
 
 import '../../../services/api_service.dart';
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
@@ -12,6 +11,7 @@ import 'controller/select_room_controller.dart';
 import 'widgets/room_card.dart';
 
 class SelectRoomScreen extends StatefulWidget {
+  
   const SelectRoomScreen({super.key});
 
   @override
