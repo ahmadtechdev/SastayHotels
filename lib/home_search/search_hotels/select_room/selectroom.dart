@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:intl/intl.dart';
 
-import '../../../services/api_service.dart';
+import '../../../services/api_service_hotel.dart';
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
 import '../../booking_card/forms/hotel/hotel_date_controller.dart';
 import 'controller/select_room_controller.dart';
@@ -26,7 +26,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   final Map<int, dynamic> selectedRooms = {};
   final guestsController = Get.find<GuestsController>();
   final selectRoomController = Get.put(SelectRoomController());
-  final apiService = ApiService();
+  final apiService = ApiServiceHotel();
   bool isLoading = false;
 
   Future<void> handleBookNow() async {

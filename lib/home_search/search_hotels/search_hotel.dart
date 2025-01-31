@@ -7,7 +7,7 @@ import 'package:flight_bocking/widgets/colors.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../services/api_service.dart';
+import '../../services/api_service_hotel.dart';
 
 class HotelScreen extends StatefulWidget {
   const HotelScreen({super.key});
@@ -556,7 +556,7 @@ class HotelCard extends StatelessWidget {
 
                 controller.roomsdata.clear();
 
-                ApiService().fetchRoomDetails(
+                ApiServiceHotel().fetchRoomDetails(
                     hotel['hotelCode'], controller.sessionId.value);
                 controller.filterhotler();
                 Get.to(() => const SelectRoomScreen());

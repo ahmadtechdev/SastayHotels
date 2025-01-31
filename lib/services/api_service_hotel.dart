@@ -6,12 +6,12 @@ import 'package:intl/intl.dart';
 import '../home_search/booking_card/forms/hotel/guests/guests_controller.dart';
 import '../home_search/search_hotels/search_hotel_controller.dart';
 
-class ApiService extends GetxService {
+class ApiServiceHotel extends GetxService {
   late final Dio dio;
   static const String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
   static const String _baseUrl = 'http://uat-apiv2.giinfotech.ae/api/v2';
 
-  ApiService() {
+  ApiServiceHotel() {
     dio = Dio(BaseOptions(baseUrl: _baseUrl));
     if (!Get.isRegistered<SearchHotelController>()) {
       Get.put(SearchHotelController());

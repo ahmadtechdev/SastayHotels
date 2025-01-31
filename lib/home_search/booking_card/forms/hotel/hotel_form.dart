@@ -4,7 +4,7 @@ import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller
 import 'package:flight_bocking/widgets/date_range_slector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../services/api_service.dart';
+import '../../../../services/api_service_hotel.dart';
 import '../../../../widgets/colors.dart';
 import '../../../../widgets/custom_textfield.dart';
 import '../../../../widgets/loading_dailog.dart';
@@ -77,7 +77,7 @@ class HotelForm extends StatelessWidget {
 
             try {
               // Call the API
-              await ApiService().fetchHotels(
+              await ApiServiceHotel().fetchHotels(
                 destinationCode: destinationCode,
                 countryCode: countryCode,
                 nationality: nationality,

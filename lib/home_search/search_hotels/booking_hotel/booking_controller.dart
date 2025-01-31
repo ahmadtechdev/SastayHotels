@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flight_bocking/home_search/booking_card/forms/hotel/hotel_date_controller.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
-import 'package:flight_bocking/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../services/api_service_hotel.dart';
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
 import '../select_room/controller/select_room_controller.dart';
 
@@ -60,7 +60,7 @@ class BookingController extends GetxController {
   HotelDateController hotelDateController = Get.find<HotelDateController>();
   GuestsController guestsController = Get.find<GuestsController>();
 
-  ApiService apiService = ApiService();
+  ApiServiceHotel apiService = ApiServiceHotel();
 
   // Booker Information
   final titleController = TextEditingController();

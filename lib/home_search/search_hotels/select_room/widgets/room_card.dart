@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../services/api_service.dart';
+import '../../../../services/api_service_hotel.dart';
 import '../../../../widgets/colors.dart';
 import '../../search_hotel_controller.dart';
 
@@ -21,7 +21,7 @@ class RoomCard extends StatelessWidget {
   });
 
   void _showCancellationPolicy(BuildContext context) async {
-    final apiService = ApiService();
+    final apiService = ApiServiceHotel();
     final controller = Get.find<SearchHotelController>();
 
     // Show loading dialog
@@ -363,7 +363,7 @@ class RoomCard extends StatelessWidget {
   }
 
   void _showPriceBreakup(BuildContext context) async {
-    final apiService = ApiService();
+    final apiService = ApiServiceHotel();
     final controller = Get.find<SearchHotelController>();
 
     // Show loading dialog

@@ -523,7 +523,7 @@ class BookingHotelScreen extends StatelessWidget {
       final bool success = await bookingController.saveHotelBookingToDB();
 
       if (success) {
-        // Get.to(() => const ThankYouScreen());
+        Get.to(() => const ThankYouScreen());
         CustomSnackBar(
           message: "Booking Confirmed Successfully!",
           backgroundColor: Colors.green,
