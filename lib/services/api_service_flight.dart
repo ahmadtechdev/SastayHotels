@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 class ApiServiceFlight extends GetxService {
   late final Dio dio;
   static const String _baseUrl = 'https://api.havail.sabre.com';

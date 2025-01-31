@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flight_bocking/home_search/booking_card/forms/hotel/hotel_date_controller.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -56,7 +55,7 @@ class BookingController extends GetxController {
   // Room guest information
   final RxList<RoomGuests> roomGuests = <RoomGuests>[].obs;
   SearchHotelController searchHotelController =
-      Get.find<SearchHotelController>();
+  Get.find<SearchHotelController>();
   HotelDateController hotelDateController = Get.find<HotelDateController>();
   GuestsController guestsController = Get.find<GuestsController>();
 
@@ -100,12 +99,12 @@ class BookingController extends GetxController {
     for (var room in guestsController.rooms) {
       final adults = List.generate(
         room.adults.value,
-        (_) => HotelGuestInfo(),
+            (_) => HotelGuestInfo(),
       );
 
       final children = List.generate(
         room.children.value,
-        (_) => HotelGuestInfo(),
+            (_) => HotelGuestInfo(),
       );
 
       roomGuests.add(RoomGuests(adults: adults, children: children));
@@ -207,7 +206,7 @@ class BookingController extends GetxController {
       // Calculate total buying price from selected rooms
       double totalBuyingPrice = 0;
       for (var roomData in searchHotelController.selectedRoomsData) {
-        if (roomData != null && roomData['price'] != null) {
+        if (roomData['price'] != null) {
           // Get price per night
           double pricePerNight = double.tryParse(roomData['price']['net'].toString()) ?? 0;
           // Multiply by number of nights
@@ -277,8 +276,8 @@ class BookingController extends GetxController {
           "p_type": "CAN",
           "p_end_date": pEndDate,
           "p_end_time": pEndTime,
-          "room_name": selectRoomController.getRoomName(i) ?? "Standard Room",
-          "room_bordbase": selectRoomController.getRoomMeal(i) ?? "RO",
+          "room_name": selectRoomController.getRoomName(i),
+          "room_bordbase": selectRoomController.getRoomMeal(i),
           "policy_details": policyDetails,
           "pax_details": paxDetails
         };

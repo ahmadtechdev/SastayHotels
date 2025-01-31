@@ -1,17 +1,17 @@
 import 'package:flight_bocking/home_search/search_hotels/booking_hotel/booking_hotel.dart';
 import 'package:flight_bocking/home_search/search_hotels/search_hotel_controller.dart';
+import 'package:flight_bocking/services/api_service_hotel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
-import 'package:intl/intl.dart';
 
-import '../../../services/api_service_hotel.dart';
 import '../../booking_card/forms/hotel/guests/guests_controller.dart';
 import '../../booking_card/forms/hotel/hotel_date_controller.dart';
 import 'controller/select_room_controller.dart';
 import 'widgets/room_card.dart';
 
 class SelectRoomScreen extends StatefulWidget {
+
   const SelectRoomScreen({super.key});
 
   @override
@@ -128,15 +128,15 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   }
 
   void selectRoom(int roomIndex, dynamic room) {
-  setState(() {
-    selectedRooms[roomIndex] = room;
-    // Update the selected room data in the controller
-    Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
-    if (roomIndex < guestsController.roomCount.value - 1) {
-      _tabController.animateTo(roomIndex + 1);
-    }
-  });
-}
+    setState(() {
+      selectedRooms[roomIndex] = room;
+      // Update the selected room data in the controller
+      Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
+      if (roomIndex < guestsController.roomCount.value - 1) {
+        _tabController.animateTo(roomIndex + 1);
+      }
+    });
+  }
 
   bool get allRoomsSelected =>
       selectedRooms.length == guestsController.roomCount.value;
@@ -153,30 +153,30 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
         elevation: 0,
         bottom: guestsController.roomCount.value > 1
             ? TabBar(
-                controller: _tabController,
-                tabs: List.generate(
-                  guestsController.roomCount.value,
-                  (index) => Tab(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Room ${index + 1}',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          if (selectedRooms.containsKey(index))
-                            const Icon(Icons.check_circle, size: 10),
-                        ],
-                      ),
+          controller: _tabController,
+          tabs: List.generate(
+            guestsController.roomCount.value,
+                (index) => Tab(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Room ${index + 1}',
+                      style: const TextStyle(fontSize: 14),
                     ),
-                  ),
+                    if (selectedRooms.containsKey(index))
+                      const Icon(Icons.check_circle, size: 10),
+                  ],
                 ),
-                labelColor: TColors.primary,
-                unselectedLabelColor: TColors.grey,
-                indicatorColor: TColors.primary,
-              )
+              ),
+            ),
+          ),
+          labelColor: TColors.primary,
+          unselectedLabelColor: TColors.grey,
+          indicatorColor: TColors.primary,
+        )
             : null,
       ),
       body: Obx(() {
@@ -204,21 +204,21 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                   controller: _tabController,
                   children: List.generate(
                     guestsController.roomCount.value,
-                    (roomIndex) => SingleChildScrollView(
+                        (roomIndex) => SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHotelInfo(),
                           ...groupedRooms.entries
                               .map((entry) => RoomTypeSection(
-                                    roomTypeName: entry.key,
-                                    rooms: entry.value,
-                                    nights: dateController.nights.value,
-                                    onRoomSelected: (room) =>
-                                        selectRoom(roomIndex, room),
-                                    isSelected: (room) =>
-                                        selectedRooms[roomIndex] == room,
-                                  )),
+                            roomTypeName: entry.key,
+                            rooms: entry.value,
+                            nights: dateController.nights.value,
+                            onRoomSelected: (room) =>
+                                selectRoom(roomIndex, room),
+                            isSelected: (room) =>
+                            selectedRooms[roomIndex] == room,
+                          )),
                         ],
                       ),
                     ),
@@ -235,69 +235,69 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
               children: [
                 _buildHotelInfo(),
                 ...groupedRooms.entries.map((entry) => RoomTypeSection(
-                      roomTypeName: entry.key,
-                      rooms: entry.value,
-                      nights: dateController.nights.value,
-                      onRoomSelected: (room) => selectRoom(0, room),
-                      isSelected: (room) => selectedRooms[0] == room,
-                    )),
+                  roomTypeName: entry.key,
+                  rooms: entry.value,
+                  nights: dateController.nights.value,
+                  onRoomSelected: (room) => selectRoom(0, room),
+                  isSelected: (room) => selectedRooms[0] == room,
+                )),
               ],
             ),
           );
         }
       }),
       bottomNavigationBar:
-          guestsController.roomCount.value >= 1 && allRoomsSelected
-              ? Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: const Offset(0, -3),
-                      ),
-                    ],
+      guestsController.roomCount.value >= 1 && allRoomsSelected
+          ? Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: Get.width,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : handleBookNow,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: Get.width,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : handleBookNow,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: TColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            isLoading ? 'Checking Availability...' : 'Book Now',
-                            style: const TextStyle(
-                              color: TColors.secondary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (isLoading)
-                        const Positioned.fill(
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: TColors.secondary,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                    ],
+                ),
+                child: Text(
+                  isLoading ? 'Checking Availability...' : 'Book Now',
+                  style: const TextStyle(
+                    color: TColors.secondary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                )
-              : null,
+                ),
+              ),
+            ),
+            if (isLoading)
+              const Positioned.fill(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: TColors.secondary,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      )
+          : null,
     );
   }
 
@@ -401,14 +401,12 @@ class _RoomTypeSectionState extends State<RoomTypeSection> {
         ),
         if (isExpanded)
           ...widget.rooms.map((room) => RoomCard(
-                room: room,
-                nights: widget.nights,
-                onSelect: widget.onRoomSelected,
-                isSelected: widget.isSelected(room),
-              )),
+            room: room,
+            nights: widget.nights,
+            onSelect: widget.onRoomSelected,
+            isSelected: widget.isSelected(room),
+          )),
       ],
     );
   }
 }
-
-

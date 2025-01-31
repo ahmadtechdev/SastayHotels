@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class SearchHotelController extends GetxController {
@@ -22,10 +21,10 @@ class SearchHotelController extends GetxController {
   void onInit() {
     super.onInit();
     // Initialize lists with proper type casting
-   
+
   }
   filterhotler(){
-     originalHotels.value = List<Map<String, dynamic>>.from(hotels);
+    originalHotels.value = List<Map<String, dynamic>>.from(hotels);
     filteredHotels.value = List<Map<String, dynamic>>.from(hotels);
   }
 
@@ -65,7 +64,7 @@ class SearchHotelController extends GetxController {
       List<Map<String, dynamic>> filtered = originalHotels.where((hotel) {
         // Remove commas and parse the price to a double
         double price =
-            double.parse(hotel['price'].toString().replaceAll(',', '').trim());
+        double.parse(hotel['price'].toString().replaceAll(',', '').trim());
         return price >= minPrice && price <= maxPrice;
       }).toList();
 
@@ -81,15 +80,15 @@ class SearchHotelController extends GetxController {
   void sortHotels(String sortOption) {
     try {
       List<Map<String, dynamic>> sortedList =
-          List<Map<String, dynamic>>.from(hotels);
+      List<Map<String, dynamic>>.from(hotels);
 
       switch (sortOption) {
         case 'Price (low to high)':
           sortedList.sort((a, b) {
             double priceA =
-                double.parse(a['price'].toString().replaceAll(',', '').trim());
+            double.parse(a['price'].toString().replaceAll(',', '').trim());
             double priceB =
-                double.parse(b['price'].toString().replaceAll(',', '').trim());
+            double.parse(b['price'].toString().replaceAll(',', '').trim());
             return priceA.compareTo(priceB);
           });
           break;
@@ -97,9 +96,9 @@ class SearchHotelController extends GetxController {
         case 'Price (high to low)':
           sortedList.sort((a, b) {
             double priceA =
-                double.parse(a['price'].toString().replaceAll(',', '').trim());
+            double.parse(a['price'].toString().replaceAll(',', '').trim());
             double priceB =
-                double.parse(b['price'].toString().replaceAll(',', '').trim());
+            double.parse(b['price'].toString().replaceAll(',', '').trim());
             return priceB.compareTo(priceA);
           });
           break;
@@ -129,9 +128,9 @@ class SearchHotelController extends GetxController {
         // Filter hotels based on the name matching the query
         hotels.value = originalHotels
             .where((hotel) => hotel['name']
-                .toString()
-                .toLowerCase()
-                .contains(query.toLowerCase()))
+            .toString()
+            .toLowerCase()
+            .contains(query.toLowerCase()))
             .toList();
       }
     } catch (e) {
