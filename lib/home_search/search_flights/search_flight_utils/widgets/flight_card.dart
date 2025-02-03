@@ -149,6 +149,12 @@ class FlightCard extends StatelessWidget {
                 ),
               ],
             ),
+
+            // Add to FlightCard
+            if (flight.departureTerminal.isNotEmpty)
+              Text('Terminal: ${flight.departureTerminal}'),
+            if (flight.baggageAllowance.pieces > 0)
+              Text('Baggage: ${flight.baggageAllowance.pieces} pieces'),
           ],
         ),
       ),

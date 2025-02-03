@@ -86,7 +86,7 @@ class HomeBanner extends StatelessWidget {
           child: const Align(
             alignment: Alignment.topLeft,
             child: Text(
-              'Travel Bookings Made Easy',
+              '',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

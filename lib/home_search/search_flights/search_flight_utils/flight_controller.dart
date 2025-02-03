@@ -98,71 +98,76 @@ class FlightController extends GetxController {
   // New: Sorting type
   var sortType = 'Suggested'.obs;
 
-  void loadDummyFlights() {
-    flights.value = List.generate(100, (index) {
-      // Generate unique flight numbers and times for variety
-      final airlines = [
-        'Air Arabia',
-        'PIA',
-        'SereneAir',
-        'Air Sial',
-        'Emirates',
-        'Fly Dubai',
-        'Fly Jinnah',
-      ];
-      final types = ['Economy', 'Business', 'Premium', 'Value'];
-      final cities = [
-        'Lahore (LHE)',
-        'Karachi (KHI)',
-        'Islamabad (ISB)',
-        'Peshawar (PEW)',
-        'Multan (MUX)',
-        'Faisalabad (FSD)'
-      ];
-      final images = {
-        'Air Arabia': 'assets/img/logos/air-arabia.png',
-        'PIA': 'assets/img/logos/pia.png',
-        'SereneAir': 'assets/img/logos/serena.png',
-        'Air Sial': 'assets/img/logos/Air-Sial.png',
-        'Emirates': 'assets/img/logos/emirates.png',
-        'Fly Dubai': 'assets/img/logos/fly-dubai.png',
-        'Fly Jinnah': 'assets/img/logos/flyjinnah.png',
-      };
 
-      final airline = airlines[index % airlines.length];
-      final from = cities[index % cities.length];
-      final to = cities[(index + 1) % cities.length];
-      final type = types[index % types.length];
-      // Generate a random duration between 1h 30m and 5h 25m
-      final randomHours = 1 + (index % 5); // Between 1 and 5 hours
-      final randomMinutes = index % 3 == 0
-          ? 30
-          : index % 2 == 0
-              ? 15
-              : 45; // Randomized 15, 30, or 45 minutes
-      final duration = '${randomHours}h ${randomMinutes}m';
-
-      // Random but consistent flight details
-      return Flight(
-        imgPath: images[airline]!,
-        airline: airline,
-        flightNumber: '${airline.substring(0, 2).toUpperCase()}-${300 + index}',
-        departureTime:
-            '${(6 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
-        arrivalTime:
-            '${(8 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
-        duration: duration,
-        price: 4500 * (index + 1) + (index % 50000),
-        from: from,
-        to: to == from ? cities[(index + 2) % cities.length] : to,
-        type: type,
-        isRefundable: index % 2 == 0,
-        isNonStop: index % 2 == 0,
-      );
-    });
-
-    filteredFlights.value = flights.toList(); // Initialize filtered flights
+  void loadFlights(Map<String, dynamic> apiResponse) {
+    parseApiResponse(apiResponse);
   }
+
+  // void loadDummyFlights() {
+  //   flights.value = List.generate(100, (index) {
+  //     // Generate unique flight numbers and times for variety
+  //     final airlines = [
+  //       'Air Arabia',
+  //       'PIA',
+  //       'SereneAir',
+  //       'Air Sial',
+  //       'Emirates',
+  //       'Fly Dubai',
+  //       'Fly Jinnah',
+  //     ];
+  //     final types = ['Economy', 'Business', 'Premium', 'Value'];
+  //     final cities = [
+  //       'Lahore (LHE)',
+  //       'Karachi (KHI)',
+  //       'Islamabad (ISB)',
+  //       'Peshawar (PEW)',
+  //       'Multan (MUX)',
+  //       'Faisalabad (FSD)'
+  //     ];
+  //     final images = {
+  //       'Air Arabia': 'assets/img/logos/air-arabia.png',
+  //       'PIA': 'assets/img/logos/pia.png',
+  //       'SereneAir': 'assets/img/logos/serena.png',
+  //       'Air Sial': 'assets/img/logos/Air-Sial.png',
+  //       'Emirates': 'assets/img/logos/emirates.png',
+  //       'Fly Dubai': 'assets/img/logos/fly-dubai.png',
+  //       'Fly Jinnah': 'assets/img/logos/flyjinnah.png',
+  //     };
+  //
+  //     final airline = airlines[index % airlines.length];
+  //     final from = cities[index % cities.length];
+  //     final to = cities[(index + 1) % cities.length];
+  //     final type = types[index % types.length];
+  //     // Generate a random duration between 1h 30m and 5h 25m
+  //     final randomHours = 1 + (index % 5); // Between 1 and 5 hours
+  //     final randomMinutes = index % 3 == 0
+  //         ? 30
+  //         : index % 2 == 0
+  //             ? 15
+  //             : 45; // Randomized 15, 30, or 45 minutes
+  //     final duration = '${randomHours}h ${randomMinutes}m';
+  //
+  //     // Random but consistent flight details
+  //     return Flight(
+  //       imgPath: images[airline]!,
+  //       airline: airline,
+  //       flightNumber: '${airline.substring(0, 2).toUpperCase()}-${300 + index}',
+  //       departureTime:
+  //           '${(6 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
+  //       arrivalTime:
+  //           '${(8 + index % 12).toString().padLeft(2, '0')}:00 ${index % 2 == 0 ? "AM" : "PM"}',
+  //       duration: duration,
+  //       price: 4500 * (index + 1) + (index % 50000),
+  //       from: from,
+  //       to: to == from ? cities[(index + 2) % cities.length] : to,
+  //       type: type,
+  //       isRefundable: index % 2 == 0,
+  //       isNonStop: index % 2 == 0,
+  //     );
+  //   });
+  //
+  //   filteredFlights.value = flights.toList(); // Initialize filtered flights
+  // }
 
   void changeCurrency(String currency) {
     selectedCurrency.value = currency;
@@ -172,7 +177,7 @@ class FlightController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadDummyFlights();
+    // loadDummyFlights();
     initializeFilterRanges();
     ever(filterState, (_) => applyFilters());
     ever(sortType,
@@ -356,5 +361,103 @@ class FlightController extends GetxController {
       arrivalTimeRanges: {},
     );
     sortType.value = 'Suggested'; // Reset sorting type as well
+  }
+}
+
+// Update FlightController to parse API response with better error handling
+extension FlightControllerExtension on FlightController {
+  void parseApiResponse(Map<String, dynamic>? response) {
+    try {
+      // Debug print the entire response
+      print('Raw API Response:');
+      print(response);
+
+      if (response == null) {
+        print('Error: API response is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+
+      // Access the nested groupedItineraryResponse
+      final groupedResponse = response['groupedItineraryResponse'];
+      if (groupedResponse == null) {
+        print('Error: groupedItineraryResponse is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+
+      // Safely cast scheduleDescs with null check
+      final scheduleDescsRaw = groupedResponse['scheduleDescs'];
+      if (scheduleDescsRaw == null) {
+        print('Error: scheduleDescs is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+      final scheduleDescs = List<Map<String, dynamic>>.from(scheduleDescsRaw as List);
+
+      // Safely cast itineraryGroups with null check
+      final itineraryGroupsRaw = groupedResponse['itineraryGroups'];
+      if (itineraryGroupsRaw == null) {
+        print('Error: itineraryGroups is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+      final itineraryGroups = List<Map<String, dynamic>>.from(itineraryGroupsRaw as List);
+
+      final List<Flight> parsedFlights = [];
+
+      for (var group in itineraryGroups) {
+        final itineraries = group['itineraries'] as List?;
+        if (itineraries == null) continue;
+
+        for (var itinerary in itineraries) {
+          final legs = itinerary['legs'] as List?;
+          if (legs == null) continue;
+
+          for (var leg in legs) {
+            final scheduleRef = leg['ref'] as int?;
+            if (scheduleRef == null || scheduleRef <= 0 || scheduleRef > scheduleDescs.length) {
+              continue;
+            }
+
+            final schedule = scheduleDescs[scheduleRef - 1];
+            final pricingInfo = itinerary['pricingInformation'] as List?;
+            if (pricingInfo == null || pricingInfo.isEmpty) continue;
+
+            final fareInfo = pricingInfo[0]['fare'];
+            if (fareInfo == null) continue;
+
+            try {
+              final flight = Flight.fromApiResponse(schedule, fareInfo);
+              parsedFlights.add(flight);
+            } catch (e) {
+              print('Error parsing individual flight: $e');
+              continue;
+            }
+          }
+        }
+      }
+
+      print('Successfully parsed ${parsedFlights.length} flights');
+
+      // Update the flights in the controller
+      flights.value = parsedFlights;
+      filteredFlights.value = parsedFlights;
+
+      // Initialize price range based on new data
+      if (parsedFlights.isNotEmpty) {
+        initializeFilterRanges();
+      }
+
+    } catch (e, stackTrace) {
+      print('Error parsing API response: $e');
+      print('Stack trace: $stackTrace');
+      flights.value = [];
+      filteredFlights.value = [];
+    }
   }
 }

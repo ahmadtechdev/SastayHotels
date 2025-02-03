@@ -63,6 +63,7 @@ class FlightBookingPage extends StatelessWidget {
   final FlightScenario scenario; // Parameter to check the search type
   final FlightController controller = Get.put(FlightController());
 
+
   FlightBookingPage({super.key, required this.scenario}) {
     // Set the scenario when page is created
     controller.setScenario(scenario);

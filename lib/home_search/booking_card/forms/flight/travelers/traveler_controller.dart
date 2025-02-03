@@ -1,18 +1,25 @@
-import 'package:flight_bocking/widgets/colors.dart';
 import 'package:get/get.dart';
-
+import '../../../../../widgets/colors.dart';
 import '../../../../../widgets/snackbar.dart';
 
 class TravelersController extends GetxController {
   var adultCount = 1.obs;
   var childrenCount = 1.obs;
   var infantCount = 1.obs;
-  var travelClass = 'Economy'.obs;
+  var travelClass = 'Economy'.obs; // Changed default to match API enumeration
+
+  // Available travel classes matching API requirements
+  final List<String> availableTravelClasses = [
+    'Economy',
+    'PremiumEconomy',
+    'Business',
+    'First'
+  ];
 
   void incrementAdults() {
     adultCount.value++;
     if (infantCount.value > adultCount.value) {
-      infantCount.value = adultCount.value; // Ensure infants ≤ adults
+      infantCount.value = adultCount.value;
     }
   }
 
@@ -20,7 +27,7 @@ class TravelersController extends GetxController {
     if (adultCount.value > 0) {
       adultCount.value--;
       if (infantCount.value > adultCount.value) {
-        infantCount.value = adultCount.value; // Ensure infants ≤ adults
+        infantCount.value = adultCount.value;
       }
     }
   }
@@ -36,8 +43,8 @@ class TravelersController extends GetxController {
       infantCount.value++;
     } else {
       CustomSnackBar(
-              message: "Infants cannot exceed the number of adults.",
-              backgroundColor: TColors.third)
+          message: "Infants cannot exceed the number of adults.",
+          backgroundColor: TColors.third)
           .show();
     }
   }
@@ -46,5 +53,9 @@ class TravelersController extends GetxController {
     if (infantCount.value > 0) infantCount.value--;
   }
 
-  void updateTravelClass(String newClass) => travelClass.value = newClass;
+  void updateTravelClass(String newClass) {
+    if (availableTravelClasses.contains(newClass)) {
+      travelClass.value = newClass;
+    }
+  }
 }
