@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,6 +50,7 @@ class ApiServiceFlight extends GetxService {
     return null;
   }
 
+  // Add to ApiServiceFlight class
   Future<String> generateToken() async {
     try {
       final response = await dio.post(
@@ -56,11 +58,11 @@ class ApiServiceFlight extends GetxService {
         options: Options(
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization':
-            'Basic VmpFNk5UVTFOVG8yVFVRNE9rRkI6Ykhsd2EyaHBNak09',
+            'Authorization': 'Basic VmpFNk5UVTFOVG8yVFVRNE9rRkI6Ykhsd2EyaHBNak09',
+            'grant_type': 'client_credentials'
           },
         ),
-        data: {'grant_type': 'client_credentials'},
+        // data: {'grant_type': 'client_credentials'},
       );
 
       if (response.statusCode == 200 && response.data['access_token'] != null) {
@@ -68,8 +70,7 @@ class ApiServiceFlight extends GetxService {
         await _storeToken(token);
         return token;
       } else {
-        throw Exception(
-            'Failed to generate token: ${response.statusCode} - ${response.data}');
+        throw Exception('Failed to generate token');
       }
     } catch (e) {
       throw Exception('Error generating token: $e');
@@ -88,15 +89,15 @@ class ApiServiceFlight extends GetxService {
     required String cabin,
   }) async {
     try {
+      print('Fetching token...');
       final token = await _getValidToken() ?? await generateToken();
+      print('Token received.');
 
       final originArray = origin.split(',');
       final destinationArray = destination.split(',');
       final depDateArray = depDate.split(',');
 
-      // Map the cabin class to the correct format
       final mappedCabin = _mapCabinClass(cabin);
-      print('Mapped cabin class: $mappedCabin from original: $cabin');
 
       List<Map<String, dynamic>> originDestinations = [];
       List<Map<String, dynamic>> passengers = [];
@@ -106,9 +107,7 @@ class ApiServiceFlight extends GetxService {
           "RPH": "1",
           "DepartureDateTime": "${depDateArray[1]}T00:00:01",
           "OriginLocation": {"LocationCode": originArray[1].toUpperCase()},
-          "DestinationLocation": {
-            "LocationCode": destinationArray[1].toUpperCase()
-          }
+          "DestinationLocation": {"LocationCode": destinationArray[1].toUpperCase()}
         });
       } else if (type == 1) {
         originDestinations.addAll([
@@ -116,25 +115,19 @@ class ApiServiceFlight extends GetxService {
             "RPH": "1",
             "DepartureDateTime": "${depDateArray[1]}T00:00:01",
             "OriginLocation": {"LocationCode": originArray[1].toUpperCase()},
-            "DestinationLocation": {
-              "LocationCode": destinationArray[1].toUpperCase()
-            }
+            "DestinationLocation": {"LocationCode": destinationArray[1].toUpperCase()}
           },
           {
             "RPH": "2",
             "DepartureDateTime": "${depDateArray[2]}T00:00:01",
-            "OriginLocation": {
-              "LocationCode": destinationArray[1].toUpperCase()
-            },
-            "DestinationLocation": {
-              "LocationCode": originArray[1].toUpperCase()
-            }
+            "OriginLocation": {"LocationCode": destinationArray[1].toUpperCase()},
+            "DestinationLocation": {"LocationCode": originArray[1].toUpperCase()}
           }
         ]);
       }
 
       if (adult > 0) passengers.add({"Code": "ADT", "Quantity": adult});
-      if (child > 0) passengers.add({"Code": "CNN", "Quantity": child});
+      if (child > 0) passengers.add({"Code": "CHD", "Quantity": child});
       if (infant > 0) passengers.add({"Code": "INF", "Quantity": infant});
 
       final requestBody = {
@@ -163,7 +156,10 @@ class ApiServiceFlight extends GetxService {
           "TravelPreferences": {
             "ValidInterlineTicket": true,
             "CabinPref": [
-              {"Cabin": mappedCabin, "PreferLevel": "Preferred"}
+              {
+                "Cabin": mappedCabin,
+                "PreferLevel": "Preferred"
+              }
             ],
             "VendorPref": [{}],
             "TPA_Extensions": {
@@ -172,12 +168,20 @@ class ApiServiceFlight extends GetxService {
                 "LCC": "Enable",
                 "NDC": "Enable"
               },
-              "NumTrips": {"Number": 50},
-              "NDCIndicators": {
-                "MultipleBrandedFares": {"Value": true},
-                "MaxNumberOfUpsells": {"Value": 6}
+              "NumTrips": {
+                "Number": 50
               },
-              "TripType": {"Value": type == 1 ? "Return" : "OneWay"}
+              "NDCIndicators": {
+                "MultipleBrandedFares": {
+                  "Value": true
+                },
+                "MaxNumberOfUpsells": {
+                  "Value": 6
+                }
+              },
+              "TripType": {
+                "Value": type == 1 ? "Return" : "OneWay"
+              }
             },
             "MaxStopsQuantity": stop
           },
@@ -185,12 +189,27 @@ class ApiServiceFlight extends GetxService {
             "SeatsRequested": [adult + child + infant],
             "AirTravelerAvail": [
               {"PassengerTypeQuantity": passengers}
-            ]
+            ],
+            "PriceRequestInformation": {
+              "TPA_Extensions": {
+                "BrandedFareIndicators": {
+                  "MultipleBrandedFares": true,
+                  "ReturnBrandAncillaries": true,
+                  "UpsellLimit": 4,
+                  "ParityMode": "Leg",
+                  "ParityModeForLowest": "Leg",
+                  "ItinParityFallbackMode": "LegParity",
+                  "ItinParityBrandlessLeg": true
+                }
+              }
+            }
           }
         }
       };
 
-      print('Request Body: ${jsonEncode(requestBody)}');
+      // Print request body (formatted)
+      print('Request Body:');
+      _printJsonPretty(requestBody);
 
       final response = await dio.post(
         '/v3/offers/shop',
@@ -203,19 +222,27 @@ class ApiServiceFlight extends GetxService {
         data: requestBody,
       );
 
-      print('Response Status: ${response.statusCode}');
-      print('Response Data: ${response.data}');
+      print('Response Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-
+        print('Response Data:');
+        _printJsonPretty(response.data);
         return response.data;
       } else {
-        throw Exception(
-            'Failed to search flights: ${response.statusCode} - ${response.statusMessage}');
+        throw Exception('Failed to search flights: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in searchFlights: $e');
       throw Exception('Error searching flights: $e');
+    }
+  }
+
+  /// Helper function to print large JSON data in readable format
+  void _printJsonPretty(dynamic jsonData) {
+    const int chunkSize = 1000;
+    final jsonString = JsonEncoder.withIndent('  ').convert(jsonData);
+    for (int i = 0; i < jsonString.length; i += chunkSize) {
+      print(jsonString.substring(i, i + chunkSize > jsonString.length ? jsonString.length : i + chunkSize));
     }
   }
 }

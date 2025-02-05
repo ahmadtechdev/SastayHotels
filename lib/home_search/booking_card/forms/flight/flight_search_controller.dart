@@ -58,13 +58,13 @@ class FlightSearchController extends GetxController {
 
       final results = await apiServiceFlight.searchFlights(
         type: tripType,
-        origin: ",LHE",
+        origin: ",KHI",
         destination: ",JED",
         depDate: formattedDates,
         adult: travelersController.adultCount.value,
         child: travelersController.childrenCount.value,
         infant: travelersController.infantCount.value,
-        stop: 0,
+        stop: 2,
         cabin: travelersController.travelClass.value.toUpperCase(),
       );
 
