@@ -204,7 +204,7 @@ class FlightForm extends StatelessWidget {
               Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
             } else {
               Get.to(() =>
-                  FlightBookingPage(scenario: FlightScenario.returnFlight));
+                  FlightBookingPage(scenario: FlightScenario.oneWay));
             }
           },
           style: ElevatedButton.styleFrom(

@@ -88,7 +88,7 @@ class FlightSearchController extends GetxController {
       if (flightDateController.tripType.value == 'One-way') {
         Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
       } else {
-        Get.to(() => FlightBookingPage(scenario: FlightScenario.returnFlight));
+        Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
       }
 
     } catch (e, stackTrace) {

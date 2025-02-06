@@ -304,87 +304,118 @@ class FlightController extends GetxController {
 extension FlightControllerExtension on FlightController {
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
-      // Debug print the entire response
-      print('Raw API Response:');
-      print(response);
-
-      if (response == null) {
-        print('Error: API response is null');
+      if (response == null || response['groupedItineraryResponse'] == null) {
+        print('Error: Invalid API response structure');
         flights.value = [];
         filteredFlights.value = [];
         return;
       }
 
-      // Access the nested groupedItineraryResponse
       final groupedResponse = response['groupedItineraryResponse'];
-      if (groupedResponse == null) {
-        print('Error: groupedItineraryResponse is null');
-        flights.value = [];
-        filteredFlights.value = [];
-        return;
+
+      // Cache all schedule descriptions for quick lookup
+      final scheduleDescsMap = <int, Map<String, dynamic>>{};
+      if (groupedResponse['scheduleDescs'] != null) {
+        for (var schedule in groupedResponse['scheduleDescs'] as List) {
+          scheduleDescsMap[schedule['id'] as int] = schedule as Map<String, dynamic>;
+        }
       }
 
-      // Safely cast scheduleDescs with null check
-      final scheduleDescsRaw = groupedResponse['scheduleDescs'];
-      if (scheduleDescsRaw == null) {
-        print('Error: scheduleDescs is null');
-        flights.value = [];
-        filteredFlights.value = [];
-        return;
+      // Cache all leg descriptions for quick lookup
+      final legDescsMap = <int, Map<String, dynamic>>{};
+      if (groupedResponse['legDescs'] != null) {
+        for (var leg in groupedResponse['legDescs'] as List) {
+          legDescsMap[leg['id'] as int] = leg as Map<String, dynamic>;
+        }
       }
-      final scheduleDescs = List<Map<String, dynamic>>.from(scheduleDescsRaw as List);
-
-      // Safely cast itineraryGroups with null check
-      final itineraryGroupsRaw = groupedResponse['itineraryGroups'];
-      if (itineraryGroupsRaw == null) {
-        print('Error: itineraryGroups is null');
-        flights.value = [];
-        filteredFlights.value = [];
-        return;
-      }
-      final itineraryGroups = List<Map<String, dynamic>>.from(itineraryGroupsRaw as List);
 
       final List<Flight> parsedFlights = [];
 
-      for (var group in itineraryGroups) {
-        final itineraries = group['itineraries'] as List?;
-        if (itineraries == null) continue;
+      // Process each itinerary group
+      for (var group in groupedResponse['itineraryGroups'] as List) {
+        final groupDesc = group['groupDescription'];
+        final legDescriptions = groupDesc['legDescriptions'] as List;
+        final isRoundTrip = legDescriptions.length > 1;
 
-        for (var itinerary in itineraries)  {
-          final legs = itinerary['legs'] as List?;
-          if (legs == null) continue;
+        // Process each itinerary within the group
+        for (var itinerary in group['itineraries'] as List) {
+          final legs = itinerary['legs'] as List;
+          final pricingInfo = itinerary['pricingInformation'] as List;
 
-          for (var leg in legs) {
-            final scheduleRef = leg['ref'] as int?;
-            if (scheduleRef == null || scheduleRef <= 0 || scheduleRef > scheduleDescs.length) {
-              continue;
+          if (pricingInfo.isEmpty) continue;
+          final fareInfo = pricingInfo[0]['fare'];
+
+          // For return flights, collect both outbound and inbound schedules
+          if (isRoundTrip && legs.length == 2) {
+            final outboundLegId = legs[0]['ref'] as int;
+            final inboundLegId = legs[1]['ref'] as int;
+
+            final outboundLegDesc = legDescsMap[outboundLegId];
+            final inboundLegDesc = legDescsMap[inboundLegId];
+
+            if (outboundLegDesc != null && inboundLegDesc != null) {
+              final outboundSchedules = outboundLegDesc['schedules'] as List;
+              final inboundSchedules = inboundLegDesc['schedules'] as List;
+
+              if (outboundSchedules.isNotEmpty && inboundSchedules.isNotEmpty) {
+                final outboundScheduleRef = outboundSchedules[0]['ref'] as int;
+                final inboundScheduleRef = inboundSchedules[0]['ref'] as int;
+
+                final outboundSchedule = scheduleDescsMap[outboundScheduleRef];
+                final inboundSchedule = scheduleDescsMap[inboundScheduleRef];
+
+                if (outboundSchedule != null && inboundSchedule != null) {
+                  try {
+                    // Create a single flight object containing both legs
+                    final flight = Flight.fromApiResponse(
+                        outboundSchedule,
+                        fareInfo,
+
+                    );
+                    parsedFlights.add(flight);
+                  } catch (e) {
+                    print('Error parsing return flight: $e');
+                    continue;
+                  }
+                }
+              }
             }
+          } else {
+            // Handle one-way flights as before
+            final legId = legs[0]['ref'] as int;
+            final legDesc = legDescsMap[legId];
 
-            final schedule = scheduleDescs[scheduleRef - 1];
-            final pricingInfo = itinerary['pricingInformation'] as List?;
-            if (pricingInfo == null || pricingInfo.isEmpty) continue;
+            if (legDesc != null) {
+              final schedules = legDesc['schedules'] as List;
+              if (schedules.isNotEmpty) {
+                final scheduleRef = schedules[0]['ref'] as int;
+                final schedule = scheduleDescsMap[scheduleRef];
 
-            final fareInfo = pricingInfo[0]['fare'];
-            if (fareInfo == null) continue;
+                if (schedule != null) {
+                  try {
+                    final flight = Flight.fromApiResponse(
+                        schedule,
+                        fareInfo,
 
-            try {
-              final flight = Flight.fromApiResponse(schedule, fareInfo);
-              parsedFlights.add(flight);
-            } catch (e) {
-              print('Error parsing individual flight: $e');
-              continue;
+                    );
+                    parsedFlights.add(flight);
+                  } catch (e) {
+                    print('Error parsing one-way flight: $e');
+                    continue;
+                  }
+                }
+              }
             }
           }
         }
       }
 
-      print('Successfully parsed ${parsedFlights.length} flights');
+      print('Successfully parsed ${parsedFlights.length} unique flights');
 
       // Update the flights in the controller
       flights.value = parsedFlights;
       filteredFlights.value = parsedFlights;
 
-      // Initialize price range based on new data
       if (parsedFlights.isNotEmpty) {
         initializeFilterRanges();
       }
