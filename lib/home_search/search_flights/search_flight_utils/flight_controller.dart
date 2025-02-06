@@ -304,73 +304,75 @@ class FlightController extends GetxController {
 extension FlightControllerExtension on FlightController {
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
-      if (response == null || response['groupedItineraryResponse'] == null) {
-        throw Exception('Invalid API response structure');
+      // Debug print the entire response
+      print('Raw API Response:');
+      print(response);
+
+      if (response == null) {
+        print('Error: API response is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
       }
 
+      // Access the nested groupedItineraryResponse
       final groupedResponse = response['groupedItineraryResponse'];
-      final scheduleDescs = Map<int, Map<String, dynamic>>.fromEntries(
-          (groupedResponse['scheduleDescs'] as List).map((schedule) =>
-              MapEntry(schedule['id'] as int, schedule as Map<String, dynamic>)
-          )
-      );
+      if (groupedResponse == null) {
+        print('Error: groupedItineraryResponse is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
 
-      final legDescs = Map<int, Map<String, dynamic>>.fromEntries(
-          (groupedResponse['legDescs'] as List).map((leg) =>
-              MapEntry(leg['id'] as int, leg as Map<String, dynamic>)
-          )
-      );
+      // Safely cast scheduleDescs with null check
+      final scheduleDescsRaw = groupedResponse['scheduleDescs'];
+      if (scheduleDescsRaw == null) {
+        print('Error: scheduleDescs is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+      final scheduleDescs = List<Map<String, dynamic>>.from(scheduleDescsRaw as List);
+
+      // Safely cast itineraryGroups with null check
+      final itineraryGroupsRaw = groupedResponse['itineraryGroups'];
+      if (itineraryGroupsRaw == null) {
+        print('Error: itineraryGroups is null');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+      final itineraryGroups = List<Map<String, dynamic>>.from(itineraryGroupsRaw as List);
 
       final List<Flight> parsedFlights = [];
 
-      // Process each itinerary group
-      for (var group in groupedResponse['itineraryGroups'] as List) {
-        // Check journey type from groupDescription
-        final groupDesc = group['groupDescription'] as Map<String, dynamic>;
-        final legDescriptions = groupDesc['legDescriptions'] as List;
+      for (var group in itineraryGroups) {
+        final itineraries = group['itineraries'] as List?;
+        if (itineraries == null) continue;
 
-        // This tells us if it's one-way, round-trip, etc.
-        final journeyType = legDescriptions.length == 1 ? 'ONE_WAY' : 'ROUND_TRIP';
+        for (var itinerary in itineraries)  {
+          final legs = itinerary['legs'] as List?;
+          if (legs == null) continue;
 
-        // Process each itinerary within the group
-        for (var itinerary in group['itineraries'] as List) {
-          // Get legs references
-          final legRefs = itinerary['legs'] as List;
+          for (var leg in legs) {
+            final scheduleRef = leg['ref'] as int?;
+            if (scheduleRef == null || scheduleRef <= 0 || scheduleRef > scheduleDescs.length) {
+              continue;
+            }
 
-          // Get pricing information
-          final pricingInfo = itinerary['pricingInformation'][0]['fare'];
+            final schedule = scheduleDescs[scheduleRef - 1];
+            final pricingInfo = itinerary['pricingInformation'] as List?;
+            if (pricingInfo == null || pricingInfo.isEmpty) continue;
 
-          // Process each leg in the itinerary
-          for (var legRef in legRefs) {
-            final legId = legRef['ref'] as int;
-            final leg = legDescs[legId];
+            final fareInfo = pricingInfo[0]['fare'];
+            if (fareInfo == null) continue;
 
-            if (leg == null) continue;
-
-            // Get schedule references for this leg
-            final scheduleRefs = leg['schedules'] as List;
-
-            for (var scheduleRef in scheduleRefs) {
-              final scheduleId = scheduleRef['ref'] as int;
-              final schedule = scheduleDescs[scheduleId];
-
-              if (schedule == null) continue;
-
-              try {
-                final flight = Flight.fromApiResponse(
-                    schedule,
-                    {
-                      ...pricingInfo,
-                      'journeyType': journeyType,
-                      'legId': legId,
-                      'scheduleId': scheduleId,
-                    }
-                );
-                parsedFlights.add(flight);
-              } catch (e) {
-                print('Error parsing individual flight: $e');
-                continue;
-              }
+            try {
+              final flight = Flight.fromApiResponse(schedule, fareInfo);
+              parsedFlights.add(flight);
+            } catch (e) {
+              print('Error parsing individual flight: $e');
+              continue;
             }
           }
         }
@@ -378,7 +380,7 @@ extension FlightControllerExtension on FlightController {
 
       print('Successfully parsed ${parsedFlights.length} flights');
 
-      // Update controller state
+      // Update the flights in the controller
       flights.value = parsedFlights;
       filteredFlights.value = parsedFlights;
 

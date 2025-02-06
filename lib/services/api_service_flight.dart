@@ -226,7 +226,7 @@ class ApiServiceFlight extends GetxService {
 
       if (response.statusCode == 200) {
         print('Response Data:');
-        _printJsonPretty(response.data);
+        _printJsonPretty(response.data['statistics']);
         return response.data;
       } else {
         throw Exception('Failed to search flights: ${response.statusCode}');
