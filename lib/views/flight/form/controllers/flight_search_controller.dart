@@ -1,9 +1,11 @@
 import 'package:flight_bocking/home_search/search_flights/search_flight_utils/flight_controller.dart';
 import 'package:get/get.dart';
-import '../../../../services/api_service_flight.dart';
-import '../../../search_flights/search_flights.dart';
+import '../../../../../../services/api_service_flight.dart';
+
+import '../../../../home_search/search_flights/search_flights.dart';
 import 'flight_date_controller.dart';
-import 'travelers/traveler_controller.dart';
+import '../travelers/traveler_controller.dart';
+
 
 class FlightSearchController extends GetxController {
   final apiServiceFlight = Get.put(ApiServiceFlight());

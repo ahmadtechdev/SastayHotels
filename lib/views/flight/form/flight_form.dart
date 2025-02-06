@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../widgets/colors.dart';
-import '../../../../widgets/custom_textfield.dart';
-import '../../../../widgets/date_selection.dart';
-import '../../../../widgets/snackbar.dart';
-import '../../../search_flights/search_flights.dart';
-import 'flight_search_controller.dart';
-import 'trip_type/trip_type_selector.dart';
-import 'flight_date_controller.dart';
+import '../../../../../widgets/colors.dart';
+import '../../../../../widgets/custom_textfield.dart';
+import '../../../../../widgets/date_selection.dart';
+import '../../../../../widgets/snackbar.dart';
+
+import '../../../home_search/search_flights/search_flights.dart';
+import 'controllers/flight_search_controller.dart';
+
+import 'controllers/flight_date_controller.dart';
 import 'travelers/travelers_field.dart';
+import 'trip_type/trip_type_selector.dart';
+
 
 class FlightForm extends StatelessWidget {
   FlightForm({super.key}) {
