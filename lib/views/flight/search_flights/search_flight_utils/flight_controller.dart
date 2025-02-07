@@ -370,7 +370,7 @@ extension FlightControllerExtension on FlightController {
                     final flight = Flight.fromApiResponse(
                         outboundSchedule,
                         fareInfo,
-
+                        pricingInfo
                     );
                     parsedFlights.add(flight);
                   } catch (e) {
@@ -396,7 +396,7 @@ extension FlightControllerExtension on FlightController {
                     final flight = Flight.fromApiResponse(
                         schedule,
                         fareInfo,
-
+                        pricingInfo
                     );
                     parsedFlights.add(flight);
                   } catch (e) {

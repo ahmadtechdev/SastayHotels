@@ -7,7 +7,6 @@ import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
 import '../search_flight_utils/flight_controller.dart';
 import '../search_flights.dart';
-import 'package_controller.dart';
 import 'package_modal.dart';
 
 class PackageSelectionDialog extends StatelessWidget {
@@ -19,7 +18,7 @@ class PackageSelectionDialog extends StatelessWidget {
     required this.flight,
     required this.isAnyFlightRemaining,
   });
-  final packageController = Get.put(PackageController());
+
   final PageController _pageController = PageController(viewportFraction: 0.9);
   final flightController = Get.find<FlightController>();
 
@@ -31,9 +30,7 @@ class PackageSelectionDialog extends StatelessWidget {
         backgroundColor: TColors.background,
         surfaceTintColor: TColors.background,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-          ),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -73,14 +70,14 @@ class PackageSelectionDialog extends StatelessWidget {
           Row(
             children: [
               Image.asset(
-                'assets/img/logos/air-arabia.png',
+                flight.imgPath,
                 height: 32,
                 width: 50,
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Fly Jinnah',
-                style: TextStyle(
+              Text(
+                flight.airline,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: TColors.text,
@@ -114,9 +111,9 @@ class PackageSelectionDialog extends StatelessWidget {
               ),
               Column(
                 children: [
-                  const Text(
-                    '1h 55m',
-                    style: TextStyle(
+                  Text(
+                    flight.duration,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: TColors.grey,
                     ),
@@ -128,9 +125,9 @@ class PackageSelectionDialog extends StatelessWidget {
                       color: TColors.primary,
                     ),
                   ),
-                  const Text(
-                    'Nonstop',
-                    style: TextStyle(
+                  Text(
+                    flight.isNonStop ? 'Nonstop' : 'With Stops',
+                    style: const TextStyle(
                       fontSize: 14,
                       color: TColors.grey,
                     ),
@@ -166,21 +163,20 @@ class PackageSelectionDialog extends StatelessWidget {
 
   Widget _buildPackagesList() {
     return Expanded(
-      child: Obx(
-        () => PageView.builder(
-          controller: _pageController,
-          itemCount: packageController.packages.length,
-          itemBuilder: (context, index) {
-            return _buildPackageCard(packageController.packages[index]);
-          },
-        ),
+      child: ListView.builder(
+        // scrollDirection: Axis.horizontal,
+        itemCount: flight.packages.length,
+        itemBuilder: (context, index) {
+          final package = flight.packages[index];
+          return _buildPackageCard(package);
+        },
       ),
     );
   }
 
-  Widget _buildPackageCard(FlightPackage package) {
+  Widget _buildPackageCard(FlightPackageInfo package) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: TColors.background,
         borderRadius: BorderRadius.circular(20),
@@ -207,7 +203,7 @@ class PackageSelectionDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  package.name,
+                  package.cabinName,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -215,7 +211,7 @@ class PackageSelectionDialog extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'PKR ${package.price}',
+                  '${package.currency} ${package.totalPrice.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -225,94 +221,64 @@ class PackageSelectionDialog extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  _buildPackageDetail(
-                    Icons.luggage,
-                    'Check-in Baggage',
-                    package.checkInBaggage,
-                  ),
-                  _buildPackageDetail(
-                    Icons.cancel_outlined,
-                    'Cancellation',
-                    package.cancellation,
-                  ),
-                  _buildPackageDetail(
-                    Icons.edit_outlined,
-                    'Modification',
-                    package.modification,
-                  ),
-                  _buildPackageDetail(
-                    Icons.airline_seat_recline_normal,
-                    'Seat',
-                    package.seat,
-                  ),
-                  _buildPackageDetail(
-                    Icons.restaurant,
-                    'Meal',
-                    package.meal,
-                  ),
-                  if (package.refundPrice != null) _buildRefundBox(package),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildPackageDetail(
+                  Icons.airline_seat_recline_normal,
+                  'Cabin',
+                  package.cabinName,
+                ),
+                _buildPackageDetail(
+                  Icons.luggage,
+                  'Baggage',
+                  '${package.baggageAllowance.pieces} pieces',
+                ),
+                _buildPackageDetail(
+                  Icons.restaurant,
+                  'Meal',
+                  package.mealCode == 'M' ? 'Meal Included' : 'No Meal',
+                ),
+                _buildPackageDetail(
+                  Icons.event_seat,
+                  'Seats Available',
+                  package.seatsAvailable.toString(),
+                ),
+                _buildPackageDetail(
+                  Icons.currency_exchange,
+                  'Refundable',
+                  package.isNonRefundable ? 'Non-Refundable' : 'Refundable',
+                ),
+              ],
             ),
           ),
-          // ElevatedButton(
-          //   onPressed: () {
-          //     if(Flight Package){
-          //
-          //     }
-          //     Get.to(() => const ReviewTripPage());
-          //   },
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: TColors.primary,
-          //     fixedSize: const Size(double.infinity, 40),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(48),
-          //     ),
-          //   ),
-          //   child: const Text(
-          //     'Select Package',
-          //     style: TextStyle(
-          //       fontSize: 16,
-          //       fontWeight: FontWeight.bold,
-          //       color: TColors.background,
-          //     ),
-          //   ),
-          // ),
-          ElevatedButton(
-            onPressed: () {
-              print(isAnyFlightRemaining);
-              if (flightController.currentScenario.value == FlightScenario.oneWay || !isAnyFlightRemaining) {
-                // For one-way or first flight selection
-                if(flightController.currentScenario.value !=FlightScenario.oneWay){
-                  Get.to(() => const ReviewTripPage(isMulti: true,));
-                }else{
-                  Get.to(() => const ReviewTripPage(isMulti: false,));
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton(
+              onPressed: () {
+                if (flightController.currentScenario.value == FlightScenario.oneWay ||
+                    !isAnyFlightRemaining) {
+                  Get.to(() => const ReviewTripPage(isMulti: false));
+                } else {
+                  flightController.isSelectingFirstFlight.value = false;
+                  Get.back();
                 }
-
-              } else {
-                // For return flight, go back to select second flight
-                flightController.isSelectingFirstFlight.value = false;
-                Get.back(); // Go back to flight selection
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: TColors.primary,
-              fixedSize: const Size(double.infinity, 40),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(48),
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TColors.primary,
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
-            ),
-            child: Text(
-              isAnyFlightRemaining ? 'Select Return Package' : 'Select Package',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: TColors.background,
+              child: Text(
+                isAnyFlightRemaining ? 'Select Return Package' : 'Select Package',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: TColors.background,
+                ),
               ),
             ),
           ),
@@ -355,54 +321,6 @@ class PackageSelectionDialog extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRefundBox(FlightPackage package) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: TColors.secondary.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: TColors.primary.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.security, color: TColors.primary),
-              SizedBox(width: 8),
-              Text(
-                'SastayHotels Refund',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: TColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'PKR ${package.refundPrice}',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: TColors.text,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Modify or cancel your trip for free before departure.',
-            style: TextStyle(
-              fontSize: 12,
-              color: TColors.grey,
             ),
           ),
         ],

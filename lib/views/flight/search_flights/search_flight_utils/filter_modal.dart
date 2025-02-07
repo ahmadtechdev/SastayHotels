@@ -1,5 +1,7 @@
 // 1. First, let's update the Flight model to match the API response
 
+import '../flight_package/package_modal.dart';
+
 class Flight {
   final String imgPath;
   final String airline;
@@ -20,6 +22,7 @@ class Flight {
   final String aircraftType;
   final List<TaxDesc> taxes;
   final BaggageAllowance baggageAllowance;
+  final List<FlightPackageInfo> packages;
 
   Flight({
     required this.imgPath,
@@ -41,9 +44,10 @@ class Flight {
     required this.aircraftType,
     required this.taxes,
     required this.baggageAllowance,
+    required this.packages,
   });
 
-  factory Flight.fromApiResponse(Map<String, dynamic> schedule, Map<String, dynamic> fareInfo) {
+  factory Flight.fromApiResponse(Map<String, dynamic> schedule, Map<String, dynamic> fareInfo, List<dynamic> pkgInfo) {
     try {
       final departure = schedule['departure'] as Map<String, dynamic>;
       final arrival = schedule['arrival'] as Map<String, dynamic>;
@@ -65,6 +69,16 @@ class Flight {
       final totalFare = (fareInfo['totalFare'] as Map<String, dynamic>?)?.cast<String, dynamic>();
       final totalPrice = totalFare?['totalPrice'] ?? 0.0;
 
+      // Parse packages from pricingInformation array
+      List<FlightPackageInfo> packages = [];
+      print(pkgInfo);
+      for (var pricing in pkgInfo) {
+        if (pricing['fare'] != null) {
+          packages.add(FlightPackageInfo.fromApiResponse(pricing['fare']));
+        }
+      }
+
+
       return Flight(
         imgPath: airlineInfo.logoPath,
         airline: airlineInfo.name,
@@ -85,6 +99,7 @@ class Flight {
         aircraftType: (carrier['equipment'] as Map<String, dynamic>?)?.cast<String, dynamic>()['code']?.toString() ?? 'Unknown',
         taxes: parseTaxes(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['taxes'] ?? []),
         baggageAllowance: parseBaggageAllowance(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['baggageInformation'] ?? []),
+        packages: packages,
       );
     } catch (e, stackTrace) {
       print('Error creating Flight object: $e');
