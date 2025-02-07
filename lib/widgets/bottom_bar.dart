@@ -2,10 +2,9 @@ import 'package:flight_bocking/home_search/home.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import '../views/support.dart';
 import 'colors.dart';
-import '../menu.dart';
-
-import '../support.dart';
+import '../views/menu.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;

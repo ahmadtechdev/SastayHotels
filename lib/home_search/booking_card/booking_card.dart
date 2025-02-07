@@ -1,10 +1,12 @@
-import 'package:flight_bocking/home_search/search_tour/tour.dart';
-import 'package:flight_bocking/home_search/searchcars/searchcars.dart';
+
 import 'package:flutter/material.dart';
 
+import '../../views/cars/search_cars/search_cars.dart';
 import '../../views/flight/form/flight_form.dart';
+import '../../views/hotel/hotel/hotel_form.dart';
+import '../../views/tour/search_tour/tour_form.dart';
 import '../../widgets/colors.dart';
-import 'forms/hotel/hotel_form.dart';
+
 
 import 'type_selector/type_selector.dart';
 
@@ -54,7 +56,7 @@ class _BookingCardState extends State<BookingCard> {
               // Show the relevant form based on the selected type
               if (selectedType == 'Flights') FlightForm(),
               if (selectedType == 'Hotels') HotelForm(),
-              if (selectedType == 'Tours') const ToursPage(),
+              if (selectedType == 'Tours') const ToursForm(),
               if (selectedType == 'Cars') const SearchCars(),
             ],
           ),

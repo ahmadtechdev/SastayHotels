@@ -5,7 +5,7 @@ import '../../../../../widgets/custom_textfield.dart';
 import '../../../../../widgets/date_selection.dart';
 import '../../../../../widgets/snackbar.dart';
 
-import '../../../home_search/search_flights/search_flights.dart';
+import '../search_flights/search_flights.dart';
 import 'controllers/flight_search_controller.dart';
 
 import 'controllers/flight_date_controller.dart';

@@ -1,12 +1,9 @@
 import 'package:flight_bocking/home_search/home.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
-
-import 'home_search/booking_card/forms/hotel/guests/guests_controller.dart';
-import 'home_search/booking_card/forms/hotel/hotel_date_controller.dart';
-import 'home_search/search_hotels/search_hotel_controller.dart';
+import 'views/hotel/hotel/guests/guests_controller.dart';
+import 'views/hotel/hotel/hotel_date_controller.dart';
+import 'views/hotel/search_hotels/search_hotel_controller.dart';
 import 'widgets/colors.dart';
 
 void main() {

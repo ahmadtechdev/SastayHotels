@@ -3,8 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../home_search/booking_card/forms/hotel/guests/guests_controller.dart';
-import '../home_search/search_hotels/search_hotel_controller.dart';
+import '../views/hotel/hotel/guests/guests_controller.dart';
+import '../views/hotel/search_hotels/search_hotel_controller.dart';
+
 
 class ApiServiceHotel extends GetxService {
   late final Dio dio;
@@ -329,7 +330,7 @@ class ApiServiceHotel extends GetxService {
         print('Error message: ${response.statusMessage}');
         return false;
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       print('\n=== BOOKING ERROR ===');
       print('DioError Type: ${e.type}');
       print('Error Message: ${e.message}');

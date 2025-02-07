@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -240,7 +239,7 @@ class ApiServiceFlight extends GetxService {
   /// Helper function to print large JSON data in readable format
   void _printJsonPretty(dynamic jsonData) {
     const int chunkSize = 1000;
-    final jsonString = JsonEncoder.withIndent('  ').convert(jsonData);
+    final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
     for (int i = 0; i < jsonString.length; i += chunkSize) {
       print(jsonString.substring(i, i + chunkSize > jsonString.length ? jsonString.length : i + chunkSize));
     }
