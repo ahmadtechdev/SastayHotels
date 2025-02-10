@@ -24,6 +24,7 @@ class Flight {
   final BaggageAllowance baggageAllowance;
   final List<FlightPackageInfo> packages;
 
+
   Flight({
     required this.imgPath,
     required this.airline,
@@ -170,7 +171,7 @@ class TaxDesc {
   });
 }
 
-class BaggageAllowance {
+class BaggageAllowance  {
   final int pieces;
   final String type;
 
@@ -197,6 +198,66 @@ AirlineInfo getAirlineInfo(String code) {
   return airlineMap[code] ?? AirlineInfo('Unknown Airline', 'assets/img/logos/pia.png');
 }
 
+
+class PriceInfo {
+  final double totalPrice;
+  final double totalTaxAmount;
+  final String currency;
+  final double baseFareAmount;
+  final String baseFareCurrency;
+  final double constructionAmount;
+  final String constructionCurrency;
+  final double equivalentAmount;
+  final String equivalentCurrency;
+
+  PriceInfo({
+    required this.totalPrice,
+    required this.totalTaxAmount,
+    required this.currency,
+    required this.baseFareAmount,
+    required this.baseFareCurrency,
+    required this.constructionAmount,
+    required this.constructionCurrency,
+    required this.equivalentAmount,
+    required this.equivalentCurrency,
+  });
+
+  factory PriceInfo.fromApiResponse(Map<String, dynamic> fareInfo) {
+    final totalFare = fareInfo['totalFare'] as Map<String, dynamic>;
+    return PriceInfo(
+      totalPrice: (totalFare['totalPrice'] is int)
+          ? totalFare['totalPrice'].toDouble()
+          : totalFare['totalPrice'] as double,
+      totalTaxAmount: (totalFare['totalTaxAmount'] is int)
+          ? totalFare['totalTaxAmount'].toDouble()
+          : totalFare['totalTaxAmount'] as double,
+      currency: totalFare['currency'] as String,
+      baseFareAmount: (totalFare['baseFareAmount'] is int)
+          ? totalFare['baseFareAmount'].toDouble()
+          : totalFare['baseFareAmount'] as double,
+      baseFareCurrency: totalFare['baseFareCurrency'] as String,
+      constructionAmount: (totalFare['constructionAmount'] is int)
+          ? totalFare['constructionAmount'].toDouble()
+          : totalFare['constructionAmount'] as double,
+      constructionCurrency: totalFare['constructionCurrency'] as String,
+      equivalentAmount: (totalFare['equivalentAmount'] is int)
+          ? totalFare['equivalentAmount'].toDouble()
+          : totalFare['equivalentAmount'] as double,
+      equivalentCurrency: totalFare['equivalentCurrency'] as String,
+    );
+  }
+
+  double getPriceInCurrency(String targetCurrency) {
+    switch (targetCurrency) {
+      case 'PKR':
+        return equivalentCurrency == 'PKR' ? equivalentAmount : totalPrice;
+      case 'USD':
+        return baseFareCurrency == 'USD' ? baseFareAmount : totalPrice;
+      default:
+        return totalPrice;
+    }
+  }
+}
 
 //
 // // Update FlightController to parse API response

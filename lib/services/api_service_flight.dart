@@ -35,7 +35,7 @@ class ApiServiceFlight extends GetxService {
     await prefs.setString(_tokenExpiryKey, expiryTime.toIso8601String());
   }
 
-  Future<String?> _getValidToken() async {
+  Future<String?> getValidToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(_tokenKey);
     final expiryTimeStr = prefs.getString(_tokenExpiryKey);
@@ -89,7 +89,7 @@ class ApiServiceFlight extends GetxService {
   }) async {
     try {
       print('Fetching token...');
-      final token = await _getValidToken() ?? await generateToken();
+      final token = await getValidToken() ?? await generateToken();
       print('Token received.');
 
       final originArray = origin.split(',');
@@ -242,6 +242,127 @@ class ApiServiceFlight extends GetxService {
     final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
     for (int i = 0; i < jsonString.length; i += chunkSize) {
       print(jsonString.substring(i, i + chunkSize > jsonString.length ? jsonString.length : i + chunkSize));
+    }
+  }
+
+  Future<Map<String, dynamic>> checkFlightPackageAvailability({
+    required String token,
+    required String origin,
+    required String destination,
+    required String departureDateTime,
+    required String returnDateTime,
+    required String cabinClass,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+    required List<Map<String, dynamic>> flights,
+  }) async {
+    try {
+      final requestBody = {
+        "OTA_AirLowFareSearchRQ": {
+          "Version": "4",
+          "TravelPreferences": {
+            "LookForAlternatives": false,
+            "TPA_Extensions": {
+              "VerificationItinCallLogic": {
+                "AlwaysCheckAvailability": true,
+                "Value": "B"
+              }
+            }
+          },
+          "TravelerInfoSummary": {
+            "SeatsRequested": [adultCount + childCount + infantCount],
+            "AirTravelerAvail": [
+              {
+                "PassengerTypeQuantity": [
+                  if (adultCount > 0)
+                    {"Code": "ADT", "Quantity": adultCount, "TPA_Extensions": {}},
+                  if (childCount > 0)
+                    {"Code": "CHD", "Quantity": childCount, "TPA_Extensions": {}},
+                  if (infantCount > 0)
+                    {"Code": "INF", "Quantity": infantCount, "TPA_Extensions": {}},
+                ]
+              }
+            ],
+            "PriceRequestInformation": {
+              "TPA_Extensions": {
+                "BrandedFareIndicators": {
+                  "MultipleBrandedFares": true,
+                  "ReturnBrandAncillaries": true
+                }
+              }
+            }
+          },
+          "POS": {
+            "Source": [
+              {
+                "PseudoCityCode": "6MD8",
+                "RequestorID": {
+                  "Type": "1",
+                  "ID": "1",
+                  "CompanyName": {"Code": "TN"}
+                }
+              }
+            ]
+          },
+          "OriginDestinationInformation": [
+            {
+              "RPH": "1",
+              "DepartureDateTime": departureDateTime,
+              "OriginLocation": {"LocationCode": origin},
+              "DestinationLocation": {"LocationCode": destination},
+              "TPA_Extensions": {
+                "Flight": flights,
+                "SegmentType": {"Code": "O"}
+              }
+            },
+            if (returnDateTime.isNotEmpty)
+              {
+                "RPH": "2",
+                "DepartureDateTime": returnDateTime,
+                "OriginLocation": {"LocationCode": destination},
+                "DestinationLocation": {"LocationCode": origin},
+                "TPA_Extensions": {
+                  "Flight": flights,
+                  "SegmentType": {"Code": "O"}
+                }
+              }
+          ],
+          "TPA_Extensions": {
+            "IntelliSellTransaction": {
+              "RequestType": {"Name": "50ITINS"}
+            }
+          }
+        }
+      };
+
+      // Print request body (formatted)
+      print('Request Body:');
+      _printJsonPretty(requestBody);
+
+      final response = await dio.post(
+        '/v4/shop/flights/revalidate',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: requestBody,
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        print('Response Data:');
+        _printJsonPretty(response.data);
+        return response.data;
+      } else {
+        throw Exception('Failed to check flight package availability: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in checkFlightPackageAvailability: $e');
+      throw Exception('Error checking flight package availability: $e');
     }
   }
 }

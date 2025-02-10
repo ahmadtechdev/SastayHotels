@@ -6,7 +6,6 @@ import '../../search_flights/search_flights.dart';
 import 'flight_date_controller.dart';
 import '../travelers/traveler_controller.dart';
 
-
 class FlightSearchController extends GetxController {
   final apiServiceFlight = Get.put(ApiServiceFlight());
   final travelersController = Get.put(TravelersController());

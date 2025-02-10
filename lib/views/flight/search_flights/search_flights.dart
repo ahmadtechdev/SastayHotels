@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../widgets/colors.dart';
 import '../../../home_search/home.dart';
@@ -61,13 +62,42 @@ class ReturnCaseScenario extends StatelessWidget {
 }
 
 class FlightBookingPage extends StatelessWidget {
-  final FlightScenario scenario; // Parameter to check the search type
+  final FlightScenario scenario;
   final FlightController controller = Get.put(FlightController());
 
-
   FlightBookingPage({super.key, required this.scenario}) {
-    // Set the scenario when page is created
     controller.setScenario(scenario);
+  }
+
+  String _formatDate(String dateTimeStr) {
+    try {
+      // First, handle if it's just a time string (HH:mm)
+      if (dateTimeStr.contains(':') && !dateTimeStr.contains('-')) {
+        final timeParts = dateTimeStr.split(':');
+        if (timeParts.length == 2) {
+          final hour = int.tryParse(timeParts[0]);
+          final minute = int.tryParse(timeParts[1]);
+          if (hour != null && minute != null) {
+            final time = TimeOfDay(hour: hour, minute: minute);
+            // Convert to 12-hour format
+            final hourLabel = time.hour > 12 ? time.hour - 12 : time.hour;
+            final period = time.hour >= 12 ? 'PM' : 'AM';
+            return '${hourLabel.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period';
+          }
+        }
+        return dateTimeStr; // Return original if parsing fails
+      }
+
+      // Try parsing ISO format (assuming API returns ISO format)
+      final DateTime dateTime = DateTime.parse(dateTimeStr);
+
+      // Format date as "dd MMM" (e.g., "20 Dec")
+      final DateFormat formatter = DateFormat('dd MMM');
+      return formatter.format(dateTime);
+    } catch (e) {
+      print('Error formatting date: $e');
+      return dateTimeStr; // Return original string if parsing fails
+    }
   }
 
   @override
@@ -78,71 +108,80 @@ class FlightBookingPage extends StatelessWidget {
         surfaceTintColor: TColors.background,
         backgroundColor: TColors.background,
         leading: const BackButton(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Text(
-                  'Karachi ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: TColors.text,
-                    fontWeight: FontWeight.bold,
+        title: Obx(() {
+          // Get the first flight to extract route information
+          final firstFlight = controller.flights.isEmpty ? null : controller.flights[0];
+
+          if (firstFlight == null) {
+            return const CircularProgressIndicator();
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '${firstFlight.departureCity} ',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: TColors.text,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.swap_horiz,
-                  size: 20,
-                  color: TColors.text,
-                ),
-                Text(
-                  ' Islamabad',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: TColors.text,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                const Text(
-                  '20 Dec - 25 Dec',
-                  style: TextStyle(
-                    fontSize: 14,
+                  const Icon(
+                    Icons.swap_horiz,
+                    size: 20,
                     color: TColors.text,
                   ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () {
-                    Get.off(() => const HomeScreen());
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: TColors.text,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Change',
-                        style: TextStyle(
-                          fontSize: 14,
+                  Text(
+                    ' ${firstFlight.arrivalCity}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: TColors.text,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text(
+                    '${_formatDate(firstFlight.departureTime)}${scenario == FlightScenario.returnFlight ? ' - ${_formatDate(firstFlight.arrivalTime)}' : ''}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: TColors.text,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Get.off(() => const HomeScreen());
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.edit,
+                          size: 16,
                           color: TColors.text,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 4),
+                        Text(
+                          'Change',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: TColors.text,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                ],
+              ),
+            ],
+          );
+        }),
         actions: [
           GetX<FlightController>(
             builder: (controller) => TextButton(
@@ -166,13 +205,9 @@ class FlightBookingPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Conditionally show return case scenario only for return flights
-          Obx(() {
-            if (controller.currentScenario.value == FlightScenario.returnFlight) {
-              return _buildReturnCaseScenario();
-            }
-            return const SizedBox.shrink();
-          }),
+          // Note: Since API returns combined data, we might want to remove or modify this section
+          // Keeping it for UI consistency but it won't affect the actual flight selection
+          if (scenario == FlightScenario.returnFlight) _buildReturnCaseScenario(),
           _buildFilterSection(),
           _buildFlightList(),
         ],
@@ -181,26 +216,31 @@ class FlightBookingPage extends StatelessWidget {
   }
 
   Widget _buildReturnCaseScenario() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ReturnCaseScenario(
-            stepNumber: '1',
-            stepText: 'Karachi to Islamabad',
-            isActive: controller.isSelectingFirstFlight.value,
-          ),
-          ReturnCaseScenario(
-            stepNumber: '2',
-            stepText: 'Islamabad to Karachi',
-            isActive: !controller.isSelectingFirstFlight.value,
-          ),
-        ],
-      ),
-    );
+    return Obx(() {
+      if (controller.flights.isEmpty) return const SizedBox.shrink();
+
+      final firstFlight = controller.flights[0];
+      return Container(
+        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        color: Colors.white,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            ReturnCaseScenario(
+              stepNumber: '1',
+              stepText: '${firstFlight.departureCity} to ${firstFlight.arrivalCity}',
+              isActive: controller.isSelectingFirstFlight.value,
+            ),
+            ReturnCaseScenario(
+              stepNumber: '2',
+              stepText: '${firstFlight.arrivalCity} to ${firstFlight.departureCity}',
+              isActive: !controller.isSelectingFirstFlight.value,
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildFilterSection() {
