@@ -300,7 +300,7 @@ class FlightController extends GetxController {
   }
 }
 
-// Update FlightController to parse API response with better error handling
+
 extension FlightControllerExtension on FlightController {
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
@@ -333,9 +333,9 @@ extension FlightControllerExtension on FlightController {
 
       // Process each itinerary group
       for (var group in groupedResponse['itineraryGroups'] as List) {
+
         final groupDesc = group['groupDescription'];
         final legDescriptions = groupDesc['legDescriptions'] as List;
-        final isRoundTrip = legDescriptions.length > 1;
 
         // Process each itinerary within the group
         for (var itinerary in group['itineraries'] as List) {
@@ -345,65 +345,106 @@ extension FlightControllerExtension on FlightController {
           if (pricingInfo.isEmpty) continue;
           final fareInfo = pricingInfo[0]['fare'];
 
-          // For return flights, collect both outbound and inbound schedules
-          if (isRoundTrip && legs.length == 2) {
-            final outboundLegId = legs[0]['ref'] as int;
-            final inboundLegId = legs[1]['ref'] as int;
-
-            final outboundLegDesc = legDescsMap[outboundLegId];
-            final inboundLegDesc = legDescsMap[inboundLegId];
-
-            if (outboundLegDesc != null && inboundLegDesc != null) {
-              final outboundSchedules = outboundLegDesc['schedules'] as List;
-              final inboundSchedules = inboundLegDesc['schedules'] as List;
-
-              if (outboundSchedules.isNotEmpty && inboundSchedules.isNotEmpty) {
-                final outboundScheduleRef = outboundSchedules[0]['ref'] as int;
-                final inboundScheduleRef = inboundSchedules[0]['ref'] as int;
-
-                final outboundSchedule = scheduleDescsMap[outboundScheduleRef];
-                final inboundSchedule = scheduleDescsMap[inboundScheduleRef];
-
-                if (outboundSchedule != null && inboundSchedule != null) {
-                  try {
-                    // Create a single flight object containing both legs
-                    final flight = Flight.fromApiResponse(
-                        outboundSchedule,
-                        fareInfo,
-                        pricingInfo
-                    );
-                    parsedFlights.add(flight);
-                  } catch (e) {
-                    print('Error parsing return flight: $e');
-                    continue;
-                  }
-                }
-              }
-            }
-          } else {
-            // Handle one-way flights as before
-            final legId = legs[0]['ref'] as int;
+          for (var leg in legs) {
+            final legId = leg['ref'] as int;
             final legDesc = legDescsMap[legId];
 
             if (legDesc != null) {
               final schedules = legDesc['schedules'] as List;
-              if (schedules.isNotEmpty) {
-                final scheduleRef = schedules[0]['ref'] as int;
-                final schedule = scheduleDescsMap[scheduleRef];
+              if (schedules.isEmpty) continue;
 
+              // Get all schedules for this leg to track stops
+              List<Map<String, dynamic>> stopSchedules = [];
+              for (var scheduleRef in schedules) {
+                final schedule = scheduleDescsMap[scheduleRef['ref']];
                 if (schedule != null) {
-                  try {
-                    final flight = Flight.fromApiResponse(
-                        schedule,
-                        fareInfo,
-                        pricingInfo
-                    );
-                    parsedFlights.add(flight);
-                  } catch (e) {
-                    print('Error parsing one-way flight: $e');
-                    continue;
+                  stopSchedules.add(schedule);
+                }
+              }
+
+              if (stopSchedules.isEmpty) continue;
+              //
+              // // Sort schedules by departure time
+              // stopSchedules.sort((a, b) {
+              //   return a['departure']['time'].compareTo(b['departure']['time']);
+              // });
+
+              // Get first and last schedule for origin and destination
+              final firstSchedule = stopSchedules.first;
+              final lastSchedule = stopSchedules.last;
+
+              print("asdds");
+              print(firstSchedule);
+              print(lastSchedule);
+              print(stopSchedules);
+
+              // Calculate stops
+              List<String> stops = [];
+              if (stopSchedules.length > 1) {
+                for (int i = 0; i < stopSchedules.length - 1; i++) {
+                  String? city = stopSchedules[i]['arrival']?['city']; // Safe lookup
+                  if (city != null) {
+                    stops.add(city);
+                  } else {
+                    stops.add("Unknown City"); // Provide a default value
                   }
                 }
+              }
+
+
+              print(stops);
+
+              // Calculate total duration from first departure to last arrival
+              final totalDuration = legDesc['elapsedTime'];
+
+              // Get carrier info from first schedule
+              final carrier = firstSchedule['carrier'];
+              final airlineCode = carrier['marketing'] as String? ?? 'Unknown';
+              final airlineInfo = getAirlineInfo(airlineCode);
+
+              try {
+                final flight = Flight(
+                  imgPath: airlineInfo.logoPath,
+                  airline: airlineInfo.name,
+                  flightNumber: '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
+                  departureTime: firstSchedule['departure']['time'].split('+')[0],
+                  arrivalTime: lastSchedule['arrival']['time'].split('+')[0],
+                  duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
+                  price: fareInfo['totalFare']['totalPrice'].toDouble(),
+                  from: '${firstSchedule['departure']['city']} (${firstSchedule['departure']['airport']})',
+                  to: '${lastSchedule['arrival']['city']} (${lastSchedule['arrival']['airport']})',
+                  type: getFareType(fareInfo),
+                  isRefundable: !((fareInfo['passengerInfoList'] as List?)?.first?['passengerInfo']?['nonRefundable'] ?? true),
+                  isNonStop: stopSchedules.length == 1,
+                  departureTerminal: firstSchedule['departure']['terminal']?.toString() ?? 'Main',
+                  arrivalTerminal: lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
+                  departureCity: firstSchedule['departure']['city']?.toString() ?? 'Unknown',
+                  arrivalCity: lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
+                  aircraftType: carrier['equipment']['code'].toString(),
+                  taxes: parseTaxes(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['taxes'] ?? []),
+                  baggageAllowance: parseBaggageAllowance(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['baggageInformation'] ?? []),
+                  packages: [],
+                  stops: stops,  // Add stops information
+                  stopSchedules: stopSchedules.map((schedule) => {
+                    'departure': {
+                      'city': schedule['departure']['city'],
+                      'airport': schedule['departure']['airport'],
+                      'time': schedule['departure']['time'],
+                      'terminal': schedule['departure']['terminal'],
+                    },
+                    'arrival': {
+                      'city': schedule['arrival']['city'],
+                      'airport': schedule['arrival']['airport'],
+                      'time': schedule['arrival']['time'],
+                      'terminal': schedule['arrival']['terminal'],
+                    },
+                  }).toList(),
+                );
+
+                parsedFlights.add(flight);
+              } catch (e) {
+                print('Error parsing flight: $e');
+                continue;
               }
             }
           }
@@ -411,8 +452,6 @@ extension FlightControllerExtension on FlightController {
       }
 
       print('Successfully parsed ${parsedFlights.length} unique flights');
-
-      // Update the flights in the controller
       flights.value = parsedFlights;
       filteredFlights.value = parsedFlights;
 
@@ -428,4 +467,134 @@ extension FlightControllerExtension on FlightController {
     }
   }
 }
+
+
+// Update FlightController to parse API response with better error handling
+// extension FlightControllerExtension on FlightController {
+//   void parseApiResponse(Map<String, dynamic>? response) {
+//     try {
+//       if (response == null || response['groupedItineraryResponse'] == null) {
+//         print('Error: Invalid API response structure');
+//         flights.value = [];
+//         filteredFlights.value = [];
+//         return;
+//       }
+//
+//       final groupedResponse = response['groupedItineraryResponse'];
+//
+//       // Cache all schedule descriptions for quick lookup
+//       final scheduleDescsMap = <int, Map<String, dynamic>>{};
+//       if (groupedResponse['scheduleDescs'] != null) {
+//         for (var schedule in groupedResponse['scheduleDescs'] as List) {
+//           scheduleDescsMap[schedule['id'] as int] = schedule as Map<String, dynamic>;
+//         }
+//       }
+//
+//       // Cache all leg descriptions for quick lookup
+//       final legDescsMap = <int, Map<String, dynamic>>{};
+//       if (groupedResponse['legDescs'] != null) {
+//         for (var leg in groupedResponse['legDescs'] as List) {
+//           legDescsMap[leg['id'] as int] = leg as Map<String, dynamic>;
+//         }
+//       }
+//
+//       final List<Flight> parsedFlights = [];
+//
+//       // Process each itinerary group
+//       for (var group in groupedResponse['itineraryGroups'] as List) {
+//         final groupDesc = group['groupDescription'];
+//         final legDescriptions = groupDesc['legDescriptions'] as List;
+//         final isRoundTrip = legDescriptions.length > 1;
+//
+//         // Process each itinerary within the group
+//         for (var itinerary in group['itineraries'] as List) {
+//           final legs = itinerary['legs'] as List;
+//           final pricingInfo = itinerary['pricingInformation'] as List;
+//
+//           if (pricingInfo.isEmpty) continue;
+//           final fareInfo = pricingInfo[0]['fare'];
+//
+//           // For return flights, collect both outbound and inbound schedules
+//           if (isRoundTrip && legs.length == 2) {
+//             final outboundLegId = legs[0]['ref'] as int;
+//             final inboundLegId = legs[1]['ref'] as int;
+//
+//             final outboundLegDesc = legDescsMap[outboundLegId];
+//             final inboundLegDesc = legDescsMap[inboundLegId];
+//
+//             if (outboundLegDesc != null && inboundLegDesc != null) {
+//               final outboundSchedules = outboundLegDesc['schedules'] as List;
+//               final inboundSchedules = inboundLegDesc['schedules'] as List;
+//
+//               if (outboundSchedules.isNotEmpty && inboundSchedules.isNotEmpty) {
+//                 final outboundScheduleRef = outboundSchedules[0]['ref'] as int;
+//                 final inboundScheduleRef = inboundSchedules[0]['ref'] as int;
+//
+//                 final outboundSchedule = scheduleDescsMap[outboundScheduleRef];
+//                 final inboundSchedule = scheduleDescsMap[inboundScheduleRef];
+//
+//                 if (outboundSchedule != null && inboundSchedule != null) {
+//                   try {
+//                     // Create a single flight object containing both legs
+//                     final flight = Flight.fromApiResponse(
+//                         outboundSchedule,
+//                         fareInfo,
+//                         pricingInfo
+//                     );
+//                     parsedFlights.add(flight);
+//                   } catch (e) {
+//                     print('Error parsing return flight: $e');
+//                     continue;
+//                   }
+//                 }
+//               }
+//             }
+//           } else {
+//             // Handle one-way flights as before
+//             final legId = legs[0]['ref'] as int;
+//             final legDesc = legDescsMap[legId];
+//
+//             if (legDesc != null) {
+//               final schedules = legDesc['schedules'] as List;
+//               if (schedules.isNotEmpty) {
+//                 final scheduleRef = schedules[0]['ref'] as int;
+//                 final schedule = scheduleDescsMap[scheduleRef];
+//
+//                 if (schedule != null) {
+//                   try {
+//                     final flight = Flight.fromApiResponse(
+//                         schedule,
+//                         fareInfo,
+//                         pricingInfo
+//                     );
+//                     parsedFlights.add(flight);
+//                   } catch (e) {
+//                     print('Error parsing one-way flight: $e');
+//                     continue;
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//
+//       print('Successfully parsed ${parsedFlights.length} unique flights');
+//
+//       // Update the flights in the controller
+//       flights.value = parsedFlights;
+//       filteredFlights.value = parsedFlights;
+//
+//       if (parsedFlights.isNotEmpty) {
+//         initializeFilterRanges();
+//       }
+//
+//     } catch (e, stackTrace) {
+//       print('Error parsing API response: $e');
+//       print('Stack trace: $stackTrace');
+//       flights.value = [];
+//       filteredFlights.value = [];
+//     }
+//   }
+// }
 

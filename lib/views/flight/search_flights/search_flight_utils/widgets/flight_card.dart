@@ -101,6 +101,22 @@ class FlightCard extends StatelessWidget {
                           color: TColors.grey,
                         ),
                       )
+                    else
+                      Text(
+                        '${flight.stops.length} ${flight.stops.length == 1 ? 'stop' : 'stops'}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: TColors.grey,
+                        ),
+                      ),
+                    if (flight.stops.isNotEmpty)
+                      Text(
+                        'via ${flight.stops.join(', ')}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: TColors.grey,
+                        ),
+                      ),
                   ],
                 ),
                 Column(

@@ -23,6 +23,8 @@ class Flight {
   final List<TaxDesc> taxes;
   final BaggageAllowance baggageAllowance;
   final List<FlightPackageInfo> packages;
+  final List<String> stops;  // New field
+  final List<Map<String, dynamic>> stopSchedules;
 
 
   Flight({
@@ -46,6 +48,8 @@ class Flight {
     required this.taxes,
     required this.baggageAllowance,
     required this.packages,
+    this.stops = const [],  // New field with default value
+    this.stopSchedules = const [],
   });
 
   factory Flight.fromApiResponse(Map<String, dynamic> schedule, Map<String, dynamic> fareInfo, List<dynamic> pkgInfo) {
@@ -108,6 +112,14 @@ class Flight {
       rethrow;
     }
   }
+}
+extension FlightExtension on Flight {
+  String get classOfService => 'Y'; // Default to economy, modify based on your data
+  String get flightNumber => '123'; // Get from your flight data
+  String get departureDateTime => '${departureTime}:00'; // Format properly
+  String get arrivalDateTime => '${arrivalTime}:00'; // Format properly
+  String get operatingCarrier => airline.substring(0, 2); // First 2 chars of airline code
+  String get marketingCarrier => airline.substring(0, 2); // First 2 chars of airline code
 }
 
 String getFareType(Map<String, dynamic> fareInfo) {

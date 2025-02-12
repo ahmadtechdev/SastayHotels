@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../../services/api_service_flight.dart';
 import '../../../../widgets/colors.dart';
 
+import '../../form/controllers/flight_date_controller.dart';
+import '../../form/travelers/traveler_controller.dart';
 import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
 import '../search_flight_utils/flight_controller.dart';
@@ -22,6 +24,8 @@ class PackageSelectionDialog extends StatelessWidget {
 
   final PageController _pageController = PageController(viewportFraction: 0.9);
   final flightController = Get.find<FlightController>();
+  final flightDateController = Get.find<FlightDateController>();
+  final travelersController = Get.find<TravelersController>();
 
   @override
   Widget build(BuildContext context) {
@@ -403,48 +407,99 @@ class PackageSelectionDialog extends StatelessWidget {
       final apiService = ApiServiceFlight();
       final token = await apiService.getValidToken() ?? await apiService.generateToken();
 
+      // Get origin and destination from the selected flight
+      final origin = flight.from;
+      final destination = flight.to;
+
+      // Clean location codes - remove any spaces and brackets
+      String cleanValue(String value) {
+        return value.split('(').first.trim().toUpperCase();
+      }
+
+      final cleanOrigin = cleanValue(origin);
+      final cleanDestination = cleanValue(destination);
+
+      // Get dates from the flight date controller
+      final departureDate = _formatDateTime(flightDateController.departureDate.value);
+      final returnDate = flightDateController.tripType.value == 'Return'
+          ? _formatDateTime(flightDateController.returnDate.value)
+          : '';
+
+      // Get passenger counts from travelers controller
+      final adultCount = travelersController.adultCount.value;
+      final childCount = travelersController.childrenCount.value;
+      final infantCount = travelersController.infantCount.value;
+
+      // Get cabin class from travelers controller
+      final cabinClass = travelersController.travelClass.value;
+
+      // Create flight segments based on the selected flight
+      final List<Map<String, dynamic>> flightSegments = [];
+
+      // Add outbound flight segment
+      flightSegments.add({
+        "ClassOfService": flight.classOfService,
+        "Number": flight.flightNumber,
+        "DepartureDateTime": flight.departureDateTime,
+        "ArrivalDateTime": flight.arrivalDateTime,
+        "Type": "A",
+        "OriginLocation": {"LocationCode": cleanOrigin},
+        "DestinationLocation": {"LocationCode": cleanDestination},
+        "Airline": {
+          "Operating": flight.operatingCarrier,
+          "Marketing": flight.marketingCarrier
+        }
+      });
+
+      // If it's a return flight and we're checking the second flight
+      if (!isAnyFlightRemaining && flightController.selectedFirstFlight.value != null) {
+        final firstFlight = flightController.selectedFirstFlight.value!;
+        flightSegments.add({
+          "ClassOfService": firstFlight.classOfService,
+          "Number": firstFlight.flightNumber,
+          "DepartureDateTime": firstFlight.departureDateTime,
+          "ArrivalDateTime": firstFlight.arrivalDateTime,
+          "Type": "A",
+          "OriginLocation": {"LocationCode": destination},
+          "DestinationLocation": {"LocationCode": origin},
+          "Airline": {
+            "Operating": firstFlight.operatingCarrier,
+            "Marketing": firstFlight.marketingCarrier
+          }
+        });
+      }
+
       final availabilityResponse = await apiService.checkFlightPackageAvailability(
         token: token,
-        origin: 'LHE',
-        destination: 'KHI',
-        departureDateTime: '2025-04-15T23:40:00',
-        returnDateTime: '2025-04-25T13:20:00',
-        cabinClass: 'Economy',
-        adultCount: 1,
-        childCount: 0,
-        infantCount: 0,
-        flights: [
-          {
-            "ClassOfService": "L",
-            "Number": 346,
-            "DepartureDateTime": "2025-04-15T23:40:00",
-            "ArrivalDateTime": "2025-04-15T06:10:00",
-            "Type": "A",
-            "OriginLocation": {"LocationCode": "LHE"},
-            "DestinationLocation": {"LocationCode": "BKK"},
-            "Airline": {"Operating": "TG", "Marketing": "TG"}
-          },
-          {
-            "ClassOfService": "L",
-            "Number": 415,
-            "DepartureDateTime": "2025-04-16T09:05:00",
-            "ArrivalDateTime": "2025-04-16T12:15:00",
-            "Type": "A",
-            "OriginLocation": {"LocationCode": "BKK"},
-            "DestinationLocation": {"LocationCode": "KUL"},
-            "Airline": {"Operating": "TG", "Marketing": "TG"}
-          }
-        ],
+        origin: origin,
+        destination: destination,
+        departureDateTime: departureDate,
+        returnDateTime: returnDate,
+        cabinClass: cabinClass,
+        adultCount: adultCount,
+        childCount: childCount,
+        infantCount: infantCount,
+        flights: flightSegments,
       );
 
-      // Handle the availability response
       if (availabilityResponse != null) {
-        // Proceed to the next step (e.g., booking)
+        // Handle successful availability check
+        // You might want to update the UI or proceed with booking
+        print('Package availability confirmed');
       }
     } catch (e) {
-      // Handle errors
       print('Error checking flight package availability: $e');
+      // Show error message to user
+      Get.snackbar(
+        'Error',
+        'Unable to check package availability. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
+  }
+
+  String _formatDateTime(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T00:00:01';
   }
 
   Widget _buildPackageDetail(IconData icon, String title, String value) {

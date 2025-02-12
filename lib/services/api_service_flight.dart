@@ -258,76 +258,105 @@ class ApiServiceFlight extends GetxService {
     required List<Map<String, dynamic>> flights,
   }) async {
     try {
+      // Clean location codes - remove any spaces and brackets
+      String cleanValue(String value) {
+        return value.split('(').first.trim().toUpperCase();
+      }
+
+      final cleanOrigin = cleanValue(origin);
+      final cleanDestination = cleanValue(destination);
+
+      // Create passenger type quantities
+      List<Map<String, dynamic>> passengerTypes = [];
+      if (adultCount > 0) {
+        passengerTypes.add({
+          "Code": "ADT",
+          "Quantity": adultCount,
+        });
+      }
+      if (childCount > 0) {
+        passengerTypes.add({
+          "Code": "CHD",
+          "Quantity": childCount,
+        });
+      }
+      if (infantCount > 0) {
+        passengerTypes.add({
+          "Code": "INF",
+          "Quantity": infantCount,
+        });
+      }
+
+      // Create origin destination information
+      List<Map<String, dynamic>> originDestInfo = [];
+
+      // Add outbound flight
+      originDestInfo.add({
+        "RPH": "1",
+        "DepartureDateTime": departureDateTime,
+        "OriginLocation": {"LocationCode": cleanOrigin},
+        "DestinationLocation": {"LocationCode": cleanDestination},
+        "TPA_Extensions": {
+          "SegmentType": {"Code": "O"},
+          "Flight": [flights.first] // Add only the outbound flight
+        }
+      });
+
+      // Add return flight if it exists
+      if (returnDateTime.isNotEmpty && flights.length > 1) {
+        originDestInfo.add({
+          "RPH": "2",
+          "DepartureDateTime": returnDateTime,
+          "OriginLocation": {"LocationCode": cleanDestination},
+          "DestinationLocation": {"LocationCode": cleanOrigin},
+          "TPA_Extensions": {
+            "SegmentType": {"Code": "O"},
+            "Flight": [flights.last] // Add only the return flight
+          }
+        });
+      }
+
       final requestBody = {
         "OTA_AirLowFareSearchRQ": {
-          "Version": "4",
+          "Version": "4.3.0",
+          "POS": {
+            "Source": [{
+              "PseudoCityCode": "6MD8",
+              "RequestorID": {
+                "Type": "1",
+                "ID": "1",
+                "CompanyName": {"Code": "TN"}
+              }
+            }]
+          },
+          "OriginDestinationInformation": originDestInfo,
           "TravelPreferences": {
-            "LookForAlternatives": false,
+            "ValidInterlineTicket": true,
+            "CabinPref": [{
+              "Cabin": _mapCabinClass(cabinClass),
+              "PreferLevel": "Preferred"
+            }],
             "TPA_Extensions": {
-              "VerificationItinCallLogic": {
-                "AlwaysCheckAvailability": true,
-                "Value": "B"
+              "TripType": {
+                "Value": returnDateTime.isNotEmpty ? "Return" : "OneWay"
               }
             }
           },
           "TravelerInfoSummary": {
             "SeatsRequested": [adultCount + childCount + infantCount],
-            "AirTravelerAvail": [
-              {
-                "PassengerTypeQuantity": [
-                  if (adultCount > 0)
-                    {"Code": "ADT", "Quantity": adultCount, "TPA_Extensions": {}},
-                  if (childCount > 0)
-                    {"Code": "CHD", "Quantity": childCount, "TPA_Extensions": {}},
-                  if (infantCount > 0)
-                    {"Code": "INF", "Quantity": infantCount, "TPA_Extensions": {}},
-                ]
-              }
-            ],
+            "AirTravelerAvail": [{
+              "PassengerTypeQuantity": passengerTypes
+            }],
             "PriceRequestInformation": {
               "TPA_Extensions": {
                 "BrandedFareIndicators": {
                   "MultipleBrandedFares": true,
-                  "ReturnBrandAncillaries": true
+                  "ReturnBrandAncillaries": true,
+                  "UpsellLimit": 4
                 }
               }
             }
           },
-          "POS": {
-            "Source": [
-              {
-                "PseudoCityCode": "6MD8",
-                "RequestorID": {
-                  "Type": "1",
-                  "ID": "1",
-                  "CompanyName": {"Code": "TN"}
-                }
-              }
-            ]
-          },
-          "OriginDestinationInformation": [
-            {
-              "RPH": "1",
-              "DepartureDateTime": departureDateTime,
-              "OriginLocation": {"LocationCode": origin},
-              "DestinationLocation": {"LocationCode": destination},
-              "TPA_Extensions": {
-                "Flight": flights,
-                "SegmentType": {"Code": "O"}
-              }
-            },
-            if (returnDateTime.isNotEmpty)
-              {
-                "RPH": "2",
-                "DepartureDateTime": returnDateTime,
-                "OriginLocation": {"LocationCode": destination},
-                "DestinationLocation": {"LocationCode": origin},
-                "TPA_Extensions": {
-                  "Flight": flights,
-                  "SegmentType": {"Code": "O"}
-                }
-              }
-          ],
           "TPA_Extensions": {
             "IntelliSellTransaction": {
               "RequestType": {"Name": "50ITINS"}
@@ -336,7 +365,6 @@ class ApiServiceFlight extends GetxService {
         }
       };
 
-      // Print request body (formatted)
       print('Request Body:');
       _printJsonPretty(requestBody);
 
@@ -351,18 +379,18 @@ class ApiServiceFlight extends GetxService {
         data: requestBody,
       );
 
-      print('Response Status Code: ${response.statusCode}');
-
       if (response.statusCode == 200) {
-        print('Response Data:');
+        print('Success Response:');
         _printJsonPretty(response.data);
         return response.data;
       } else {
-        throw Exception('Failed to check flight package availability: ${response.statusCode}');
+        print('Error Response:');
+        _printJsonPretty(response.data);
+        throw Exception('Failed to check flight package availability: ${response.statusCode}\nResponse: ${response.data}');
       }
     } catch (e) {
       print('Error in checkFlightPackageAvailability: $e');
-      throw Exception('Error checking flight package availability: $e');
+      rethrow;
     }
   }
 }
