@@ -25,6 +25,8 @@ class Flight {
   final List<FlightPackageInfo> packages;
   final List<String> stops;  // New field
   final List<Map<String, dynamic>> stopSchedules;
+  final int legElapsedTime;  // Total elapsed time from the leg
+
 
 
   Flight({
@@ -50,6 +52,8 @@ class Flight {
     required this.packages,
     this.stops = const [],  // New field with default value
     this.stopSchedules = const [],
+    this.legElapsedTime = 0,
+    
   });
 
   factory Flight.fromApiResponse(Map<String, dynamic> schedule, Map<String, dynamic> fareInfo, List<dynamic> pkgInfo) {
