@@ -25,7 +25,9 @@ class Flight {
   final List<FlightPackageInfo> packages;
   final List<String> stops;  // New field
   final List<Map<String, dynamic>> stopSchedules;
-  final int legElapsedTime;  // Total elapsed time from the leg
+  final int? legElapsedTime;  // Total elapsed time from the leg
+  final String cabinClass;
+  final String mealCode;
 
 
 
@@ -53,6 +55,8 @@ class Flight {
     this.stops = const [],  // New field with default value
     this.stopSchedules = const [],
     this.legElapsedTime = 0,
+    required this.cabinClass,
+    required this.mealCode,
     
   });
 
@@ -109,6 +113,9 @@ class Flight {
         taxes: parseTaxes(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['taxes'] ?? []),
         baggageAllowance: parseBaggageAllowance(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['baggageInformation'] ?? []),
         packages: packages,
+        cabinClass: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
+        mealCode: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
+
       );
     } catch (e, stackTrace) {
       print('Error creating Flight object: $e');

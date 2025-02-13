@@ -425,6 +425,7 @@ extension FlightControllerExtension on FlightController {
                   baggageAllowance: parseBaggageAllowance(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['baggageInformation'] ?? []),
                   packages: [],
                   stops: stops,  // Add stops information
+                  legElapsedTime: legDesc['elapsedTime'] as int?, // Add this property
                   stopSchedules: stopSchedules.map((schedule) => {
                     'departure': {
                       'city': schedule['departure']['city'],
@@ -438,7 +439,11 @@ extension FlightControllerExtension on FlightController {
                       'time': schedule['arrival']['time'],
                       'terminal': schedule['arrival']['terminal'],
                     },
+                    'elapsedTime': schedule['elapsedTime'] as int?, // Add this property
                   }).toList(),
+                  cabinClass: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
+                  mealCode: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
+
                 );
 
                 parsedFlights.add(flight);

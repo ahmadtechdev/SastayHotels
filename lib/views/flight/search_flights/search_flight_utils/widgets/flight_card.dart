@@ -61,22 +61,54 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
     return '${hours}h ${minutes}m';
   }
 
-  // Get meal information for a specific schedule
-  String getMealInfo(Map<String, dynamic> schedule) {
-    final mealCode = schedule['mealService'] as String? ?? 'Standard';
+// Add this utility function to translate cabin codes
+  String getCabinClassName(String cabinCode) {
+    switch (cabinCode) {
+      case 'F':
+        return 'First Class';
+      case 'C':
+        return 'Business Class';
+      case 'Y':
+        return 'Economy Class';
+      case 'W':
+        return 'Premium Economy';
+      default:
+        return 'Economy Class';
+    }
+  }
+
+// Add this utility function for meal codes
+  String getMealInfo(String mealCode) {
     switch (mealCode.toUpperCase()) {
+      case 'P':
+        return 'Alcoholic beverages for purchase';
+      case 'C':
+        return 'Complimentary alcoholic beverages';
       case 'B':
         return 'Breakfast';
-      case 'L':
-        return 'Lunch';
+      case 'K':
+        return 'Continental breakfast';
       case 'D':
         return 'Dinner';
+      case 'F':
+        return 'Food for purchase';
+      case 'G':
+        return 'Food/Beverages for purchase';
+      case 'M':
+        return 'Meal';
+      case 'N':
+        return 'No meal service';
+      case 'R':
+        return 'Complimentary refreshments';
+      case 'V':
+        return 'Refreshments for purchase';
       case 'S':
         return 'Snack';
       default:
-        return 'Standard Meal';
+        return 'No Meal';
     }
   }
+
 
   // Format baggage information
   String formatBaggageInfo() {
@@ -379,6 +411,21 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
   }
 
   Widget _buildFlightSegment(Map<String, dynamic> schedule, int index, int totalSegments) {
+    // Calculate layover time if there's a next segment
+    String? layoverTime;
+    if (index < totalSegments - 1) {
+      final currentArrival = DateTime.parse("1970-01-01T${schedule['arrival']['time']}");
+      final nextDeparture = DateTime.parse("1970-01-01T${widget.flight.stopSchedules[index + 1]['departure']['time']}");
+
+
+
+      final difference = nextDeparture.difference(currentArrival);
+      final hours = difference.inHours;
+      final minutes = difference.inMinutes % 60;
+
+      layoverTime = '${hours}h ${minutes}m';
+    }
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -392,6 +439,23 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Add Cabin Class information
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: TColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              getCabinClassName(widget.flight.cabinClass),
+              style: TextStyle(
+                color: TColors.primary,
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          SizedBox(height: 12),
           Row(
             children: [
               Icon(Icons.flight_takeoff, size: 16, color: TColors.primary),
@@ -419,7 +483,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['departure']['time'],
+                      schedule['departure']['time'].split('+')[0],
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -428,9 +492,28 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
               Column(
                 children: [
                   Icon(Icons.flight, color: TColors.primary),
-                  Text(
-                    getMealInfo(schedule),
-                    style: TextStyle(fontSize: 12, color: Colors.green),
+                  // Updated meal information display
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.restaurant_menu, size: 12, color: Colors.green),
+                        SizedBox(width: 4),
+                        Text(
+                          getMealInfo(widget.flight.mealCode),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -447,7 +530,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['arrival']['time'],
+                      schedule['arrival']['time'].split('+')[0],
                       style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -455,6 +538,33 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
               ),
             ],
           ),
+          // Show layover time if there's a next segment
+          if (layoverTime != null) ...[
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                  SizedBox(width: 4),
+                  Text(
+                    'Layover: $layoverTime',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
