@@ -166,16 +166,49 @@ List<TaxDesc> parseTaxes(List<dynamic> taxes) {
 BaggageAllowance parseBaggageAllowance(List<dynamic> baggageInfo) {
   try {
     if (baggageInfo.isEmpty) {
-      return BaggageAllowance(pieces: 0, type: 'None');
+      return BaggageAllowance(
+          pieces: 0,
+          weight: 0,
+          unit: '',
+          type: 'Check airline policy'
+      );
     }
 
+    // Check if we have weight-based allowance
+    if (baggageInfo[0]?['allowance']?['weight'] != null) {
+      return BaggageAllowance(
+          pieces: 0,
+          weight: (baggageInfo[0]['allowance']['weight'] as num).toDouble(),
+          unit: baggageInfo[0]['allowance']['unit'] ?? 'KG',
+          type: '${baggageInfo[0]['allowance']['weight']} ${baggageInfo[0]['allowance']['unit'] ?? 'KG'}'
+      );
+    }
+
+    // Check if we have piece-based allowance
+    if (baggageInfo[0]?['allowance']?['pieceCount'] != null) {
+      return BaggageAllowance(
+          pieces: baggageInfo[0]['allowance']['pieceCount'] as int,
+          weight: 0,
+          unit: 'PC',
+          type: '${baggageInfo[0]['allowance']['pieceCount']} PC'
+      );
+    }
+
+    // Default case
     return BaggageAllowance(
-      pieces: baggageInfo[0]?['allowance']?['pieceCount'] as int? ?? 0,
-      type: baggageInfo[0]?['provisionType']?.toString() ?? 'None',
+        pieces: 0,
+        weight: 0,
+        unit: '',
+        type: 'Check airline policy'
     );
   } catch (e) {
     print('Error parsing baggage allowance: $e');
-    return BaggageAllowance(pieces: 0, type: 'None');
+    return BaggageAllowance(
+        pieces: 0,
+        weight: 0,
+        unit: '',
+        type: 'Check airline policy'
+    );
   }
 }
 
@@ -194,12 +227,16 @@ class TaxDesc {
   });
 }
 
-class BaggageAllowance  {
+class BaggageAllowance {
   final int pieces;
+  final double weight;
+  final String unit;
   final String type;
 
   BaggageAllowance({
     required this.pieces,
+    required this.weight,
+    required this.unit,
     required this.type,
   });
 }

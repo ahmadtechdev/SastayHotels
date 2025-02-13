@@ -313,6 +313,14 @@ extension FlightControllerExtension on FlightController {
 
       final groupedResponse = response['groupedItineraryResponse'];
 
+      // Create a map of baggage allowance descriptions for quick lookup
+      final baggageAllowanceDescsMap = <int, Map<String, dynamic>>{};
+      if (groupedResponse['baggageAllowanceDescs'] != null) {
+        for (var baggage in groupedResponse['baggageAllowanceDescs'] as List) {
+          baggageAllowanceDescsMap[baggage['id'] as int] = baggage;
+        }
+      }
+
       // Cache all schedule descriptions for quick lookup
       final scheduleDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['scheduleDescs'] != null) {
@@ -333,7 +341,6 @@ extension FlightControllerExtension on FlightController {
 
       // Process each itinerary group
       for (var group in groupedResponse['itineraryGroups'] as List) {
-
         final groupDesc = group['groupDescription'];
         final legDescriptions = groupDesc['legDescriptions'] as List;
 
@@ -344,6 +351,12 @@ extension FlightControllerExtension on FlightController {
 
           if (pricingInfo.isEmpty) continue;
           final fareInfo = pricingInfo[0]['fare'];
+
+          // Parse baggage information with the new logic
+          BaggageAllowance baggageAllowance = _parseBaggageAllowance(
+              fareInfo['passengerInfoList'][0]['passengerInfo']['baggageInformation'] as List,
+              baggageAllowanceDescsMap
+          );
 
           for (var leg in legs) {
             final legId = leg['ref'] as int;
@@ -363,36 +376,18 @@ extension FlightControllerExtension on FlightController {
               }
 
               if (stopSchedules.isEmpty) continue;
-              //
-              // // Sort schedules by departure time
-              // stopSchedules.sort((a, b) {
-              //   return a['departure']['time'].compareTo(b['departure']['time']);
-              // });
 
               // Get first and last schedule for origin and destination
               final firstSchedule = stopSchedules.first;
               final lastSchedule = stopSchedules.last;
 
-              print("asdds");
-              print(firstSchedule);
-              print(lastSchedule);
-              print(stopSchedules);
-
               // Calculate stops
               List<String> stops = [];
               if (stopSchedules.length > 1) {
                 for (int i = 0; i < stopSchedules.length - 1; i++) {
-                  String? city = stopSchedules[i]['arrival']?['city']; // Safe lookup
-                  if (city != null) {
-                    stops.add(city);
-                  } else {
-                    stops.add("Unknown City"); // Provide a default value
-                  }
+                  stops.add(stopSchedules[i]['arrival']['city'] ?? "Unknown City");
                 }
               }
-
-
-              print(stops);
 
               // Calculate total duration from first departure to last arrival
               final totalDuration = legDesc['elapsedTime'];
@@ -404,6 +399,7 @@ extension FlightControllerExtension on FlightController {
 
               try {
                 final flight = Flight(
+                  // ... (previous flight properties remain the same)
                   imgPath: airlineInfo.logoPath,
                   airline: airlineInfo.name,
                   flightNumber: '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
@@ -422,10 +418,10 @@ extension FlightControllerExtension on FlightController {
                   arrivalCity: lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
                   aircraftType: carrier['equipment']['code'].toString(),
                   taxes: parseTaxes(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['taxes'] ?? []),
-                  baggageAllowance: parseBaggageAllowance(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['baggageInformation'] ?? []),
+                  baggageAllowance: baggageAllowance,
                   packages: [],
-                  stops: stops,  // Add stops information
-                  legElapsedTime: legDesc['elapsedTime'] as int?, // Add this property
+                  stops: stops,
+                  legElapsedTime: legDesc['elapsedTime'] as int?,
                   stopSchedules: stopSchedules.map((schedule) => {
                     'departure': {
                       'city': schedule['departure']['city'],
@@ -439,11 +435,10 @@ extension FlightControllerExtension on FlightController {
                       'time': schedule['arrival']['time'],
                       'terminal': schedule['arrival']['terminal'],
                     },
-                    'elapsedTime': schedule['elapsedTime'] as int?, // Add this property
+                    'elapsedTime': schedule['elapsedTime'] as int?,
                   }).toList(),
                   cabinClass: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
                   mealCode: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
-
                 );
 
                 parsedFlights.add(flight);
@@ -470,6 +465,49 @@ extension FlightControllerExtension on FlightController {
       flights.value = [];
       filteredFlights.value = [];
     }
+  }
+
+  // New helper method to parse baggage allowance
+  BaggageAllowance _parseBaggageAllowance(
+      List baggageInformation,
+      Map<int, Map<String, dynamic>> baggageAllowanceDescsMap
+      ) {
+    try {
+      for (var baggageInfo in baggageInformation) {
+        if (baggageInfo['allowance'] != null && baggageInfo['allowance']['ref'] != null) {
+          final baggageRef = baggageInfo['allowance']['ref'] as int;
+          final baggageDesc = baggageAllowanceDescsMap[baggageRef];
+
+          if (baggageDesc != null) {
+            if (baggageDesc.containsKey('weight')) {
+              return BaggageAllowance(
+                  pieces: 0,
+                  weight: (baggageDesc['weight'] as num).toDouble(),
+                  unit: baggageDesc['unit'] as String,
+                  type: '${baggageDesc['weight']} ${baggageDesc['unit']}'
+              );
+            } else if (baggageDesc.containsKey('pieceCount')) {
+              return BaggageAllowance(
+                  pieces: baggageDesc['pieceCount'] as int,
+                  weight: 0,
+                  unit: 'PC',
+                  type: '${baggageDesc['pieceCount']} PC'
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing baggage allowance: $e');
+    }
+
+    // Default return if no valid baggage information is found
+    return BaggageAllowance(
+        pieces: 0,
+        weight: 0,
+        unit: '',
+        type: 'Check airline policy'
+    );
   }
 }
 

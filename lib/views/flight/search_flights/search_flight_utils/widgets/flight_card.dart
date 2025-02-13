@@ -112,10 +112,15 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
 
   // Format baggage information
   String formatBaggageInfo() {
+    print("baggage check");
+    print(widget.flight.baggageAllowance.pieces );
+    print(widget.flight.baggageAllowance.weight );
     if (widget.flight.baggageAllowance.pieces > 0) {
-      return '${widget.flight.baggageAllowance.pieces} piece(s) - ${widget.flight.baggageAllowance.type}';
+      return '${widget.flight.baggageAllowance.pieces} piece(s) included';
+    } else if (widget.flight.baggageAllowance.weight > 0) {
+      return '${widget.flight.baggageAllowance.weight} ${widget.flight.baggageAllowance.unit} included';
     }
-    return 'Check airline policy';
+    return widget.flight.baggageAllowance.type;
   }
 
   @override
@@ -337,7 +342,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                 children: [
                   Row(
                     children: [
-                      Text(
+                      const Text(
                         'Flight Details',
                         style: TextStyle(
                           color: TColors.primary,
@@ -347,7 +352,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                       AnimatedRotation(
                         duration: const Duration(milliseconds: 300),
                         turns: isExpanded ? 0.5 : 0,
-                        child: Icon(
+                        child: const Icon(
                           Icons.keyboard_arrow_down,
                           color: TColors.primary,
                         ),
@@ -397,7 +402,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
 
                   // Fare Rules
                   _buildSectionCard(
-                    title: 'Fare Rules',
+                    title: 'Policy',
                     content: _buildFareRules(),
                     icon: Icons.rule,
                   ),
