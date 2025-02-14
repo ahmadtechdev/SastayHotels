@@ -7,8 +7,13 @@ import '../flight_controller.dart';
 
 class FlightCard extends StatefulWidget {
   final Flight flight;
+  final bool showReturnFlight;
 
-  const FlightCard({super.key, required this.flight});
+  const FlightCard({
+    super.key,
+    required this.flight,
+    this.showReturnFlight = true,
+  });
 
   @override
   State<FlightCard> createState() => _FlightCardState();
@@ -112,9 +117,9 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
 
   // Format baggage information
   String formatBaggageInfo() {
-    print("baggage check");
-    print(widget.flight.baggageAllowance.pieces );
-    print(widget.flight.baggageAllowance.weight );
+    // print("baggage check");
+    // print(widget.flight.baggageAllowance.pieces );
+    // print(widget.flight.baggageAllowance.weight );
     if (widget.flight.baggageAllowance.pieces > 0) {
       return '${widget.flight.baggageAllowance.pieces} piece(s) included';
     } else if (widget.flight.baggageAllowance.weight > 0) {
@@ -432,7 +437,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
     }
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -446,32 +451,32 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
         children: [
           // Add Cabin Class information
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: TColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               getCabinClassName(widget.flight.cabinClass),
-              style: TextStyle(
+              style: const TextStyle(
                 color: TColors.primary,
                 fontWeight: FontWeight.w500,
                 fontSize: 12,
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.flight_takeoff, size: 16, color: TColors.primary),
-              SizedBox(width: 8),
+              const Icon(Icons.flight_takeoff, size: 16, color: TColors.primary),
+              const SizedBox(width: 8),
               Text(
                 'Flight Segment ${index + 1}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -481,25 +486,25 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                   children: [
                     Text(
                       schedule['departure']['city'],
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
                       'Terminal ${schedule['departure']['terminal'] ?? "Main"}',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
                       schedule['departure']['time'].split('+')[0],
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
               ),
               Column(
                 children: [
-                  Icon(Icons.flight, color: TColors.primary),
+                  const Icon(Icons.flight, color: TColors.primary),
                   // Updated meal information display
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -507,11 +512,11 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.restaurant_menu, size: 12, color: Colors.green),
-                        SizedBox(width: 4),
+                        const Icon(Icons.restaurant_menu, size: 12, color: Colors.green),
+                        const SizedBox(width: 4),
                         Text(
                           getMealInfo(widget.flight.mealCode),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.green,
                             fontWeight: FontWeight.w500,
@@ -528,15 +533,15 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                   children: [
                     Text(
                       schedule['arrival']['city'],
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
                       'Terminal ${schedule['arrival']['terminal'] ?? "Main"}',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
                       schedule['arrival']['time'].split('+')[0],
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -545,9 +550,9 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
           ),
           // Show layover time if there's a next segment
           if (layoverTime != null) ...[
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Container(
-              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -557,7 +562,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     'Layover: $layoverTime',
                     style: TextStyle(
@@ -581,7 +586,7 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
     required IconData icon,
   }) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.grey[300]!),
@@ -593,14 +598,14 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
           Row(
             children: [
               Icon(icon, size: 16, color: TColors.primary),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             content,
             style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -620,119 +625,3 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
 • Check-in baggage as per policy''';
   }
 }
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: TColors.grey,
-              fontSize: 14,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPolicy(String title, String description, String fee) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            description,
-            style: const TextStyle(
-              color: TColors.grey,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Fee: $fee',
-            style: const TextStyle(
-              color: TColors.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStopDetail(Map<String, dynamic> stop) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${stop['arrival']['city']} (${stop['arrival']['airport']})',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Arrival: ${stop['arrival']['time']}',
-                style: const TextStyle(fontSize: 12),
-              ),
-              Text(
-                'Terminal: ${stop['arrival']['terminal'] ?? 'Main'}',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Departure: ${stop['departure']['time']}',
-                style: const TextStyle(fontSize: 12),
-              ),
-              Text(
-                'Terminal: ${stop['departure']['terminal'] ?? 'Main'}',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }

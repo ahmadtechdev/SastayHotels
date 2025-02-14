@@ -28,6 +28,18 @@ class Flight {
   final int? legElapsedTime;  // Total elapsed time from the leg
   final String cabinClass;
   final String mealCode;
+  final Flight? returnFlight; // For storing return flight information
+  final bool isReturn; // To identify if this is a return flight
+  final String? groupId; // To group related flights together
+  // New Fields for Round-Trip Support
+  final String? returnDepartureTime;
+  final String? returnArrivalTime;
+  final String? returnFrom;
+  final String? returnTo;
+  final bool isRoundTrip;
+  final List<Flight>? connectedFlights; // For storing related flights in multi-city
+  final int? tripSequence; // To track order in multi-city trips
+  final String? tripType; // "oneWay", "return", "multiCity"
 
 
 
@@ -57,10 +69,100 @@ class Flight {
     this.legElapsedTime = 0,
     required this.cabinClass,
     required this.mealCode,
-    
+    this.returnFlight,
+    this.isReturn = false,
+    this.groupId,
+    // Initialize new fields
+    this.returnDepartureTime,
+    this.returnArrivalTime,
+    this.returnFrom,
+    this.returnTo,
+    this.isRoundTrip = false,
+    this.connectedFlights,
+    this.tripSequence,
+    this.tripType,
+
   });
 
-  factory Flight.fromApiResponse(Map<String, dynamic> schedule, Map<String, dynamic> fareInfo, List<dynamic> pkgInfo) {
+  // Add helper method to combine flights
+  static Flight combineFlights(List<Flight> flights, String type) {
+    final firstFlight = flights.first;
+    final lastFlight = flights.last;
+
+    return Flight(
+      imgPath: firstFlight.imgPath,
+      airline: flights.map((f) => f.airline).toSet().join(' + '),
+      flightNumber: flights.map((f) => f.flightNumber).join(', '),
+      departureTime: firstFlight.departureTime,
+      arrivalTime: lastFlight.arrivalTime,
+      duration: _calculateTotalDuration(flights),
+      price: flights.fold(0.0, (sum, f) => sum + f.price),
+      from: firstFlight.from,
+      to: lastFlight.to,
+      type: firstFlight.type,
+      isRefundable: flights.every((f) => f.isRefundable),
+      isNonStop: false,
+      departureTerminal: firstFlight.departureTerminal,
+      arrivalTerminal: lastFlight.arrivalTerminal,
+      departureCity: firstFlight.departureCity,
+      arrivalCity: lastFlight.arrivalCity,
+      aircraftType: flights.map((f) => f.aircraftType).join(', '),
+      taxes: _combineTaxes(flights),
+      baggageAllowance: firstFlight.baggageAllowance,
+      packages: firstFlight.packages,
+      connectedFlights: flights,
+      tripType: type,
+      stops: _combineStops(flights), cabinClass: '', mealCode: '',
+    );
+  }
+
+  static String _calculateTotalDuration(List<Flight> flights) {
+    int totalMinutes = 0;
+    for (var flight in flights) {
+      final parts = flight.duration.split('h ');
+      final hours = int.parse(parts[0]);
+      final minutes = int.parse(parts[1].replaceAll('m', ''));
+      totalMinutes += hours * 60 + minutes;
+    }
+    return '${totalMinutes ~/ 60}h ${totalMinutes % 60}m';
+  }
+
+  static List<TaxDesc> _combineTaxes(List<Flight> flights) {
+    final Map<String, TaxDesc> combinedTaxes = {};
+    for (var flight in flights) {
+      for (var tax in flight.taxes) {
+        if (combinedTaxes.containsKey(tax.code)) {
+          combinedTaxes[tax.code] = TaxDesc(
+            code: tax.code,
+            amount: combinedTaxes[tax.code]!.amount + tax.amount,
+            currency: tax.currency,
+            description: tax.description,
+          );
+        } else {
+          combinedTaxes[tax.code] = tax;
+        }
+      }
+    }
+    return combinedTaxes.values.toList();
+  }
+
+  static List<String> _combineStops(List<Flight> flights) {
+    List<String> allStops = [];
+    for (var flight in flights) {
+      allStops.addAll(flight.stops);
+    }
+    return allStops;
+  }
+
+  factory Flight.fromApiResponse( Map<String, dynamic> schedule,
+  Map<String, dynamic> fareInfo,
+  List<dynamic> pkgInfo, {
+  Flight? returnFlight,
+  bool isReturn = false,
+  String? groupId,
+  List<Flight>? connectedFlights,
+  int? tripSequence,
+  String? tripType,}) {
     try {
       final departure = schedule['departure'] as Map<String, dynamic>;
       final arrival = schedule['arrival'] as Map<String, dynamic>;
@@ -115,8 +217,14 @@ class Flight {
         packages: packages,
         cabinClass: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
         mealCode: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
-
+        returnFlight: returnFlight,
+        isReturn: isReturn,
+        groupId: groupId,
+        connectedFlights: connectedFlights,
+        tripSequence: tripSequence,
+  tripType: tripType,
       );
+
     } catch (e, stackTrace) {
       print('Error creating Flight object: $e');
       print('Stack trace: $stackTrace');
@@ -124,14 +232,16 @@ class Flight {
     }
   }
 }
-extension FlightExtension on Flight {
-  String get classOfService => 'Y'; // Default to economy, modify based on your data
-  String get flightNumber => '123'; // Get from your flight data
-  String get departureDateTime => '${departureTime}:00'; // Format properly
-  String get arrivalDateTime => '${arrivalTime}:00'; // Format properly
-  String get operatingCarrier => airline.substring(0, 2); // First 2 chars of airline code
-  String get marketingCarrier => airline.substring(0, 2); // First 2 chars of airline code
-}
+
+
+// extension FlightExtension on Flight {
+//   String get classOfService => 'Y'; // Default to economy, modify based on your data
+//   String get flightNumber => '123'; // Get from your flight data
+//   String get departureDateTime => '$departureTime:00'; // Format properly
+//   String get arrivalDateTime => '$arrivalTime:00'; // Format properly
+//   String get operatingCarrier => airline.substring(0, 2); // First 2 chars of airline code
+//   String get marketingCarrier => airline.substring(0, 2); // First 2 chars of airline code
+// }
 
 String getFareType(Map<String, dynamic> fareInfo) {
   try {
@@ -318,6 +428,8 @@ class PriceInfo {
     }
   }
 }
+
+
 
 //
 // // Update FlightController to parse API response

@@ -437,36 +437,36 @@ class PackageSelectionDialog extends StatelessWidget {
       final List<Map<String, dynamic>> flightSegments = [];
 
       // Add outbound flight segment
-      flightSegments.add({
-        "ClassOfService": flight.classOfService,
-        "Number": flight.flightNumber,
-        "DepartureDateTime": flight.departureDateTime,
-        "ArrivalDateTime": flight.arrivalDateTime,
-        "Type": "A",
-        "OriginLocation": {"LocationCode": cleanOrigin},
-        "DestinationLocation": {"LocationCode": cleanDestination},
-        "Airline": {
-          "Operating": flight.operatingCarrier,
-          "Marketing": flight.marketingCarrier
-        }
-      });
+      // flightSegments.add({
+      //   "ClassOfService": flight.classOfService,
+      //   "Number": flight.flightNumber,
+      //   "DepartureDateTime": flight.departureDateTime,
+      //   "ArrivalDateTime": flight.arrivalDateTime,
+      //   "Type": "A",
+      //   "OriginLocation": {"LocationCode": cleanOrigin},
+      //   "DestinationLocation": {"LocationCode": cleanDestination},
+      //   "Airline": {
+      //     "Operating": flight.operatingCarrier,
+      //     "Marketing": flight.marketingCarrier
+      //   }
+      // });
 
       // If it's a return flight and we're checking the second flight
       if (!isAnyFlightRemaining && flightController.selectedFirstFlight.value != null) {
         final firstFlight = flightController.selectedFirstFlight.value!;
-        flightSegments.add({
-          "ClassOfService": firstFlight.classOfService,
-          "Number": firstFlight.flightNumber,
-          "DepartureDateTime": firstFlight.departureDateTime,
-          "ArrivalDateTime": firstFlight.arrivalDateTime,
-          "Type": "A",
-          "OriginLocation": {"LocationCode": destination},
-          "DestinationLocation": {"LocationCode": origin},
-          "Airline": {
-            "Operating": firstFlight.operatingCarrier,
-            "Marketing": firstFlight.marketingCarrier
-          }
-        });
+        // flightSegments.add({
+        //   "ClassOfService": firstFlight.classOfService,
+        //   "Number": firstFlight.flightNumber,
+        //   "DepartureDateTime": firstFlight.departureDateTime,
+        //   "ArrivalDateTime": firstFlight.arrivalDateTime,
+        //   "Type": "A",
+        //   "OriginLocation": {"LocationCode": destination},
+        //   "DestinationLocation": {"LocationCode": origin},
+        //   "Airline": {
+        //     "Operating": firstFlight.operatingCarrier,
+        //     "Marketing": firstFlight.marketingCarrier
+        //   }
+        // });
       }
 
       final availabilityResponse = await apiService.checkFlightPackageAvailability(
