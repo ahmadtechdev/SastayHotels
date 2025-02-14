@@ -62,11 +62,11 @@ class FlightDateController extends GetxController {
 
   // Add new flight for multi-city
   void addFlight() {
-    if (flights.length < 4) {
-      flights.add({
-        'date': DateTime.now().add(Duration(days: flights.length)),
-      });
-    }
+    flights.add({
+      'date': DateTime.now(),
+      'origin': '',
+      'destination': '',
+    });
   }
 
   // Remove flight from multi-city

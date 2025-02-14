@@ -76,6 +76,7 @@ class ApiServiceFlight extends GetxService {
     }
   }
 
+
   Future<Map<String, dynamic>> searchFlights({
     required int type,
     required String origin,
@@ -102,6 +103,7 @@ class ApiServiceFlight extends GetxService {
       List<Map<String, dynamic>> passengers = [];
 
       if (type == 0) {
+        // One-way trip
         originDestinations.add({
           "RPH": "1",
           "DepartureDateTime": "${depDateArray[1]}T00:00:01",
@@ -109,6 +111,7 @@ class ApiServiceFlight extends GetxService {
           "DestinationLocation": {"LocationCode": destinationArray[1].toUpperCase()}
         });
       } else if (type == 1) {
+        // Return trip
         originDestinations.addAll([
           {
             "RPH": "1",
@@ -123,6 +126,19 @@ class ApiServiceFlight extends GetxService {
             "DestinationLocation": {"LocationCode": originArray[1].toUpperCase()}
           }
         ]);
+      } else if (type == 2) {
+        // Multi-city trip
+        // Skip the first empty element in the arrays (due to leading comma)
+        for (int i = 1; i < depDateArray.length; i++) {
+          if (i <originArray.length && i < destinationArray.length) {
+            originDestinations.add({
+              "RPH": "$i",
+              "DepartureDateTime": "${depDateArray[i]}T00:00:01",
+              "OriginLocation": {"LocationCode": originArray[i].toUpperCase()},
+              "DestinationLocation": {"LocationCode": destinationArray[i].toUpperCase()}
+            });
+          }
+        }
       }
 
       if (adult > 0) passengers.add({"Code": "ADT", "Quantity": adult});
@@ -179,7 +195,7 @@ class ApiServiceFlight extends GetxService {
                 }
               },
               "TripType": {
-                "Value": type == 1 ? "Return" : "OneWay"
+                "Value": type == 1 ? "Return" : (type == 2 ? "Other" : "OneWay")
               }
             },
             "MaxStopsQuantity": stop
@@ -235,6 +251,7 @@ class ApiServiceFlight extends GetxService {
       throw Exception('Error searching flights: $e');
     }
   }
+
 
   /// Helper function to print large JSON data in readable format
   void _printJsonPretty(dynamic jsonData) {

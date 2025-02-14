@@ -10,7 +10,7 @@ import 'search_flight_utils/widgets/currency_dialog.dart';
 import 'search_flight_utils/widgets/flight_bottom_sheet.dart';
 import 'search_flight_utils/widgets/flight_card.dart';
 
-enum FlightScenario { oneWay, returnFlight }
+enum FlightScenario { oneWay, returnFlight, multiCity }
 
 class ReturnCaseScenario extends StatelessWidget {
   final String stepNumber;

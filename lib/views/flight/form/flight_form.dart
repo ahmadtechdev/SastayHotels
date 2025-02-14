@@ -69,15 +69,21 @@ class FlightForm extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           CustomTextField(
-                            hintText: 'Enter departure city',
-                            icon: Icons.location_on,
-                            controller: TextEditingController(),
+                          hintText: 'Enter departure city',
+                          icon: Icons.location_on,
+                          controller: TextEditingController(),
+                          onChanged: (value) {
+                          flightDateController.flights[index]['origin'] = value;
+                          },
                           ),
                           const SizedBox(height: 12),
                           CustomTextField(
-                            hintText: 'Enter destination city',
-                            icon: Icons.location_on,
-                            controller: TextEditingController(),
+                          hintText: 'Enter destination city',
+                          icon: Icons.location_on,
+                          controller: TextEditingController(),
+                          onChanged: (value) {
+                          flightDateController.flights[index]['destination'] = value;
+                          },
                           ),
                           const SizedBox(height: 8),
                           Column(

@@ -39,28 +39,71 @@ class FlightSearchController extends GetxController {
           tripType = 0;
       }
 
-      // Format the dates based on trip type
-      String formattedDates = ',${_formatDate(flightDateController.departureDate.value)}';
-      if (tripType == 1) {
-        formattedDates += ',${_formatDate(flightDateController.returnDate.value)}';
-      } else if (tripType == 2) {
-        for (var flight in flightDateController.flights) {
-          formattedDates += ',${_formatDate(flight['date'])}';
+      // Format origin, destination, and dates based on trip type
+      String origins = '';
+      String destinations = '';
+      String formattedDates = '';
+
+      if (tripType == 2) {
+        // For multi-city trips, we need to get the origins, destinations and dates from the flights array
+        final flights = flightDateController.flights;
+
+        for (int i = 0; i < flights.length; i++) {
+          // Only add the comma if it's not the first item
+          if (i > 0) {
+            origins += ',';
+            destinations += ',';
+            formattedDates += ',';
+          } else {
+            // Add initial comma for the first item to match the format
+            origins += ',';
+            destinations += ',';
+            formattedDates += ',';
+          }
+
+          // Get origin and destination from the flights array
+          // Fallback to hardcoded values if not set
+          String origin = flights[i]['origin'] ?? 'KHI';
+          if (i == 1) origin = 'DXB';  // For the second flight, use DXB as origin
+
+          String destination = flights[i]['destination'] ?? (i == 0 ? 'DXB' : 'JED');
+
+          origins += origin;
+          destinations += destination;
+          formattedDates += _formatDate(flights[i]['date']);
+        }
+
+        // If there's only one flight, add a second one
+        if (flights.length == 1) {
+          origins += ',DXB';
+          destinations += ',JED';
+          // Use the same date plus one day
+          DateTime nextDay = flights[0]['date'].add(Duration(days: 1));
+          formattedDates += ',${_formatDate(nextDay)}';
+        }
+      } else {
+        // Handle one-way and return trips
+        origins = ",KHI";
+        destinations = ",JED";
+        formattedDates = ',${_formatDate(flightDateController.departureDate.value)}';
+
+        if (tripType == 1) {
+          formattedDates += ',${_formatDate(flightDateController.returnDate.value)}';
         }
       }
 
       print('Search parameters:');
       print('Trip type: $tripType');
+      print('Origins: $origins');
+      print('Destinations: $destinations');
       print('Dates: $formattedDates');
-      print('Origin: LHE');
-      print('Destination: JED');
       print('Adults: ${travelersController.adultCount.value}');
       print('Cabin: ${travelersController.travelClass.value}');
 
       final results = await apiServiceFlight.searchFlights(
         type: tripType,
-        origin: ",KHI",
-        destination: ",JED",
+        origin: origins,
+        destination: destinations,
         depDate: formattedDates,
         adult: travelersController.adultCount.value,
         child: travelersController.childrenCount.value,
@@ -73,27 +116,21 @@ class FlightSearchController extends GetxController {
       print(results);
 
       searchResults.value = results;
-
-      // Initialize the flight controller with the results
-      print('Initializing flight controller with results...');
       flightController.loadFlights(results);
-
-      // If we get here, the search was successful
       print('Flight search completed successfully');
 
       // Navigate based on trip type
-      if (flightDateController.tripType.value == 'One-way') {
-        Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
-      } else {
-        Get.to(() => FlightBookingPage(scenario: FlightScenario.oneWay));
-      }
+      Get.to(() => FlightBookingPage(
+          scenario: tripType == 1
+              ? FlightScenario.returnFlight
+              : (tripType == 2 ? FlightScenario.multiCity : FlightScenario.oneWay)
+      ));
 
     } catch (e, stackTrace) {
       print('Error in searchFlights: $e');
       print('Stack trace: $stackTrace');
       errorMessage.value = 'Error searching flights: $e';
 
-      // Set empty results when there's an error
       searchResults.value = null;
       flightController.loadFlights({
         'groupedItineraryResponse': {
