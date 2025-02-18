@@ -1,3 +1,4 @@
+
 import 'package:get/get.dart';
 import '../../../../../../services/api_service_flight.dart';
 
@@ -12,9 +13,64 @@ class FlightSearchController extends GetxController {
   final flightDateController = Get.put(FlightDateController());
   final flightController = Get.put(FlightController());
 
+  // New observable variables for origin, destination, and trip type
+  var origins = RxList<String>(['KHI']); // Default first origin
+  var destinations = RxList<String>(['JED']); // Default first destination
+  var currentTripType = 0.obs; // 0: one-way, 1: return, 2: multi-city
+
   var isLoading = false.obs;
   var searchResults = Rxn<Map<String, dynamic>>();
   var errorMessage = ''.obs;
+
+  // Getter for formatted origins string
+  String get formattedOrigins => origins.isNotEmpty ? ',${origins.join(',')}' : ',KHI';
+
+  // Getter for formatted destinations string
+  String get formattedDestinations => destinations.isNotEmpty ? ',${destinations.join(',')}' : ',JED';
+
+  // Method to update origins and destinations
+  void updateRoute(int index, {String? origin, String? destination}) {
+    if (origin != null) {
+      if (index >= origins.length) {
+        origins.add(origin);
+      } else {
+        origins[index] = origin;
+      }
+    }
+
+    if (destination != null) {
+      if (index >= destinations.length) {
+        destinations.add(destination);
+      } else {
+        destinations[index] = destination;
+      }
+    }
+  }
+
+  // Method to update trip type
+  void updateTripType(String type) {
+    switch (type) {
+      case 'One-way':
+        currentTripType.value = 0;
+        break;
+      case 'Return':
+        currentTripType.value = 1;
+        break;
+      case 'Multi City':
+        currentTripType.value = 2;
+        break;
+      default:
+        currentTripType.value = 0;
+    }
+  }
+
+  // Method to clear routes
+  void clearRoutes() {
+    origins.clear();
+    destinations.clear();
+    origins.add('KHI');
+    destinations.add('JED');
+  }
 
   Future<void> searchFlights() async {
     try {
@@ -23,87 +79,66 @@ class FlightSearchController extends GetxController {
 
       print('Starting flight search...');
 
-      // Get the trip type (0 for one-way, 1 for return, 2 for multi-city)
-      int tripType;
-      switch (flightDateController.tripType.value) {
-        case 'One-way':
-          tripType = 0;
-          break;
-        case 'Return':
-          tripType = 1;
-          break;
-        case 'Multi City':
-          tripType = 2;
-          break;
-        default:
-          tripType = 0;
-      }
+      // Update trip type based on flightDateController
+      updateTripType(flightDateController.tripType.value);
 
-      // Format origin, destination, and dates based on trip type
-      String origins = '';
-      String destinations = '';
+      // Format dates based on trip type
       String formattedDates = '';
 
-      if (tripType == 2) {
-        // For multi-city trips, we need to get the origins, destinations and dates from the flights array
+      if (currentTripType.value == 2) {
+        // For multi-city trips
         final flights = flightDateController.flights;
 
+        // Clear and update origins/destinations based on flights
+        origins.clear();
+        destinations.clear();
+
         for (int i = 0; i < flights.length; i++) {
-          // Only add the comma if it's not the first item
           if (i > 0) {
-            origins += ',';
-            destinations += ',';
             formattedDates += ',';
           } else {
-            // Add initial comma for the first item to match the format
-            origins += ',';
-            destinations += ',';
             formattedDates += ',';
           }
 
-          // Get origin and destination from the flights array
-          // Fallback to hardcoded values if not set
+          // Update origins and destinations
           String origin = flights[i]['origin'] ?? 'KHI';
           if (i == 1) origin = 'DXB';  // For the second flight, use DXB as origin
-
           String destination = flights[i]['destination'] ?? (i == 0 ? 'DXB' : 'JED');
 
-          origins += origin;
-          destinations += destination;
+          origins.add(origin);
+          destinations.add(destination);
           formattedDates += _formatDate(flights[i]['date']);
         }
 
         // If there's only one flight, add a second one
         if (flights.length == 1) {
-          origins += ',DXB';
-          destinations += ',JED';
-          // Use the same date plus one day
+          origins.add('DXB');
+          destinations.add('JED');
           DateTime nextDay = flights[0]['date'].add(Duration(days: 1));
           formattedDates += ',${_formatDate(nextDay)}';
         }
       } else {
         // Handle one-way and return trips
-        origins = ",KHI";
-        destinations = ",JED";
+        clearRoutes(); // Reset to default values
         formattedDates = ',${_formatDate(flightDateController.departureDate.value)}';
 
-        if (tripType == 1) {
+        if (currentTripType.value == 1) {
           formattedDates += ',${_formatDate(flightDateController.returnDate.value)}';
         }
       }
 
       print('Search parameters:');
-      print('Trip type: $tripType');
-      print('Origins: $origins');
-      print('Destinations: $destinations');
+      print('Trip type: ${currentTripType.value}');
+      print('Origins: $formattedOrigins');
+      print('Destinations: $formattedDestinations');
       print('Dates: $formattedDates');
       print('Adults: ${travelersController.adultCount.value}');
       print('Cabin: ${travelersController.travelClass.value}');
 
       final results = await apiServiceFlight.searchFlights(
-        type: tripType,
-        origin: origins,
-        destination: destinations,
+        type: currentTripType.value,
+        origin: formattedOrigins,
+        destination: formattedDestinations,
         depDate: formattedDates,
         adult: travelersController.adultCount.value,
         child: travelersController.childrenCount.value,
@@ -121,9 +156,9 @@ class FlightSearchController extends GetxController {
 
       // Navigate based on trip type
       Get.to(() => FlightBookingPage(
-          scenario: tripType == 1
+          scenario: currentTripType.value == 1
               ? FlightScenario.returnFlight
-              : (tripType == 2 ? FlightScenario.multiCity : FlightScenario.oneWay)
+              : (currentTripType.value == 2 ? FlightScenario.multiCity : FlightScenario.oneWay)
       ));
 
     } catch (e, stackTrace) {

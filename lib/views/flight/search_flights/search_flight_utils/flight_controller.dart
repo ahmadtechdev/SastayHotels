@@ -300,7 +300,6 @@ class FlightController extends GetxController {
   }
 }
 
-
 extension FlightControllerExtension on FlightController {
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
@@ -313,7 +312,7 @@ extension FlightControllerExtension on FlightController {
 
       final groupedResponse = response['groupedItineraryResponse'];
 
-      // Create a map of baggage allowance descriptions for quick lookup
+      // Create lookup maps for quick reference
       final baggageAllowanceDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['baggageAllowanceDescs'] != null) {
         for (var baggage in groupedResponse['baggageAllowanceDescs'] as List) {
@@ -321,7 +320,6 @@ extension FlightControllerExtension on FlightController {
         }
       }
 
-      // Cache all schedule descriptions for quick lookup
       final scheduleDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['scheduleDescs'] != null) {
         for (var schedule in groupedResponse['scheduleDescs'] as List) {
@@ -329,7 +327,6 @@ extension FlightControllerExtension on FlightController {
         }
       }
 
-      // Cache all leg descriptions for quick lookup
       final legDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['legDescs'] != null) {
         for (var leg in groupedResponse['legDescs'] as List) {
@@ -340,115 +337,158 @@ extension FlightControllerExtension on FlightController {
       final List<Flight> parsedFlights = [];
 
       // Process each itinerary group
-      for (var group in groupedResponse['itineraryGroups'] as List) {
-        final groupDesc = group['groupDescription'];
-        final legDescriptions = groupDesc['legDescriptions'] as List;
+      final itineraryGroups = groupedResponse['itineraryGroups'] as List?;
+      if (itineraryGroups == null) {
+        print('Error: No itinerary groups found');
+        flights.value = [];
+        filteredFlights.value = [];
+        return;
+      }
+
+      for (var group in itineraryGroups) {
+        final Map<int, List<Map<String, dynamic>>> itineraryLegsMap = {};
 
         // Process each itinerary within the group
-        for (var itinerary in group['itineraries'] as List) {
-          final legs = itinerary['legs'] as List;
-          final pricingInfo = itinerary['pricingInformation'] as List;
+        final itineraries = group['itineraries'] as List?;
+        if (itineraries == null) continue;
 
-          if (pricingInfo.isEmpty) continue;
+        for (var itinerary in itineraries) {
+          final itineraryId = itinerary['id'] as int;
+          final legs = itinerary['legs'] as List?;
+          if (legs == null) continue;
+
+          final pricingInfo = itinerary['pricingInformation'] as List?;
+          if (pricingInfo == null || pricingInfo.isEmpty) continue;
+
           final fareInfo = pricingInfo[0]['fare'];
+          if (fareInfo == null) continue;
 
-          // Parse baggage information with the new logic
-          BaggageAllowance baggageAllowance = _parseBaggageAllowance(
-              fareInfo['passengerInfoList'][0]['passengerInfo']['baggageInformation'] as List,
-              baggageAllowanceDescsMap
-          );
+          // Group legs by itinerary ID
+          itineraryLegsMap[itineraryId] = [];
 
+          // Process all legs for this itinerary
           for (var leg in legs) {
             final legId = leg['ref'] as int;
             final legDesc = legDescsMap[legId];
 
             if (legDesc != null) {
-              final schedules = legDesc['schedules'] as List;
-              if (schedules.isEmpty) continue;
-
-              // Get all schedules for this leg to track stops
-              List<Map<String, dynamic>> stopSchedules = [];
-              for (var scheduleRef in schedules) {
-                final schedule = scheduleDescsMap[scheduleRef['ref']];
-                if (schedule != null) {
-                  stopSchedules.add(schedule);
-                }
-              }
-
-              if (stopSchedules.isEmpty) continue;
-
-              // Get first and last schedule for origin and destination
-              final firstSchedule = stopSchedules.first;
-              final lastSchedule = stopSchedules.last;
-
-              // Calculate stops
-              List<String> stops = [];
-              if (stopSchedules.length > 1) {
-                for (int i = 0; i < stopSchedules.length - 1; i++) {
-                  stops.add(stopSchedules[i]['arrival']['city'] ?? "Unknown City");
-                }
-              }
-
-              // Calculate total duration from first departure to last arrival
-              final totalDuration = legDesc['elapsedTime'];
-
-              // Get carrier info from first schedule
-              final carrier = firstSchedule['carrier'];
-              final airlineCode = carrier['marketing'] as String? ?? 'Unknown';
-              final airlineInfo = getAirlineInfo(airlineCode);
-
-              try {
-                final flight = Flight(
-                  // ... (previous flight properties remain the same)
-                  imgPath: airlineInfo.logoPath,
-                  airline: airlineInfo.name,
-                  flightNumber: '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
-                  departureTime: firstSchedule['departure']['time'].split('+')[0],
-                  arrivalTime: lastSchedule['arrival']['time'].split('+')[0],
-                  duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
-                  price: fareInfo['totalFare']['totalPrice'].toDouble(),
-                  from: '${firstSchedule['departure']['city']} (${firstSchedule['departure']['airport']})',
-                  to: '${lastSchedule['arrival']['city']} (${lastSchedule['arrival']['airport']})',
-                  type: getFareType(fareInfo),
-                  isRefundable: !((fareInfo['passengerInfoList'] as List?)?.first?['passengerInfo']?['nonRefundable'] ?? true),
-                  isNonStop: stopSchedules.length == 1,
-                  departureTerminal: firstSchedule['departure']['terminal']?.toString() ?? 'Main',
-                  arrivalTerminal: lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
-                  departureCity: firstSchedule['departure']['city']?.toString() ?? 'Unknown',
-                  arrivalCity: lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
-                  aircraftType: carrier['equipment']['code'].toString(),
-                  taxes: parseTaxes(fareInfo['passengerInfoList']?[0]?['passengerInfo']?['taxes'] ?? []),
-                  baggageAllowance: baggageAllowance,
-                  packages: [],
-                  stops: stops,
-                  legElapsedTime: legDesc['elapsedTime'] as int?,
-                  stopSchedules: stopSchedules.map((schedule) => {
-                    'departure': {
-                      'city': schedule['departure']['city'],
-                      'airport': schedule['departure']['airport'],
-                      'time': schedule['departure']['time'],
-                      'terminal': schedule['departure']['terminal'],
-                    },
-                    'arrival': {
-                      'city': schedule['arrival']['city'],
-                      'airport': schedule['arrival']['airport'],
-                      'time': schedule['arrival']['time'],
-                      'terminal': schedule['arrival']['terminal'],
-                    },
-                    'elapsedTime': schedule['elapsedTime'] as int?,
-                  }).toList(),
-                  cabinClass: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
-                  mealCode: fareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
-                );
-                parsedFlights.add(flight);
-              } catch (e) {
-                print('Error parsing flight: $e');
-                continue;
-              }
+              itineraryLegsMap[itineraryId]!.add({
+                'legDesc': legDesc,
+                'fareInfo': fareInfo,
+              });
             }
           }
         }
+
+        // Process each itinerary's legs
+        itineraryLegsMap.forEach((itineraryId, legsList) {
+          if (legsList.isEmpty) return;
+
+          List<Map<String, dynamic>> allStopSchedules = [];
+          List<String> allStops = [];
+          int totalDuration = 0;
+
+          for (var legData in legsList) {
+            final legDesc = legData['legDesc'];
+            final schedules = legDesc['schedules'] as List?;
+            if (schedules == null) continue;
+
+            for (var scheduleRef in schedules) {
+              final schedule = scheduleDescsMap[scheduleRef['ref']];
+              if (schedule != null) {
+                allStopSchedules.add(schedule);
+
+                // if (allStopSchedules.length > 1 && allStopSchedules.length < schedules.length) {
+                //   allStops.add(schedule['arrival']['city'] ?? "Unknown City");
+                // }
+              }
+            }
+
+            if (allStopSchedules.length > 1) {
+              for (int i = 0; i < allStopSchedules.length - 1; i++) {
+                allStops.add(allStopSchedules[i]['arrival']['city'] ?? "Unknown City");
+              }
+            }
+
+
+            totalDuration += legDesc['elapsedTime'] as int;
+          }
+
+          if (allStopSchedules.isEmpty) return;
+
+          // Get first and last schedule for origin and destination
+          final firstSchedule = allStopSchedules.first;
+          final lastSchedule = allStopSchedules.last;
+          final carrier = firstSchedule['carrier'];
+          final airlineCode = carrier['marketing'] as String? ?? 'Unknown';
+          final airlineInfo = getAirlineInfo(airlineCode);
+          final fareInfo = legsList.first['fareInfo'];
+
+          try {
+            final passengerInfo = (fareInfo['passengerInfoList'] as List?)?.firstOrNull?['passengerInfo'];
+            if (passengerInfo == null) return;
+
+            final fareComponents = passengerInfo['fareComponents'] as List?;
+            if (fareComponents == null || fareComponents.isEmpty) return;
+
+            final segments = fareComponents[0]['segments'] as List?;
+            if (segments == null || segments.isEmpty) return;
+
+            final segment = segments[0]['segment'];
+            if (segment == null) return;
+
+            final flight = Flight(
+              imgPath: airlineInfo.logoPath,
+              airline: airlineInfo.name,
+              flightNumber: '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
+              departureTime: firstSchedule['departure']['time'].toString().split('+')[0],
+              arrivalTime: lastSchedule['arrival']['time'].toString().split('+')[0],
+              duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
+              price: (fareInfo['totalFare']['totalPrice'] as num).toDouble(),
+              from: '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
+              to: '${lastSchedule['arrival']['city'] ?? 'Unknown'} (${lastSchedule['arrival']['airport'] ?? 'Unknown'})',
+              type: getFareType(fareInfo),
+              isRefundable: !(passengerInfo['nonRefundable'] ?? true),
+              isNonStop: allStopSchedules.length == 1,
+              departureTerminal: firstSchedule['departure']['terminal']?.toString() ?? 'Main',
+              arrivalTerminal: lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
+              departureCity: firstSchedule['departure']['city']?.toString() ?? 'Unknown',
+              arrivalCity: lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
+              aircraftType: carrier['equipment']['code']?.toString() ?? 'Unknown',
+              taxes: parseTaxes(passengerInfo['taxes'] ?? []),
+              baggageAllowance: _parseBaggageAllowance(
+                  passengerInfo['baggageInformation'] as List? ?? [],
+                  baggageAllowanceDescsMap
+              ),
+              packages: [],
+              stops: allStops,
+              legElapsedTime: totalDuration,
+              stopSchedules: allStopSchedules.map((schedule) => {
+                'departure': {
+                  'city': schedule['departure']['city'],
+                  'airport': schedule['departure']['airport'],
+                  'time': schedule['departure']['time'],
+                  'terminal': schedule['departure']['terminal'],
+                },
+                'arrival': {
+                  'city': schedule['arrival']['city'],
+                  'airport': schedule['arrival']['airport'],
+                  'time': schedule['arrival']['time'],
+                  'terminal': schedule['arrival']['terminal'],
+                },
+                'elapsedTime': schedule['elapsedTime'] as int?,
+              }).toList(),
+              cabinClass: segment['cabinCode'] ?? 'Y',
+              mealCode: segment['mealCode'] ?? 'N',
+              groupId: itineraryId.toString(),
+            );
+            parsedFlights.add(flight);
+          } catch (e) {
+            print('Error parsing flight for itinerary $itineraryId: $e');
+          }
+        });
       }
+
       print('Successfully parsed ${parsedFlights.length} unique flights');
       flights.value = parsedFlights;
       filteredFlights.value = parsedFlights;
@@ -465,41 +505,41 @@ extension FlightControllerExtension on FlightController {
     }
   }
 
-  // New helper method to parse baggage allowance
   BaggageAllowance _parseBaggageAllowance(
       List baggageInformation,
       Map<int, Map<String, dynamic>> baggageAllowanceDescsMap
       ) {
     try {
       for (var baggageInfo in baggageInformation) {
-        if (baggageInfo['allowance'] != null && baggageInfo['allowance']['ref'] != null) {
-          final baggageRef = baggageInfo['allowance']['ref'] as int;
-          final baggageDesc = baggageAllowanceDescsMap[baggageRef];
+        final allowance = baggageInfo['allowance'];
+        if (allowance == null) continue;
 
-          if (baggageDesc != null) {
-            if (baggageDesc.containsKey('weight')) {
-              return BaggageAllowance(
-                  pieces: 0,
-                  weight: (baggageDesc['weight'] as num).toDouble(),
-                  unit: baggageDesc['unit'] as String,
-                  type: '${baggageDesc['weight']} ${baggageDesc['unit']}'
-              );
-            } else if (baggageDesc.containsKey('pieceCount')) {
-              return BaggageAllowance(
-                  pieces: baggageDesc['pieceCount'] as int,
-                  weight: 0,
-                  unit: 'PC',
-                  type: '${baggageDesc['pieceCount']} PC'
-              );
-            }
-          }
+        final baggageRef = allowance['ref'] as int?;
+        if (baggageRef == null) continue;
+
+        final baggageDesc = baggageAllowanceDescsMap[baggageRef];
+        if (baggageDesc == null) continue;
+
+        if (baggageDesc.containsKey('weight')) {
+          return BaggageAllowance(
+              pieces: 0,
+              weight: (baggageDesc['weight'] as num).toDouble(),
+              unit: baggageDesc['unit'] as String? ?? '',
+              type: '${baggageDesc['weight']} ${baggageDesc['unit'] ?? ''}'
+          );
+        } else if (baggageDesc.containsKey('pieceCount')) {
+          return BaggageAllowance(
+              pieces: baggageDesc['pieceCount'] as int? ?? 0,
+              weight: 0,
+              unit: 'PC',
+              type: '${baggageDesc['pieceCount']} PC'
+          );
         }
       }
     } catch (e) {
       print('Error parsing baggage allowance: $e');
     }
 
-    // Default return if no valid baggage information is found
     return BaggageAllowance(
         pieces: 0,
         weight: 0,
@@ -508,3 +548,5 @@ extension FlightControllerExtension on FlightController {
     );
   }
 }
+
+

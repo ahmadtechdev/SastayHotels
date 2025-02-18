@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:get/get.dart';
 
 import '../../../../../widgets/colors.dart';
+import '../../../form/controllers/flight_search_controller.dart';
 import '../filter_modal.dart';
 import '../flight_controller.dart';
 
@@ -19,7 +21,8 @@ class FlightCard extends StatefulWidget {
   State<FlightCard> createState() => _FlightCardState();
 }
 
-class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateMixin {
+class _FlightCardState extends State<FlightCard>
+    with SingleTickerProviderStateMixin {
   bool isExpanded = false;
   late AnimationController _controller;
   late Animation<double> _expandAnimation;
@@ -114,7 +117,6 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
     }
   }
 
-
   // Format baggage information
   String formatBaggageInfo() {
     // print("baggage check");
@@ -130,7 +132,35 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return  AnimatedContainer(
+    print("stop schedules");
+    print(widget.flight.stopSchedules);
+    final searchConroller = Get.put(FlightSearchController());
+    String formatTime(String time) {
+      if (time.isEmpty) return 'N/A';
+      return time.split(':').sublist(0, 2).join(':'); // Extract HH:mm
+    }
+
+// Find the matching departure time based on the origin city
+    String getDepartureTime() {
+      final stop = widget.flight.stopSchedules.firstWhere(
+        (schedule) =>
+            schedule['departure']['city'] == searchConroller.origins.first,
+        orElse: () => {},
+      );
+      return stop.isNotEmpty ? formatTime(stop['departure']['time']) : 'N/A';
+    }
+
+// Find the matching arrival time based on the destination city
+    String getArrivalTime() {
+      final stop = widget.flight.stopSchedules.firstWhere(
+        (schedule) =>
+            schedule['arrival']['city'] == searchConroller.destinations.first,
+        orElse: () => {},
+      );
+      return stop.isNotEmpty ? formatTime(stop['arrival']['time']) : 'N/A';
+    }
+
+    return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -178,102 +208,115 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.flight.departureTime,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          widget.flight.from,
-                          style: const TextStyle(
-                            color: TColors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text(
-                          widget.flight.duration,
-                          style: const TextStyle(
-                            color: TColors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                        // const Icon(
-                        //   Icons.flight,
-                        //   color: TColors.primary,
-                        // ),
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              height: 2,
-                              width: 70,
-                              color: Colors.grey[300],
-                            ),
-                            const Icon(
-                              Icons.flight,
-                              size: 20,
-                              color:TColors.primary,
-                            ),
-                          ],
-                        ),
-                        if (widget.flight.isNonStop)
-                          const Text(
-                            'Nonstop',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: TColors.grey,
-                            ),
-                          )
-                        else
+                SingleChildScrollView(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            '${widget.flight.stops.length} ${widget.flight.stops.length == 1 ? 'stop' : 'stops'}',
+                            // widget.flight.departureTime,
+                            getDepartureTime(),
                             style: const TextStyle(
-                              fontSize: 14,
-                              color: TColors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        if (widget.flight.stops.isNotEmpty)
                           Text(
-                            'via ${widget.flight.stops.join(', ')}',
+                            // widget.flight.from,
+                            searchConroller.origins.first,
                             style: const TextStyle(
-                              fontSize: 12,
                               color: TColors.grey,
+                              fontSize: 16,
                             ),
                           ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          widget.flight.arrivalTime,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            widget.flight.duration,
+                            style: const TextStyle(
+                              color: TColors.grey,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                        Text(
-                          widget.flight.to,
-                          style: const TextStyle(
-                            color: TColors.grey,
-                            fontSize: 14,
+                          // const Icon(
+                          //   Icons.flight,
+                          //   color: TColors.primary,
+                          // ),
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                height: 2,
+                                width: 70,
+                                color: Colors.grey[300],
+                              ),
+                              const Icon(
+                                Icons.flight,
+                                size: 20,
+                                color: TColors.primary,
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          if (widget.flight.isNonStop)
+                            const Text(
+                              'Nonstop',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: TColors.grey,
+                              ),
+                            )
+                          else
+                            Text(
+                              '${widget.flight.stops.toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: TColors.grey,
+                              ),
+                            ),
+                          if (widget.flight.stops.isNotEmpty)
+                            Text(
+                              widget.flight.stops
+                                  .toSet()
+                                  .where((stop) =>
+                                      stop != searchConroller.origins &&
+                                      stop !=
+                                          searchConroller.destinations)
+                                  .toList()
+                                  .join(', '),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: TColors.grey,
+                              ),
+                            ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            // widget.flight.arrivalTime,
+                            getArrivalTime(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            // widget.flight.to,
+                            searchConroller.destinations.first,
+                            style: const TextStyle(
+                              color: TColors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -308,7 +351,8 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                         decoration: BoxDecoration(
                           color: TColors.black.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(42),
-                          border: Border.all(color: TColors.black.withOpacity(0.3)),
+                          border:
+                              Border.all(color: TColors.black.withOpacity(0.3)),
                         ),
                         child: Text(
                           '${controller.selectedCurrency.value} ${widget.flight.price.toStringAsFixed(0)}',
@@ -364,7 +408,6 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -420,14 +463,15 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildFlightSegment(Map<String, dynamic> schedule, int index, int totalSegments) {
+  Widget _buildFlightSegment(
+      Map<String, dynamic> schedule, int index, int totalSegments) {
     // Calculate layover time if there's a next segment
     String? layoverTime;
     if (index < totalSegments - 1) {
-      final currentArrival = DateTime.parse("1970-01-01T${schedule['arrival']['time']}");
-      final nextDeparture = DateTime.parse("1970-01-01T${widget.flight.stopSchedules[index + 1]['departure']['time']}");
-
-
+      final currentArrival =
+          DateTime.parse("1970-01-01T${schedule['arrival']['time']}");
+      final nextDeparture = DateTime.parse(
+          "1970-01-01T${widget.flight.stopSchedules[index + 1]['departure']['time']}");
 
       final difference = nextDeparture.difference(currentArrival);
       final hours = difference.inHours;
@@ -441,7 +485,9 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: index < totalSegments - 1 ? Colors.grey[300]! : Colors.transparent,
+            color: index < totalSegments - 1
+                ? Colors.grey[300]!
+                : Colors.transparent,
             width: 1,
           ),
         ),
@@ -468,7 +514,8 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.flight_takeoff, size: 16, color: TColors.primary),
+              const Icon(Icons.flight_takeoff,
+                  size: 16, color: TColors.primary),
               const SizedBox(width: 8),
               Text(
                 'Flight Segment ${index + 1}',
@@ -504,7 +551,8 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                   const Icon(Icons.flight, color: TColors.primary),
                   // Updated meal information display
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -512,7 +560,8 @@ class _FlightCardState extends State<FlightCard> with SingleTickerProviderStateM
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.restaurant_menu, size: 12, color: Colors.green),
+                        const Icon(Icons.restaurant_menu,
+                            size: 12, color: Colors.green),
                         const SizedBox(width: 4),
                         Text(
                           getMealInfo(widget.flight.mealCode),

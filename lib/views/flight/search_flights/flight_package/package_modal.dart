@@ -37,7 +37,10 @@ class FlightPackageInfo {
       isNonRefundable: passengerInfo['nonRefundable'] ?? true,
       baggageAllowance: parseBaggageAllowance(passengerInfo['baggageInformation'] ?? []),
     );
+
+
   }
+
 
   String get cabinName {
     switch (cabinCode) {
@@ -51,3 +54,4 @@ class FlightPackageInfo {
     }
   }
 }
+

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../widgets/colors.dart';
 import '../../../home_search/home.dart';
 
+import '../form/controllers/flight_search_controller.dart';
 import 'search_flight_utils/flight_controller.dart';
 import 'search_flight_utils/widgets/currency_dialog.dart';
 import 'search_flight_utils/widgets/flight_bottom_sheet.dart';
@@ -102,6 +103,7 @@ class FlightBookingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final searchConroller = Get.put(FlightSearchController());
     return Scaffold(
       backgroundColor: TColors.background2,
       appBar: AppBar(
@@ -122,7 +124,7 @@ class FlightBookingPage extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '${firstFlight.departureCity} ',
+                    '${searchConroller.origins.first} ',
                     style: const TextStyle(
                       fontSize: 16,
                       color: TColors.text,
@@ -135,7 +137,7 @@ class FlightBookingPage extends StatelessWidget {
                     color: TColors.text,
                   ),
                   Text(
-                    ' ${firstFlight.arrivalCity}',
+                    ' ${searchConroller.origins.last}',
                     style: const TextStyle(
                       fontSize: 16,
                       color: TColors.text,
@@ -147,7 +149,7 @@ class FlightBookingPage extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '${_formatDate(firstFlight.departureTime)}${scenario == FlightScenario.returnFlight ? ' - ${_formatDate(firstFlight.arrivalTime)}' : ''}',
+                    '${controller.flights.length} Flights Found',
                     style: const TextStyle(
                       fontSize: 14,
                       color: TColors.text,
@@ -205,9 +207,7 @@ class FlightBookingPage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Note: Since API returns combined data, we might want to remove or modify this section
-          // Keeping it for UI consistency but it won't affect the actual flight selection
-          if (scenario == FlightScenario.returnFlight) _buildReturnCaseScenario(),
+
           _buildFilterSection(),
           _buildFlightList(),
         ],
@@ -215,33 +215,6 @@ class FlightBookingPage extends StatelessWidget {
     );
   }
 
-  Widget _buildReturnCaseScenario() {
-    return Obx(() {
-      if (controller.flights.isEmpty) return const SizedBox.shrink();
-
-      final firstFlight = controller.flights[0];
-      return Container(
-        padding: const EdgeInsets.all(8),
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        color: Colors.white,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            ReturnCaseScenario(
-              stepNumber: '1',
-              stepText: '${firstFlight.departureCity} to ${firstFlight.arrivalCity}',
-              isActive: controller.isSelectingFirstFlight.value,
-            ),
-            ReturnCaseScenario(
-              stepNumber: '2',
-              stepText: '${firstFlight.arrivalCity} to ${firstFlight.departureCity}',
-              isActive: !controller.isSelectingFirstFlight.value,
-            ),
-          ],
-        ),
-      );
-    });
-  }
 
   Widget _buildFilterSection() {
     return Container(

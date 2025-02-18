@@ -43,6 +43,7 @@ class Flight {
 
 
 
+
   Flight({
     required this.imgPath,
     required this.airline,
@@ -86,6 +87,8 @@ class Flight {
 
   // Add helper method to combine flights
   static Flight combineFlights(List<Flight> flights, String type) {
+    if (flights.isEmpty) return flights.first;
+
     final firstFlight = flights.first;
     final lastFlight = flights.last;
 
@@ -99,7 +102,7 @@ class Flight {
       price: flights.fold(0.0, (sum, f) => sum + f.price),
       from: firstFlight.from,
       to: lastFlight.to,
-      type: firstFlight.type,
+      type: type,
       isRefundable: flights.every((f) => f.isRefundable),
       isNonStop: false,
       departureTerminal: firstFlight.departureTerminal,
@@ -112,19 +115,29 @@ class Flight {
       packages: firstFlight.packages,
       connectedFlights: flights,
       tripType: type,
-      stops: _combineStops(flights), cabinClass: '', mealCode: '',
+      stops: _getAllStops(flights),
+      cabinClass: firstFlight.cabinClass,
+      mealCode: firstFlight.mealCode,
     );
   }
 
   static String _calculateTotalDuration(List<Flight> flights) {
-    int totalMinutes = 0;
-    for (var flight in flights) {
+    int totalMinutes = flights.fold(0, (sum, flight) {
       final parts = flight.duration.split('h ');
       final hours = int.parse(parts[0]);
       final minutes = int.parse(parts[1].replaceAll('m', ''));
-      totalMinutes += hours * 60 + minutes;
-    }
+      return sum + (hours * 60 + minutes);
+    });
+
     return '${totalMinutes ~/ 60}h ${totalMinutes % 60}m';
+  }
+
+  static List<String> _getAllStops(List<Flight> flights) {
+    List<String> allStops = [];
+    for (var flight in flights) {
+      allStops.addAll(flight.stops);
+    }
+    return allStops;
   }
 
   static List<TaxDesc> _combineTaxes(List<Flight> flights) {
@@ -232,6 +245,8 @@ class Flight {
     }
   }
 }
+
+
 
 
 // extension FlightExtension on Flight {
