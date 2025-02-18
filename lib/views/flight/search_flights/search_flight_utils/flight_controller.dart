@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:math';
 
 import '../flight_package/flight_package.dart';
+import '../flight_package/package_modal.dart';
 import '../search_flights.dart';
 import 'filter_modal.dart';
 
@@ -301,6 +302,7 @@ class FlightController extends GetxController {
 }
 
 extension FlightControllerExtension on FlightController {
+  // Add this to your FlightControllerExtension in flight_controller.dart
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
       if (response == null || response['groupedItineraryResponse'] == null) {
@@ -323,20 +325,19 @@ extension FlightControllerExtension on FlightController {
       final scheduleDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['scheduleDescs'] != null) {
         for (var schedule in groupedResponse['scheduleDescs'] as List) {
-          scheduleDescsMap[schedule['id'] as int] = schedule as Map<String, dynamic>;
+          scheduleDescsMap[schedule['id'] as int] = schedule;
         }
       }
 
       final legDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['legDescs'] != null) {
         for (var leg in groupedResponse['legDescs'] as List) {
-          legDescsMap[leg['id'] as int] = leg as Map<String, dynamic>;
+          legDescsMap[leg['id'] as int] = leg;
         }
       }
 
       final List<Flight> parsedFlights = [];
 
-      // Process each itinerary group
       final itineraryGroups = groupedResponse['itineraryGroups'] as List?;
       if (itineraryGroups == null) {
         print('Error: No itinerary groups found');
@@ -346,50 +347,41 @@ extension FlightControllerExtension on FlightController {
       }
 
       for (var group in itineraryGroups) {
-        final Map<int, List<Map<String, dynamic>>> itineraryLegsMap = {};
-
-        // Process each itinerary within the group
         final itineraries = group['itineraries'] as List?;
         if (itineraries == null) continue;
 
         for (var itinerary in itineraries) {
-          final itineraryId = itinerary['id'] as int;
           final legs = itinerary['legs'] as List?;
           if (legs == null) continue;
 
           final pricingInfo = itinerary['pricingInformation'] as List?;
           if (pricingInfo == null || pricingInfo.isEmpty) continue;
 
-          final fareInfo = pricingInfo[0]['fare'];
-          if (fareInfo == null) continue;
-
-          // Group legs by itinerary ID
-          itineraryLegsMap[itineraryId] = [];
-
-          // Process all legs for this itinerary
-          for (var leg in legs) {
-            final legId = leg['ref'] as int;
-            final legDesc = legDescsMap[legId];
-
-            if (legDesc != null) {
-              itineraryLegsMap[itineraryId]!.add({
-                'legDesc': legDesc,
-                'fareInfo': fareInfo,
-              });
+          // Extract all fare options for packages
+          final List<FlightPackageInfo> packages = [];
+          for (var pricing in pricingInfo) {
+            try {
+              final fareInfo = pricing['fare'];
+              if (fareInfo != null) {
+                packages.add(FlightPackageInfo.fromApiResponse(fareInfo));
+              }
+            } catch (e) {
+              print('Error parsing package: $e');
             }
           }
-        }
 
-        // Process each itinerary's legs
-        itineraryLegsMap.forEach((itineraryId, legsList) {
-          if (legsList.isEmpty) return;
+          // Use the first pricing info for basic flight details
+          final mainFareInfo = pricingInfo[0]['fare'];
 
           List<Map<String, dynamic>> allStopSchedules = [];
           List<String> allStops = [];
           int totalDuration = 0;
 
-          for (var legData in legsList) {
-            final legDesc = legData['legDesc'];
+          for (var leg in legs) {
+            final legId = leg['ref'] as int;
+            final legDesc = legDescsMap[legId];
+            if (legDesc == null) continue;
+
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
 
@@ -397,10 +389,6 @@ extension FlightControllerExtension on FlightController {
               final schedule = scheduleDescsMap[scheduleRef['ref']];
               if (schedule != null) {
                 allStopSchedules.add(schedule);
-
-                // if (allStopSchedules.length > 1 && allStopSchedules.length < schedules.length) {
-                //   allStops.add(schedule['arrival']['city'] ?? "Unknown City");
-                // }
               }
             }
 
@@ -410,33 +398,18 @@ extension FlightControllerExtension on FlightController {
               }
             }
 
-
             totalDuration += legDesc['elapsedTime'] as int;
           }
 
-          if (allStopSchedules.isEmpty) return;
+          if (allStopSchedules.isEmpty) continue;
 
-          // Get first and last schedule for origin and destination
           final firstSchedule = allStopSchedules.first;
           final lastSchedule = allStopSchedules.last;
           final carrier = firstSchedule['carrier'];
           final airlineCode = carrier['marketing'] as String? ?? 'Unknown';
           final airlineInfo = getAirlineInfo(airlineCode);
-          final fareInfo = legsList.first['fareInfo'];
 
           try {
-            final passengerInfo = (fareInfo['passengerInfoList'] as List?)?.firstOrNull?['passengerInfo'];
-            if (passengerInfo == null) return;
-
-            final fareComponents = passengerInfo['fareComponents'] as List?;
-            if (fareComponents == null || fareComponents.isEmpty) return;
-
-            final segments = fareComponents[0]['segments'] as List?;
-            if (segments == null || segments.isEmpty) return;
-
-            final segment = segments[0]['segment'];
-            if (segment == null) return;
-
             final flight = Flight(
               imgPath: airlineInfo.logoPath,
               airline: airlineInfo.name,
@@ -444,25 +417,24 @@ extension FlightControllerExtension on FlightController {
               departureTime: firstSchedule['departure']['time'].toString().split('+')[0],
               arrivalTime: lastSchedule['arrival']['time'].toString().split('+')[0],
               duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
-              price: (fareInfo['totalFare']['totalPrice'] as num).toDouble(),
+              price: (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
               from: '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
               to: '${lastSchedule['arrival']['city'] ?? 'Unknown'} (${lastSchedule['arrival']['airport'] ?? 'Unknown'})',
-              type: getFareType(fareInfo),
-              isRefundable: !(passengerInfo['nonRefundable'] ?? true),
+              type: getFareType(mainFareInfo),
+              isRefundable: !(mainFareInfo['passengerInfoList'][0]['passengerInfo']['nonRefundable'] ?? true),
               isNonStop: allStopSchedules.length == 1,
               departureTerminal: firstSchedule['departure']['terminal']?.toString() ?? 'Main',
               arrivalTerminal: lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
               departureCity: firstSchedule['departure']['city']?.toString() ?? 'Unknown',
               arrivalCity: lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
               aircraftType: carrier['equipment']['code']?.toString() ?? 'Unknown',
-              taxes: parseTaxes(passengerInfo['taxes'] ?? []),
+              taxes: parseTaxes(mainFareInfo['passengerInfoList'][0]['passengerInfo']['taxes'] ?? []),
               baggageAllowance: _parseBaggageAllowance(
-                  passengerInfo['baggageInformation'] as List? ?? [],
+                  mainFareInfo['passengerInfoList'][0]['passengerInfo']['baggageInformation'] as List? ?? [],
                   baggageAllowanceDescsMap
               ),
-              packages: [],
+              packages: packages, // Add the parsed packages
               stops: allStops,
-              legElapsedTime: totalDuration,
               stopSchedules: allStopSchedules.map((schedule) => {
                 'departure': {
                   'city': schedule['departure']['city'],
@@ -478,18 +450,19 @@ extension FlightControllerExtension on FlightController {
                 },
                 'elapsedTime': schedule['elapsedTime'] as int?,
               }).toList(),
-              cabinClass: segment['cabinCode'] ?? 'Y',
-              mealCode: segment['mealCode'] ?? 'N',
-              groupId: itineraryId.toString(),
+              legElapsedTime: totalDuration,
+              cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
+              mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
+              groupId: itinerary['id'].toString(),
             );
             parsedFlights.add(flight);
           } catch (e) {
-            print('Error parsing flight for itinerary $itineraryId: $e');
+            print('Error creating flight: $e');
           }
-        });
+        }
       }
 
-      print('Successfully parsed ${parsedFlights.length} unique flights');
+      print('Successfully parsed ${parsedFlights.length} flights with packages');
       flights.value = parsedFlights;
       filteredFlights.value = parsedFlights;
 

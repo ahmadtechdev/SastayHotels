@@ -5,6 +5,7 @@ import '../../../../services/api_service_flight.dart';
 import '../../../../widgets/colors.dart';
 
 import '../../form/controllers/flight_date_controller.dart';
+import '../../form/controllers/flight_search_controller.dart';
 import '../../form/travelers/traveler_controller.dart';
 import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
@@ -56,6 +57,35 @@ class PackageSelectionDialog extends StatelessWidget {
   }
 
   Widget _buildFlightInfo() {
+
+
+    final searchConroller = Get.put(FlightSearchController());
+    String formatTime(String time) {
+      if (time.isEmpty) return 'N/A';
+      return time.split(':').sublist(0, 2).join(':'); // Extract HH:mm
+    }
+
+// Find the matching departure time based on the origin city
+    String getDepartureTime() {
+      final stop = flight.stopSchedules.firstWhere(
+            (schedule) =>
+        schedule['departure']['city'] == searchConroller.origins.first,
+        orElse: () => {},
+      );
+      return stop.isNotEmpty ? formatTime(stop['departure']['time']) : 'N/A';
+    }
+
+    // Find the matching arrival time based on the destination city
+    String getArrivalTime() {
+      final stop = flight.stopSchedules.firstWhere(
+            (schedule) =>
+        schedule['arrival']['city'] == searchConroller.destinations.first,
+        orElse: () => {},
+      );
+      return stop.isNotEmpty ? formatTime(stop['arrival']['time']) : 'N/A';
+    }
+
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
@@ -98,7 +128,8 @@ class PackageSelectionDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    flight.departureTime,
+                    // flight.departureTime,
+                    getDepartureTime(),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -143,7 +174,8 @@ class PackageSelectionDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    flight.arrivalTime,
+                    // flight.arrivalTime,
+                    getArrivalTime(),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

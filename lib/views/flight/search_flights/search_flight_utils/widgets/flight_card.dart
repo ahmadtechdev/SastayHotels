@@ -598,7 +598,7 @@ class _FlightCardState extends State<FlightCard>
             ],
           ),
           // Show layover time if there's a next segment
-          if (layoverTime != null) ...[
+          if (layoverTime != null && index<1) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
