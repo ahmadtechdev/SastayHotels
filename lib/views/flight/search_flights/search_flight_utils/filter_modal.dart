@@ -40,7 +40,7 @@ class Flight {
   final List<Flight>? connectedFlights; // For storing related flights in multi-city
   final int? tripSequence; // To track order in multi-city trips
   final String? tripType; // "oneWay", "return", "multiCity"
-
+  final List<Map<String, dynamic>> legSchedules;  // Add this new property
 
 
 
@@ -65,8 +65,9 @@ class Flight {
     required this.taxes,
     required this.baggageAllowance,
     required this.packages,
-    this.stops = const [],  // New field with default value
-    this.stopSchedules = const [],
+    required this.legSchedules,
+    required this.stopSchedules,
+    this.stops = const [],
     this.legElapsedTime = 0,
     required this.cabinClass,
     required this.mealCode,

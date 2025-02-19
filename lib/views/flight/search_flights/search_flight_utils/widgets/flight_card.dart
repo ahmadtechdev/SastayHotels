@@ -208,113 +208,223 @@ class _FlightCardState extends State<FlightCard>
                   ],
                 ),
                 const SizedBox(height: 16),
+                // SingleChildScrollView(
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //     children: [
+                //       Column(
+                //         crossAxisAlignment: CrossAxisAlignment.start,
+                //         children: [
+                //           Text(
+                //             // widget.flight.departureTime,
+                //             getDepartureTime(),
+                //             style: const TextStyle(
+                //               fontSize: 16,
+                //               fontWeight: FontWeight.bold,
+                //             ),
+                //           ),
+                //           Text(
+                //             // widget.flight.from,
+                //             searchConroller.origins.first,
+                //             style: const TextStyle(
+                //               color: TColors.grey,
+                //               fontSize: 16,
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //       Column(
+                //         children: [
+                //           Text(
+                //             widget.flight.duration,
+                //             style: const TextStyle(
+                //               color: TColors.grey,
+                //               fontSize: 14,
+                //             ),
+                //           ),
+                //           // const Icon(
+                //           //   Icons.flight,
+                //           //   color: TColors.primary,
+                //           // ),
+                //           Stack(
+                //             alignment: Alignment.center,
+                //             children: [
+                //               Container(
+                //                 height: 2,
+                //                 width: 70,
+                //                 color: Colors.grey[300],
+                //               ),
+                //               const Icon(
+                //                 Icons.flight,
+                //                 size: 20,
+                //                 color: TColors.primary,
+                //               ),
+                //             ],
+                //           ),
+                //           if (widget.flight.isNonStop)
+                //             const Text(
+                //               'Nonstop',
+                //               style: TextStyle(
+                //                 fontSize: 14,
+                //                 color: TColors.grey,
+                //               ),
+                //             )
+                //           else
+                //             Text(
+                //               '${widget.flight.stops.toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
+                //               style: const TextStyle(
+                //                 fontSize: 14,
+                //                 color: TColors.grey,
+                //               ),
+                //             ),
+                //           if (widget.flight.stops.isNotEmpty)
+                //             Text(
+                //               widget.flight.stops
+                //                   .toSet()
+                //                   .where((stop) =>
+                //                       stop != searchConroller.origins &&
+                //                       stop !=
+                //                           searchConroller.destinations)
+                //                   .toList()
+                //                   .join(', '),
+                //               style: const TextStyle(
+                //                 fontSize: 12,
+                //                 color: TColors.grey,
+                //               ),
+                //             ),
+                //         ],
+                //       ),
+                //       Column(
+                //         crossAxisAlignment: CrossAxisAlignment.end,
+                //         children: [
+                //           Text(
+                //             // widget.flight.arrivalTime,
+                //             getArrivalTime(),
+                //             style: const TextStyle(
+                //               fontSize: 16,
+                //               fontWeight: FontWeight.bold,
+                //             ),
+                //           ),
+                //           Text(
+                //             // widget.flight.to,
+                //             searchConroller.destinations.first,
+                //             style: const TextStyle(
+                //               color: TColors.grey,
+                //               fontSize: 16,
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 SingleChildScrollView(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            // widget.flight.departureTime,
-                            getDepartureTime(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            // widget.flight.from,
-                            searchConroller.origins.first,
-                            style: const TextStyle(
-                              color: TColors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          Text(
-                            widget.flight.duration,
-                            style: const TextStyle(
-                              color: TColors.grey,
-                              fontSize: 14,
-                            ),
-                          ),
-                          // const Icon(
-                          //   Icons.flight,
-                          //   color: TColors.primary,
-                          // ),
-                          Stack(
-                            alignment: Alignment.center,
+                      for (var legSchedule in widget.flight.legSchedules)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                height: 2,
-                                width: 70,
-                                color: Colors.grey[300],
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    formatTime(legSchedule['departure']['time'].toString()),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${legSchedule['departure']['city']} (${legSchedule['departure']['airport']})',
+                                    style: const TextStyle(
+                                      color: TColors.grey,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const Icon(
-                                Icons.flight,
-                                size: 20,
-                                color: TColors.primary,
+                              Column(
+                                children: [
+                                  Text(
+                                    '${legSchedule['elapsedTime'] ~/ 60}h ${legSchedule['elapsedTime'] % 60}m',
+                                    style: const TextStyle(
+                                      color: TColors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        height: 2,
+                                        width: 70,
+                                        color: Colors.grey[300],
+                                      ),
+                                      const Icon(
+                                        Icons.flight,
+                                        size: 20,
+                                        color: TColors.primary,
+                                      ),
+                                    ],
+                                  ),
+                                  if (widget.flight.isNonStop)
+                                    const Text(
+                                      'Nonstop',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: TColors.grey,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      '${widget.flight.stops.toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: TColors.grey,
+                                      ),
+                                    ),
+                                  if (widget.flight.stops.isNotEmpty)
+                                    Text(
+                                      widget.flight.stops
+                                          .toSet()
+                                          .where((stop) =>
+                                      stop != searchConroller.origins &&
+                                          stop !=
+                                              searchConroller.destinations)
+                                          .toList()
+                                          .join(', '),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: TColors.grey,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    formatTime(legSchedule['arrival']['time'].toString()),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${legSchedule['arrival']['city']} (${legSchedule['arrival']['airport']})',
+                                    style: const TextStyle(
+                                      color: TColors.grey,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          if (widget.flight.isNonStop)
-                            const Text(
-                              'Nonstop',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: TColors.grey,
-                              ),
-                            )
-                          else
-                            Text(
-                              '${widget.flight.stops.toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: TColors.grey,
-                              ),
-                            ),
-                          if (widget.flight.stops.isNotEmpty)
-                            Text(
-                              widget.flight.stops
-                                  .toSet()
-                                  .where((stop) =>
-                                      stop != searchConroller.origins &&
-                                      stop !=
-                                          searchConroller.destinations)
-                                  .toList()
-                                  .join(', '),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: TColors.grey,
-                              ),
-                            ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            // widget.flight.arrivalTime,
-                            getArrivalTime(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            // widget.flight.to,
-                            searchConroller.destinations.first,
-                            style: const TextStyle(
-                              color: TColors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
                     ],
                   ),
                 ),
@@ -322,28 +432,7 @@ class _FlightCardState extends State<FlightCard>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // TextButton(
-                    //   onPressed: () {
-                    //     setState(() {
-                    //       isExpanded = !isExpanded;
-                    //     });
-                    //   },
-                    //   child: Row(
-                    //     children: [
-                    //       Text(
-                    //         isExpanded ? 'Hide Details' : 'Show Details',
-                    //         style: const TextStyle(
-                    //           color: TColors.primary,
-                    //           fontWeight: FontWeight.bold,
-                    //         ),
-                    //       ),
-                    //       Icon(
-                    //         isExpanded ? Icons.expand_less : Icons.expand_more,
-                    //         color: TColors.primary,
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
+
                     GetX<FlightController>(
                       builder: (controller) => Container(
                         padding: const EdgeInsets.symmetric(

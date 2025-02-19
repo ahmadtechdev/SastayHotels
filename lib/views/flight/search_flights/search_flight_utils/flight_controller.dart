@@ -377,10 +377,16 @@ extension FlightControllerExtension on FlightController {
           List<String> allStops = [];
           int totalDuration = 0;
 
+          List<Map<String, dynamic>> legSchedules = [];
+          List<String> tripStops = [];
+
           for (var leg in legs) {
             final legId = leg['ref'] as int;
             final legDesc = legDescsMap[legId];
             if (legDesc == null) continue;
+
+            List<Map<String, dynamic>> currentLegSchedules = [];
+            List<String> currentLegStops = [];
 
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
@@ -396,6 +402,32 @@ extension FlightControllerExtension on FlightController {
               for (int i = 0; i < allStopSchedules.length - 1; i++) {
                 allStops.add(allStopSchedules[i]['arrival']['city'] ?? "Unknown City");
               }
+            }
+
+            // Get schedules for this leg
+            for (var scheduleRef in schedules) {
+              final schedule = scheduleDescsMap[scheduleRef['ref']];
+              if (schedule != null) {
+                currentLegSchedules.add(schedule);
+              }
+            }
+
+            // Calculate stops for this leg
+            if (currentLegSchedules.length > 1) {
+              for (int i = 0; i < currentLegSchedules.length - 1; i++) {
+                currentLegStops.add(currentLegSchedules[i]['arrival']['city'] ?? "Unknown City");
+              }
+            }
+
+            // Add leg information
+            if (currentLegSchedules.isNotEmpty) {
+              legSchedules.add({
+                'departure': currentLegSchedules.first['departure'],
+                'arrival': currentLegSchedules.last['arrival'],
+                'schedules': currentLegSchedules,
+                'stops': currentLegStops,
+                'elapsedTime': legDesc['elapsedTime'],
+              });
             }
 
             totalDuration += legDesc['elapsedTime'] as int;
@@ -420,6 +452,9 @@ extension FlightControllerExtension on FlightController {
               price: (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
               from: '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
               to: '${lastSchedule['arrival']['city'] ?? 'Unknown'} (${lastSchedule['arrival']['airport'] ?? 'Unknown'})',
+              legSchedules: legSchedules,  // Add this new property
+              stopSchedules: allStopSchedules,  // Keep this for detailed view
+              // stops: tripStops,
               type: getFareType(mainFareInfo),
               isRefundable: !(mainFareInfo['passengerInfoList'][0]['passengerInfo']['nonRefundable'] ?? true),
               isNonStop: allStopSchedules.length == 1,
@@ -435,21 +470,21 @@ extension FlightControllerExtension on FlightController {
               ),
               packages: packages, // Add the parsed packages
               stops: allStops,
-              stopSchedules: allStopSchedules.map((schedule) => {
-                'departure': {
-                  'city': schedule['departure']['city'],
-                  'airport': schedule['departure']['airport'],
-                  'time': schedule['departure']['time'],
-                  'terminal': schedule['departure']['terminal'],
-                },
-                'arrival': {
-                  'city': schedule['arrival']['city'],
-                  'airport': schedule['arrival']['airport'],
-                  'time': schedule['arrival']['time'],
-                  'terminal': schedule['arrival']['terminal'],
-                },
-                'elapsedTime': schedule['elapsedTime'] as int?,
-              }).toList(),
+              // stopSchedules: allStopSchedules.map((schedule) => {
+              //   'departure': {
+              //     'city': schedule['departure']['city'],
+              //     'airport': schedule['departure']['airport'],
+              //     'time': schedule['departure']['time'],
+              //     'terminal': schedule['departure']['terminal'],
+              //   },
+              //   'arrival': {
+              //     'city': schedule['arrival']['city'],
+              //     'airport': schedule['arrival']['airport'],
+              //     'time': schedule['arrival']['time'],
+              //     'terminal': schedule['arrival']['terminal'],
+              //   },
+              //   'elapsedTime': schedule['elapsedTime'] as int?,
+              // }).toList(),
               legElapsedTime: totalDuration,
               cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
               mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
