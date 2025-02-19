@@ -182,32 +182,7 @@ class _FlightCardState extends State<FlightCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      widget.flight.imgPath,
-                      height: 32,
-                      width: 50,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.flight.airline,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.flight.flightNumber,
-                      style: const TextStyle(
-                        color: TColors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+
                 // SingleChildScrollView(
                 //   child: Row(
                 //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -318,10 +293,37 @@ class _FlightCardState extends State<FlightCard>
                 //     ],
                 //   ),
                 // ),
+                for (var legSchedule in widget.flight.legSchedules)
                 SingleChildScrollView(
                   child: Column(
                     children: [
-                      for (var legSchedule in widget.flight.legSchedules)
+
+                        Row(
+                          children: [
+                            Image.asset(
+                              widget.flight.imgPath,
+                              height: 32,
+                              width: 50,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.flight.airline,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            // const SizedBox(width: 8),
+                            // Text(
+                            //   widget.flight.flightNumber,
+                            //   style: const TextStyle(
+                            //     color: TColors.grey,
+                            //     fontSize: 14,
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: Row(
@@ -370,7 +372,7 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                     ],
                                   ),
-                                  if (widget.flight.isNonStop)
+                                  if (legSchedule['stops'] .toSet().length == 0)
                                     const Text(
                                       'Nonstop',
                                       style: TextStyle(
@@ -380,7 +382,7 @@ class _FlightCardState extends State<FlightCard>
                                     )
                                   else
                                     Text(
-                                      '${widget.flight.stops.toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
+                                      '${legSchedule['stops'].toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: TColors.grey,
@@ -388,7 +390,7 @@ class _FlightCardState extends State<FlightCard>
                                     ),
                                   if (widget.flight.stops.isNotEmpty)
                                     Text(
-                                      widget.flight.stops
+                                      legSchedule['stops']
                                           .toSet()
                                           .where((stop) =>
                                       stop != searchConroller.origins &&
@@ -554,19 +556,51 @@ class _FlightCardState extends State<FlightCard>
 
   Widget _buildFlightSegment(
       Map<String, dynamic> schedule, int index, int totalSegments) {
-    // Calculate layover time if there's a next segment
+    // Get flight number and carrier from the schedule
+    final carrier = schedule['carrier'] ?? {};
+    final flightNumber = '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}';
+    final marketingCarrier = carrier['marketing'] ?? 'Unknown';
+    final airlineInfo = getAirlineInfo(marketingCarrier);
+
+    // Calculate layover time for segments within the same leg
     String? layoverTime;
-    if (index < totalSegments - 1) {
-      final currentArrival =
-          DateTime.parse("1970-01-01T${schedule['arrival']['time']}");
-      final nextDeparture = DateTime.parse(
-          "1970-01-01T${widget.flight.stopSchedules[index + 1]['departure']['time']}");
 
-      final difference = nextDeparture.difference(currentArrival);
-      final hours = difference.inHours;
-      final minutes = difference.inMinutes % 60;
+    // Find which leg this schedule belongs to
+    for (var legSchedule in widget.flight.legSchedules) {
+      final schedules = legSchedule['schedules'] as List;
+      final currentScheduleIndex = schedules.indexWhere((s) =>
+      s['departure']['time'] == schedule['departure']['time'] &&
+          s['arrival']['time'] == schedule['arrival']['time']);
 
-      layoverTime = '${hours}h ${minutes}m';
+      // If found and not the last schedule in this leg
+      if (currentScheduleIndex != -1 && currentScheduleIndex < schedules.length - 1) {
+        // Get arrival time of current flight
+        final currentArrivalTime = schedule['arrival']['time'].toString();
+
+        // Get departure time of next flight in the same leg
+        final nextSchedule = schedules[currentScheduleIndex + 1];
+        final nextDepartureTime = nextSchedule['departure']['time'].toString();
+
+        // Parse times with a fixed date to handle day changes
+        final arrival = DateTime.parse("2024-01-01T$currentArrivalTime");
+        DateTime departure = DateTime.parse("2024-01-01T$nextDepartureTime");
+
+        // If departure is before arrival, it means it's next day
+        if (departure.isBefore(arrival)) {
+          departure = departure.add(const Duration(days: 1));
+        }
+
+        // Calculate difference in minutes
+        final difference = departure.difference(arrival);
+        final totalMinutes = difference.inMinutes;
+
+        if (totalMinutes > 0) {
+          final hours = totalMinutes ~/ 60;
+          final minutes = totalMinutes % 60;
+          layoverTime = '${hours}h ${minutes}m';
+        }
+        break;
+      }
     }
 
     return Container(
@@ -584,7 +618,27 @@ class _FlightCardState extends State<FlightCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add Cabin Class information
+          // Flight number and carrier info
+          Row(
+            children: [
+              Image.asset(
+                airlineInfo.logoPath,
+                height: 24,
+                width: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${airlineInfo.name} $flightNumber',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Cabin Class information
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -601,6 +655,7 @@ class _FlightCardState extends State<FlightCard>
             ),
           ),
           const SizedBox(height: 12),
+
           Row(
             children: [
               const Icon(Icons.flight_takeoff,
@@ -629,7 +684,7 @@ class _FlightCardState extends State<FlightCard>
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['departure']['time'].split('+')[0],
+                      schedule['departure']['time'].toString().split('+')[0],
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -638,10 +693,9 @@ class _FlightCardState extends State<FlightCard>
               Column(
                 children: [
                   const Icon(Icons.flight, color: TColors.primary),
-                  // Updated meal information display
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -678,7 +732,7 @@ class _FlightCardState extends State<FlightCard>
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['arrival']['time'].split('+')[0],
+                      schedule['arrival']['time'].toString().split('+')[0],
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -686,8 +740,9 @@ class _FlightCardState extends State<FlightCard>
               ),
             ],
           ),
-          // Show layover time if there's a next segment
-          if (layoverTime != null && index<1) ...[
+
+          // Show layover time if it exists
+          if (layoverTime != null) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
