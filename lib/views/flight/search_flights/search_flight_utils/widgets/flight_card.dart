@@ -372,7 +372,7 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                     ],
                                   ),
-                                  if (legSchedule['stops'] .toSet().length == 0)
+                                  if (legSchedule['stops'].isEmpty)
                                     const Text(
                                       'Nonstop',
                                       style: TextStyle(
@@ -382,22 +382,15 @@ class _FlightCardState extends State<FlightCard>
                                     )
                                   else
                                     Text(
-                                      '${legSchedule['stops'].toSet().length} ${widget.flight.stops.toSet().length == 1 ? 'stop' : 'stops'}',
+                                      '${legSchedule['stops'].length} ${legSchedule['stops'].length == 1 ? 'stop' : 'stops'}',
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: TColors.grey,
                                       ),
                                     ),
-                                  if (widget.flight.stops.isNotEmpty)
+                                  if (legSchedule['stops'].isNotEmpty)
                                     Text(
-                                      legSchedule['stops']
-                                          .toSet()
-                                          .where((stop) =>
-                                      stop != searchConroller.origins &&
-                                          stop !=
-                                              searchConroller.destinations)
-                                          .toList()
-                                          .join(', '),
+                                      legSchedule['stops'].join(', '),
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: TColors.grey,
@@ -561,6 +554,12 @@ class _FlightCardState extends State<FlightCard>
     final flightNumber = '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}';
     final marketingCarrier = carrier['marketing'] ?? 'Unknown';
     final airlineInfo = getAirlineInfo(marketingCarrier);
+    FlightSegmentInfo? segmentInfo;
+    if (index < widget.flight.segmentInfo.length) {
+      segmentInfo = widget.flight.segmentInfo[index];
+    }
+
+    print(segmentInfo);
 
     // Calculate layover time for segments within the same leg
     String? layoverTime;
@@ -650,7 +649,7 @@ class _FlightCardState extends State<FlightCard>
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              getCabinClassName(widget.flight.cabinClass),
+              getCabinClassName(segmentInfo?.cabinCode ?? 'Y'),
               style: const TextStyle(
                 color: TColors.primary,
                 fontWeight: FontWeight.w500,
@@ -719,7 +718,7 @@ class _FlightCardState extends State<FlightCard>
                             size: 12, color: Colors.green),
                         const SizedBox(width: 4),
                         Text(
-                          getMealInfo(widget.flight.mealCode),
+                          getMealInfo(segmentInfo?.mealCode ?? 'N'),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.green,
