@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 class Room {
-  RxInt adults = 1.obs;
+  RxInt adults = 2.obs;
   RxInt children = 0.obs;
   RxList<int> childrenAges = RxList<int>([]);
 
@@ -72,5 +72,6 @@ class GuestsController extends GetxController {
   int get totalAdults => rooms.fold(0, (sum, room) => sum + room.adults.value);
 
   // Get total count of children across all rooms
-  int get totalChildren => rooms.fold(0, (sum, room) => sum + room.children.value);
+  int get totalChildren =>
+      rooms.fold(0, (sum, room) => sum + room.children.value);
 }

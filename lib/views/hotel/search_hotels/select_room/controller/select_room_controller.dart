@@ -1,4 +1,3 @@
-
 import 'package:get/get.dart';
 
 class SelectRoomController extends GetxController {
@@ -6,60 +5,74 @@ class SelectRoomController extends GetxController {
   final Rx<Map<String, dynamic>> prebookResponse = Rx<Map<String, dynamic>>({});
 
   // Observable lists to store policy details for each room
-  final RxList<List<Map<String, dynamic>>> roomsPolicyDetails = RxList<List<Map<String, dynamic>>>([]);
+  final RxList<List<Map<String, dynamic>>> roomsPolicyDetails =
+      RxList<List<Map<String, dynamic>>>([]);
 
   // Observable maps to store room details
   final RxMap<int, String> roomNames = RxMap<int, String>({});
   final RxMap<int, String> roomMeals = RxMap<int, String>({});
-  final RxMap<int, String> roomRateTypes = RxMap<int, String>({}); // Added for rate types
+  final RxMap<int, String> roomRateTypes = RxMap<int, String>({});
+  final RxMap<int, String> rateKeys = RxMap<int, String>({});
 
-  // Method to store prebook response data
+  // Method to store rate key for a specific room
+  void storeRateKey(int roomIndex, String rateKey) {
+    rateKeys[roomIndex] = rateKey;
+  }
+
+  // Method to get all stored rate keys
+  List<String> getAllRateKeys() {
+    return rateKeys.values.toList();
+  } // Added for rate types
+
   void storePrebookResponse(Map<String, dynamic> response) {
     prebookResponse.value = response;
 
     // Extract and store room details
-    if (response['hotel']?['rooms']?['room'] != null) {
-      final rooms = response['hotel']['rooms']['room'] as List;
+    if (response['hotel']?['rooms'] != null) {
+      final rooms = response['hotel']['rooms'] as List;
 
       roomsPolicyDetails.clear();
       roomNames.clear();
       roomMeals.clear();
-      roomRateTypes.clear(); // Clear rate types
+      roomRateTypes.clear();
 
       for (var i = 0; i < rooms.length; i++) {
         final room = rooms[i];
 
-        // Store room name, meal and rate type
-        roomNames[i] = room['roomName'] ?? '';
-        roomMeals[i] = room['meal'] ?? '';
-        roomRateTypes[i] = room['rateType'] ?? ''; // Store rate type
+        // Store room name
+        roomNames[i] = room['name'] ?? '';
 
-        // Extract policy details
-        if (room['policies']?['policy'] != null) {
-          List<Map<String, dynamic>> policyDetails = [];
+        // Get the first rate entry for meal and rate type info
+        if (room['rates'] != null && (room['rates'] as List).isNotEmpty) {
+          final firstRate = room['rates'][0];
+          roomMeals[i] = firstRate['boardName'] ?? '';
+          roomRateTypes[i] = firstRate['rateType'] ?? '';
 
-          for (var policy in room['policies']['policy']) {
-            if (policy['condition'] != null) {
-              for (var condition in policy['condition']) {
-                policyDetails.add({
-                  "from_date": condition['fromDate'] ?? '',
-                  "to_date": condition['toDate'] ?? '',
-                  "timezone": condition['timezone'] ?? '',
-                  "from_time": condition['fromTime'] ?? '',
-                  "to_time": condition['toTime'] ?? '',
-                  "percentage": condition['percentage'] ?? '',
-                  "nights": condition['nights'] ?? '',
-                  "fixed": condition['fixed'] ?? '',
-                  "applicableOn": condition['applicableOn'] ?? ''
-                });
-              }
+          // Extract cancellation policy details
+          if (firstRate['cancellationPolicies'] != null) {
+            List<Map<String, dynamic>> policyDetails = [];
+
+            for (var policy in firstRate['cancellationPolicies']) {
+              policyDetails.add({
+                "from_date": policy['from'] ?? '',
+                "amount": policy['amount'] ?? '',
+                // Setting other fields as empty since they're not in the response
+                "to_date": '',
+                "timezone": '',
+                "from_time": '',
+                "to_time": '',
+                "percentage": '',
+                "nights": '',
+                "fixed": '',
+                "applicableOn": ''
+              });
             }
-          }
 
-          if (roomsPolicyDetails.length <= i) {
-            roomsPolicyDetails.add(policyDetails);
-          } else {
-            roomsPolicyDetails[i] = policyDetails;
+            if (roomsPolicyDetails.length <= i) {
+              roomsPolicyDetails.add(policyDetails);
+            } else {
+              roomsPolicyDetails[i] = policyDetails;
+            }
           }
         }
       }

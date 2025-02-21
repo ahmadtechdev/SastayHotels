@@ -302,6 +302,45 @@ class FlightController extends GetxController {
 }
 
 extension FlightControllerExtension on FlightController {
+
+  String _formatDateTimeWithoutMillis(DateTime dateTime) {
+    // Format: YYYY-MM-DDTHH:mm:ss
+    return "${dateTime.year.toString().padLeft(4, '0')}-"
+        "${dateTime.month.toString().padLeft(2, '0')}-"
+        "${dateTime.day.toString().padLeft(2, '0')}T"
+        "${dateTime.hour.toString().padLeft(2, '0')}:"
+        "${dateTime.minute.toString().padLeft(2, '0')}:"
+        "${dateTime.second.toString().padLeft(2, '0')}";
+  }
+
+  DateTime _calculateFlightDateTime(String baseDate, String timeString, int? dateAdjustment) {
+    // Parse the base date
+    DateTime date = DateTime.parse(baseDate);
+
+    // Parse the time string (format: "HH:mm:ss+XX:XX")
+    final timeParts = timeString.split('+')[0].split(':');
+    final hours = int.parse(timeParts[0]);
+    final minutes = int.parse(timeParts[1]);
+    final seconds = int.parse(timeParts[2]);
+
+    // Create DateTime with base date and time
+    DateTime dateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      hours,
+      minutes,
+      seconds,
+    );
+
+    // Add date adjustment if present
+    if (dateAdjustment != null) {
+      dateTime = dateTime.add(Duration(days: dateAdjustment));
+    }
+
+    return dateTime;
+  }
+
   // Add this to your FlightControllerExtension in flight_controller.dart
   void parseApiResponse(Map<String, dynamic>? response) {
     try {
@@ -347,10 +386,17 @@ extension FlightControllerExtension on FlightController {
       }
 
       for (var group in itineraryGroups) {
+
+        final legDescriptions = group['groupDescription']['legDescriptions'] as List?;
+        if (legDescriptions == null) continue;
+
         final itineraries = group['itineraries'] as List?;
         if (itineraries == null) continue;
 
+        var i = 0;
+
         for (var itinerary in itineraries) {
+
           final legs = itinerary['legs'] as List?;
           if (legs == null) continue;
 
@@ -380,10 +426,14 @@ extension FlightControllerExtension on FlightController {
           List<Map<String, dynamic>> legSchedules = [];
           List<String> tripStops = [];
 
-          for (var leg in legs) {
+          for (var legIndex = 0; legIndex < legs.length; legIndex++) {
+            final leg = legs[legIndex];
             final legId = leg['ref'] as int;
             final legDesc = legDescsMap[legId];
             if (legDesc == null) continue;
+
+            // Get base date from legDescriptions for this leg
+            final baseDate = legDescriptions[legIndex]['departureDate'] as String;
 
             List<Map<String, dynamic>> currentLegSchedules = [];
             List<String> currentLegStops = [];
@@ -391,12 +441,39 @@ extension FlightControllerExtension on FlightController {
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
 
-            for (var scheduleRef in schedules) {
+            for (var scheduleIndex = 0; scheduleIndex < schedules.length; scheduleIndex++) {
+              final scheduleRef = schedules[scheduleIndex];
               final schedule = scheduleDescsMap[scheduleRef['ref']];
-              if (schedule != null) {
-                allStopSchedules.add(schedule);
-              }
+              if (schedule == null) continue;
+
+              // Calculate departure and arrival DateTimes
+              final departureDateAdjustment = scheduleRef['departureDateAdjustment'] as int? ?? 0;
+              final arrivalDateAdjustment = schedule['arrival']['dateAdjustment'] as int? ?? 0;
+
+              final departureDateTime = _calculateFlightDateTime(
+                  baseDate,
+                  schedule['departure']['time'],
+                  departureDateAdjustment
+              );
+
+              final arrivalDateTime = _calculateFlightDateTime(
+                  baseDate,
+                  schedule['arrival']['time'],
+                  departureDateAdjustment + arrivalDateAdjustment
+              );
+
+              // Use the new formatting function when creating the schedule
+              final scheduleWithDateTime = Map<String, dynamic>.from(schedule);
+              scheduleWithDateTime['departure'] = Map<String, dynamic>.from(schedule['departure']);
+              scheduleWithDateTime['arrival'] = Map<String, dynamic>.from(schedule['arrival']);
+
+              scheduleWithDateTime['departure']['dateTime'] = _formatDateTimeWithoutMillis(departureDateTime);
+              scheduleWithDateTime['arrival']['dateTime'] = _formatDateTimeWithoutMillis(arrivalDateTime);
+
+              currentLegSchedules.add(scheduleWithDateTime);
+              allStopSchedules.add(scheduleWithDateTime);
             }
+
 
             if (allStopSchedules.length > 1) {
               for (int i = 0; i < allStopSchedules.length - 1; i++) {
@@ -446,8 +523,8 @@ extension FlightControllerExtension on FlightController {
               imgPath: airlineInfo.logoPath,
               airline: airlineInfo.name,
               flightNumber: '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
-              departureTime: firstSchedule['departure']['time'].toString().split('+')[0],
-              arrivalTime: lastSchedule['arrival']['time'].toString().split('+')[0],
+              departureTime: allStopSchedules.first['departure']['dateTime'],
+              arrivalTime: allStopSchedules.last['arrival']['dateTime'],
               duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
               price: (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
               from: '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
@@ -486,14 +563,15 @@ extension FlightControllerExtension on FlightController {
               //   'elapsedTime': schedule['elapsedTime'] as int?,
               // }).toList(),
               legElapsedTime: totalDuration,
-              cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['cabinCode'] ?? 'Y',
-              mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][0]['segment']['mealCode'] ?? 'N',
+              cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][i]['segment']['cabinCode'] ?? '',
+              mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']['fareComponents'][0]['segments'][i]['segment']['mealCode'] ?? '',
               groupId: itinerary['id'].toString(),
             );
             parsedFlights.add(flight);
           } catch (e) {
             print('Error creating flight: $e');
           }
+          i++;
         }
       }
 

@@ -1,18 +1,18 @@
 import 'package:flight_bocking/services/api_service_hotel.dart';
+import 'package:flight_bocking/views/hotel/search_hotels/booking_hotel/booking_controller.dart';
+import 'package:flight_bocking/views/hotel/search_hotels/booking_hotel/booking_hotel.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 
 import '../../hotel/guests/guests_controller.dart';
 import '../../hotel/hotel_date_controller.dart';
-import '../booking_hotel/booking_hotel.dart';
 import '../search_hotel_controller.dart';
 import 'controller/select_room_controller.dart';
 import 'widgets/room_card.dart';
 
 class SelectRoomScreen extends StatefulWidget {
-
-  const SelectRoomScreen({super.key});
+  const SelectRoomScreen({super.key});  
 
   @override
   State<SelectRoomScreen> createState() => _SelectRoomScreenState();
@@ -26,6 +26,8 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   final Map<int, dynamic> selectedRooms = {};
   final guestsController = Get.find<GuestsController>();
   final selectRoomController = Get.put(SelectRoomController());
+  final Bookingcontroller = Get.put(BookingController());
+
   final apiService = ApiServiceHotel();
   bool isLoading = false;
 
@@ -36,43 +38,35 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
 
     try {
       // Extract rate keys from selected rooms
-      List<String> rateKeys = selectedRooms.values
-          .map((room) => room['rateKey'].toString())
-          .toList();
+      List<String> rateKeys = [];
 
-      // Get the group code from the first selected room
-      int groupCode = selectedRooms.values.first['groupCode'] as int;
+      selectedRooms.forEach((roomIndex, roomData) {
+        if (roomData['rates'] != null && roomData['rates'].isNotEmpty) {
+          String? rateKey = roomData['rates'][0]['rateKey']?.toString();
+          if (rateKey != null && rateKey.isNotEmpty) {
+            rateKeys.add(rateKey);
+          }
+        }
+      });
 
-      // Make the prebook API call
-      var response = await apiService.prebook(
-        sessionId: controller.sessionId.value,
-        hotelCode: controller.hotelCode.value,
-        groupCode: groupCode,
-        currency: "USD",
-        rateKeys: rateKeys,
-      );
+      if (rateKeys.isEmpty) {
+        _showErrorDialog('No valid rate keys found for selected rooms.');
+        return;
+      }
 
-      // Store the response in the controller
+      print('Rate keys to be checked: $rateKeys');
+
+      var response = await apiService.checkRate(rateKeys: rateKeys);
+
       if (response != null) {
+        Bookingcontroller.buying_price.value = response['hotel']['totalNet'];
+        print('the buying rate is ${Bookingcontroller.buying_price.value}');
+
+        // Store the response in the controller
         selectRoomController.storePrebookResponse(response);
 
-        bool isSoldOut = response['isSoldOut'] ?? false;
-        bool isPriceChanged = response['isPriceChanged'] ?? false;
-        bool isBookable = response['isBookable'] ?? false;
-
-        if (isSoldOut) {
-          _showErrorDialog(
-              'Sorry, one or more selected rooms are no longer available.');
-        } else if (isPriceChanged) {
-          _showErrorDialog(
-              'The price for one or more rooms has changed. Please review the updated prices.');
-        } else if (!isBookable) {
-          _showErrorDialog(
-              'One or more rooms are not currently bookable. Please try different rooms.');
-        } else {
-          // All validations passed, proceed to booking
-          Get.to(() => BookingHotelScreen());
-        }
+        // Navigate to next screen or handle success case
+        Get.to(() => BookingHotelScreen());
       } else {
         _showErrorDialog(
             'Failed to validate room availability. Please try again.');
@@ -87,6 +81,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
       });
     }
   }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -130,8 +125,19 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   void selectRoom(int roomIndex, dynamic room) {
     setState(() {
       selectedRooms[roomIndex] = room;
-      // Update the selected room data in the controller
+
+      // Store the complete room data including the rate key
+      if (room['rates'] != null && room['rates'].isNotEmpty) {
+        String? rateKey = room['rates'][0]['rateKey']?.toString();
+        if (rateKey != null && rateKey.isNotEmpty) {
+          selectRoomController.storeRateKey(roomIndex, rateKey);
+        }
+      }
+
+      // Update the controller
       Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
+
+      // Move to next tab if available
       if (roomIndex < guestsController.roomCount.value - 1) {
         _tabController.animateTo(roomIndex + 1);
       }
@@ -153,30 +159,30 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
         elevation: 0,
         bottom: guestsController.roomCount.value > 1
             ? TabBar(
-          controller: _tabController,
-          tabs: List.generate(
-            guestsController.roomCount.value,
-                (index) => Tab(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Room ${index + 1}',
-                      style: const TextStyle(fontSize: 14),
+                controller: _tabController,
+                tabs: List.generate(
+                  guestsController.roomCount.value,
+                  (index) => Tab(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Room ${index + 1}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          if (selectedRooms.containsKey(index))
+                            const Icon(Icons.check_circle, size: 10),
+                        ],
+                      ),
                     ),
-                    if (selectedRooms.containsKey(index))
-                      const Icon(Icons.check_circle, size: 10),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
-          labelColor: TColors.primary,
-          unselectedLabelColor: TColors.grey,
-          indicatorColor: TColors.primary,
-        )
+                labelColor: TColors.primary,
+                unselectedLabelColor: TColors.grey,
+                indicatorColor: TColors.primary,
+              )
             : null,
       ),
       body: Obx(() {
@@ -204,21 +210,21 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                   controller: _tabController,
                   children: List.generate(
                     guestsController.roomCount.value,
-                        (roomIndex) => SingleChildScrollView(
+                    (roomIndex) => SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHotelInfo(),
                           ...groupedRooms.entries
                               .map((entry) => RoomTypeSection(
-                            roomTypeName: entry.key,
-                            rooms: entry.value,
-                            nights: dateController.nights.value,
-                            onRoomSelected: (room) =>
-                                selectRoom(roomIndex, room),
-                            isSelected: (room) =>
-                            selectedRooms[roomIndex] == room,
-                          )),
+                                    roomTypeName: entry.key,
+                                    rooms: entry.value,
+                                    nights: dateController.nights.value,
+                                    onRoomSelected: (room) =>
+                                        selectRoom(roomIndex, room),
+                                    isSelected: (room) =>
+                                        selectedRooms[roomIndex] == room,
+                                  )),
                         ],
                       ),
                     ),
@@ -235,69 +241,69 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
               children: [
                 _buildHotelInfo(),
                 ...groupedRooms.entries.map((entry) => RoomTypeSection(
-                  roomTypeName: entry.key,
-                  rooms: entry.value,
-                  nights: dateController.nights.value,
-                  onRoomSelected: (room) => selectRoom(0, room),
-                  isSelected: (room) => selectedRooms[0] == room,
-                )),
+                      roomTypeName: entry.key,
+                      rooms: entry.value,
+                      nights: dateController.nights.value,
+                      onRoomSelected: (room) => selectRoom(0, room),
+                      isSelected: (room) => selectedRooms[0] == room,
+                    )),
               ],
             ),
           );
         }
       }),
       bottomNavigationBar:
-      guestsController.roomCount.value >= 1 && allRoomsSelected
-          ? Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: Get.width,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : handleBookNow,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: TColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+          guestsController.roomCount.value >= 1 && allRoomsSelected
+              ? Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
                   ),
-                ),
-                child: Text(
-                  isLoading ? 'Checking Availability...' : 'Book Now',
-                  style: const TextStyle(
-                    color: TColors.secondary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: Get.width,
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : handleBookNow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isLoading ? 'Checking Availability...' : 'Book Now',
+                            style: const TextStyle(
+                              color: TColors.secondary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isLoading)
+                        const Positioned.fill(
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: TColors.secondary,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ),
-            ),
-            if (isLoading)
-              const Positioned.fill(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: TColors.secondary,
-                    strokeWidth: 2,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      )
-          : null,
+                )
+              : null,
     );
   }
 
@@ -316,12 +322,32 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
             ),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
+            children: [
+              Text(
+                controller.zoneName.value,
+                style: TextStyle(
+                  color: TColors.grey,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(width: 4),
+              Text(
+                controller.destinationName.value,
+                style: TextStyle(
+                  color: TColors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
             children: [
               Icon(Icons.star, color: TColors.primary, size: 18),
               SizedBox(width: 4),
               Text(
-                '4 Star Hotel',
+                '${controller.categoryName.value} Star Hotel',
                 style: TextStyle(
                   color: TColors.grey,
                   fontSize: 14,
@@ -401,11 +427,11 @@ class _RoomTypeSectionState extends State<RoomTypeSection> {
         ),
         if (isExpanded)
           ...widget.rooms.map((room) => RoomCard(
-            room: room,
-            nights: widget.nights,
-            onSelect: widget.onRoomSelected,
-            isSelected: widget.isSelected(room),
-          )),
+                room: room,
+                nights: widget.nights,
+                onSelect: widget.onRoomSelected,
+                isSelected: widget.isSelected(room),
+              )),
       ],
     );
   }

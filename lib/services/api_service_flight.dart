@@ -262,12 +262,12 @@ class ApiServiceFlight extends GetxService {
     }
   }
 
-  Future<Map<String, dynamic>> checkFlightPackageAvailability({
+  Future<Map<String, dynamic>?> checkFlightAvailability({
     required String token,
     required String origin,
     required String destination,
     required String departureDateTime,
-    required String returnDateTime,
+    String? returnDateTime,
     required String cabinClass,
     required int adultCount,
     required int childCount,
@@ -275,139 +275,192 @@ class ApiServiceFlight extends GetxService {
     required List<Map<String, dynamic>> flights,
   }) async {
     try {
-      // Clean location codes - remove any spaces and brackets
-      String cleanValue(String value) {
-        return value.split('(').first.trim().toUpperCase();
+      // Validate input parameters
+      if (flights.isEmpty) {
+        throw Exception('No flight segments provided');
       }
 
-      final cleanOrigin = cleanValue(origin);
-      final cleanDestination = cleanValue(destination);
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
 
-      // Create passenger type quantities
-      List<Map<String, dynamic>> passengerTypes = [];
+      // Build passenger types with proper validation
+      final List<Map<String, dynamic>> passengerTypes = [];
       if (adultCount > 0) {
         passengerTypes.add({
           "Code": "ADT",
           "Quantity": adultCount,
+          "TPA_Extensions": {}
         });
       }
       if (childCount > 0) {
         passengerTypes.add({
-          "Code": "CHD",
+          "Code": "CNN",
           "Quantity": childCount,
+          "TPA_Extensions": {}
         });
       }
       if (infantCount > 0) {
         passengerTypes.add({
           "Code": "INF",
           "Quantity": infantCount,
+          "TPA_Extensions": {}
         });
       }
 
-      // Create origin destination information
-      List<Map<String, dynamic>> originDestInfo = [];
+      // Process flight segments with proper type handling
+      List<Map<String, dynamic>> processedFlights = flights.map((flight) {
+        return {
+          "ClassOfService": flight['cabinCode'] ?? 'L',
+          "Number": _parseFlightNumber(flight['Number']),
+          "DepartureDateTime": flight['DepartureDateTime'],
+          "ArrivalDateTime": flight['ArrivalDateTime'],
+          "Type": flight['Type'] ?? 'A',
+          "OriginLocation": {
+            "LocationCode": flight['OriginLocation']['LocationCode']
+          },
+          "DestinationLocation": {
+            "LocationCode": flight['DestinationLocation']['LocationCode']
+          },
+          "Airline": {
+            "Operating": flight['Airline']['Operating'],
+            "Marketing": flight['Airline']['Marketing']
+          }
+        };
+      }).toList();
 
-      // Add outbound flight
-      originDestInfo.add({
-        "RPH": "1",
-        "DepartureDateTime": departureDateTime,
-        "OriginLocation": {"LocationCode": cleanOrigin},
-        "DestinationLocation": {"LocationCode": cleanDestination},
-        "TPA_Extensions": {
-          "SegmentType": {"Code": "O"},
-          "Flight": [flights.first] // Add only the outbound flight
+      // Build origin destination information
+      final List<Map<String, dynamic>> originDestInfo = [
+        {
+          "RPH": "1",
+          "DepartureDateTime": departureDateTime,
+          "OriginLocation": {
+            "LocationCode": origin.toUpperCase()
+          },
+          "DestinationLocation": {
+            "LocationCode": destination.toUpperCase()
+          },
+          "TPA_Extensions": {
+            "Flight": processedFlights.where((f) =>
+            f['OriginLocation']['LocationCode'] == origin.toUpperCase() ||
+                f['DestinationLocation']['LocationCode'] == destination.toUpperCase()
+            ).toList(),
+            "SegmentType": {
+              "Code": "O"
+            }
+          }
         }
-      });
+      ];
 
-      // Add return flight if it exists
-      if (returnDateTime.isNotEmpty && flights.length > 1) {
+      // Add return flight if exists
+      if (returnDateTime != null) {
         originDestInfo.add({
           "RPH": "2",
           "DepartureDateTime": returnDateTime,
-          "OriginLocation": {"LocationCode": cleanDestination},
-          "DestinationLocation": {"LocationCode": cleanOrigin},
+          "OriginLocation": {
+            "LocationCode": destination.toUpperCase()
+          },
+          "DestinationLocation": {
+            "LocationCode": origin.toUpperCase()
+          },
           "TPA_Extensions": {
-            "SegmentType": {"Code": "O"},
-            "Flight": [flights.last] // Add only the return flight
+            "Flight": processedFlights.where((f) =>
+            f['OriginLocation']['LocationCode'] == destination.toUpperCase() ||
+                f['DestinationLocation']['LocationCode'] == origin.toUpperCase()
+            ).toList(),
+            "SegmentType": {
+              "Code": "O"
+            }
           }
         });
       }
 
-      final requestBody = {
+      final requestData = {
         "OTA_AirLowFareSearchRQ": {
-          "Version": "4.3.0",
-          "POS": {
-            "Source": [{
-              "PseudoCityCode": "6MD8",
-              "RequestorID": {
-                "Type": "1",
-                "ID": "1",
-                "CompanyName": {"Code": "TN"}
-              }
-            }]
-          },
-          "OriginDestinationInformation": originDestInfo,
+          "Version": "4",
           "TravelPreferences": {
-            "ValidInterlineTicket": true,
-            "CabinPref": [{
-              "Cabin": _mapCabinClass(cabinClass),
-              "PreferLevel": "Preferred"
-            }],
+            "LookForAlternatives": false,
             "TPA_Extensions": {
-              "TripType": {
-                "Value": returnDateTime.isNotEmpty ? "Return" : "OneWay"
+              "VerificationItinCallLogic": {
+                "AlwaysCheckAvailability": true,
+                "Value": "B"
               }
             }
           },
           "TravelerInfoSummary": {
             "SeatsRequested": [adultCount + childCount + infantCount],
-            "AirTravelerAvail": [{
-              "PassengerTypeQuantity": passengerTypes
-            }],
+            "AirTravelerAvail": [
+              {
+                "PassengerTypeQuantity": passengerTypes
+              }
+            ],
             "PriceRequestInformation": {
               "TPA_Extensions": {
                 "BrandedFareIndicators": {
                   "MultipleBrandedFares": true,
-                  "ReturnBrandAncillaries": true,
-                  "UpsellLimit": 4
+                  "ReturnBrandAncillaries": true
                 }
               }
             }
           },
+          "POS": {
+            "Source": [
+              {
+                "PseudoCityCode": "6MD8",
+                "RequestorID": {
+                  "Type": "1",
+                  "ID": "1",
+                  "CompanyName": {
+                    "Code": "TN"
+                  }
+                }
+              }
+            ]
+          },
+          "OriginDestinationInformation": originDestInfo,
           "TPA_Extensions": {
             "IntelliSellTransaction": {
-              "RequestType": {"Name": "50ITINS"}
+              "RequestType": {
+                "Name": "50ITINS"
+              }
             }
           }
         }
       };
 
-      print('Request Body:');
-      _printJsonPretty(requestBody);
-
       final response = await dio.post(
         '/v4/shop/flights/revalidate',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: requestBody,
+        options: Options(headers: headers),
+        data: requestData,
       );
 
       if (response.statusCode == 200) {
-        print('Success Response:');
-        _printJsonPretty(response.data);
         return response.data;
       } else {
-        print('Error Response:');
-        _printJsonPretty(response.data);
-        throw Exception('Failed to check flight package availability: ${response.statusCode}\nResponse: ${response.data}');
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to check flight availability: ${response.statusCode}',
+        );
       }
+    } on DioException catch (e) {
+      print('DioError in flight availability check: ${e.message}');
+      print('Response data: ${e.response?.data}');
+      rethrow;
     } catch (e) {
-      print('Error in checkFlightPackageAvailability: $e');
+      print('Error in flight availability check: $e');
       rethrow;
     }
+  }
+
+  // Helper method to handle flight number parsing
+  String _parseFlightNumber(dynamic number) {
+    if (number is int) {
+      return number.toString();
+    } else if (number is String) {
+      return number;
+    }
+    throw FormatException('Invalid flight number format: $number');
   }
 }

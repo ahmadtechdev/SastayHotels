@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../views/hotel/hotel/guests/guests_controller.dart';
 import '../views/hotel/search_hotels/search_hotel_controller.dart';
 
-
 class ApiServiceHotel extends GetxService {
+  final SearchHotelController controller = Get.put(SearchHotelController());
+
   late final Dio dio;
   static const String _apiKey = 'VSXYTrVlCtVXRAOXGS2==';
   static const String _baseUrl = 'http://uat-apiv2.giinfotech.ae/api/v2';
@@ -38,174 +39,6 @@ class ApiServiceHotel extends GetxService {
       print('Date formatting error: $e');
       return isoDate; // Fallback to the original format if parsing fails.
     }
-  }
-
-  /// Fetches hotels based on search parameters.
-  Future<void> fetchHotels({
-    required String destinationCode,
-    required String countryCode,
-    required String nationality,
-    required String currency,
-    required String checkInDate,
-    required String checkOutDate,
-    required List<Map<String, dynamic>> rooms,
-  }) async {
-    final searchController = Get.find<SearchHotelController>();
-
-    final requestBody = {
-      "SearchParameter": {
-        "DestinationCode": destinationCode,
-        "CountryCode": countryCode,
-        "Nationality": nationality,
-        "Currency": currency,
-        "CheckInDate": _formatDate(checkInDate),
-        "CheckOutDate": _formatDate(checkOutDate),
-        "Rooms": {
-          "Room": rooms
-              .map((room) => {
-                    "RoomIdentifier": room["RoomIdentifier"],
-                    "Adult": room["Adult"],
-                  })
-              .toList(),
-        },
-        "TassProInfo": {"CustomerCode": "4805", "RegionID": "123"}
-      }
-    };
-
-    print('Fetching Hotels with Request: ${json.encode(requestBody)}');
-    try {
-      final response = await dio.post(
-        '/Hotel/Search',
-        data: requestBody,
-        options: _defaultHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final hotels = data['hotels']?['hotel'] ?? [];
-        final sessionId = data['generalInfo']?['sessionId'];
-        final destinationCode = data['audit']?['destination']['code'];
-
-        searchController.sessionId.value = sessionId ?? '';
-        searchController.destinationCode.value = destinationCode ?? '';
-        searchController.hotels.value =
-            hotels.map<Map<String, dynamic>>((hotel) {
-          return {
-            'name': hotel['name'] ?? 'Unknown Hotel',
-            'price': hotel['minPrice']?.toString() ?? '0',
-            'address': hotel['hotelInfo']?['add1'] ?? 'Address not available',
-            'image': hotel['hotelInfo']?['image'] ??
-                'assets/img/cardbg/broken-image.png',
-            'rating': double.tryParse(
-                    hotel['hotelInfo']?['starRating']?.toString() ?? '0') ??
-                3.0,
-            'latitude': hotel['hotelInfo']?['lat'] ?? 0.0,
-            'longitude': hotel['hotelInfo']?['lon'] ?? 0.0,
-            'hotelCode': hotel['code'] ?? '',
-            'hotelCity': hotel['hotelInfo']?['city'] ?? '',
-          };
-        }).toList();
-
-        print('Successfully updated hotel data');
-      } else {
-        print('API Error: ${response.statusMessage}');
-      }
-    } catch (e) {
-      print('Error Fetching Hotels: $e');
-    }
-  }
-
-  /// Fetch room details.
-  Future<void> fetchRoomDetails(String hotelCode, String sessionId) async {
-    final guestsController = Get.find<GuestsController>();
-
-    List<Map<String, dynamic>> rooms =
-        guestsController.rooms.asMap().entries.map((entry) {
-      final index = entry.key;
-      final room = entry.value;
-      return {
-        "RoomIdentifier": index + 1,
-        "Adult": room.adults.value,
-        if (room.children.value > 0) "child": room.children.value,
-      };
-    }).toList();
-
-    final requestBody = {
-      "SessionId": sessionId,
-      "SearchParameter": {
-        "HotelCode": hotelCode,
-        "Currency": "USD",
-        "Rooms": {"Room": rooms}
-      }
-    };
-
-    print('Fetching Room Details with Request: $requestBody');
-    try {
-      final response = await dio.post(
-        '/hotel/RoomDetails',
-        data: requestBody,
-        options: _defaultHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final hotelInfo = data['hotel']?['hotelInfo'];
-        final roomData = data['hotel']['rooms']?['room'];
-        print(roomData);
-
-        if (hotelInfo != null) {
-          final searchController = Get.find<SearchHotelController>();
-          searchController.hotelName.value = hotelInfo['name'];
-          searchController.image.value = hotelInfo['image'];
-          searchController.roomsdata.value = roomData;
-          print('Successfully updated room data');
-        } else {
-          print('No room information available');
-        }
-      } else {
-        print('API Error: ${response.statusMessage}');
-      }
-    } catch (e) {
-      print('Error Fetching Room Details: $e');
-    }
-  }
-
-  /// Pre-book a room.
-  Future<Map<String, dynamic>?> prebook({
-    required String sessionId,
-    required String hotelCode,
-    required int groupCode,
-    required String currency,
-    required List<String> rateKeys,
-  }) async {
-    final requestBody = {
-      "SessionId": sessionId,
-      "SearchParameter": {
-        "HotelCode": hotelCode,
-        "GroupCode": groupCode,
-        "Currency": currency,
-        "RateKeys": {"RateKey": rateKeys},
-      }
-    };
-
-    print('Prebooking with Request: ${json.encode(requestBody)}');
-    try {
-      final response = await dio.post(
-        '/hotel/Reprice',
-        data: requestBody,
-        options: _defaultHeaders(),
-      );
-
-      if (response.statusCode == 200) {
-        print('Prebook Successful: ${response.data}');
-        return response.data as Map<String, dynamic>;
-      } else {
-        print('Prebook Failed: ${response.statusMessage}');
-      }
-    } catch (e) {
-      print('Error in Prebooking: $e');
-    }
-    return null;
   }
 
   Future<Map<String, dynamic>?> getCancellationPolicy({
@@ -284,7 +117,8 @@ class ApiServiceHotel extends GetxService {
   }
 
   Future<bool> bookHotel(Map<String, dynamic> requestBody) async {
-    const String bookingEndpoint = 'https://sastayhotels.pk/mobile_thankyou.php';
+    const String bookingEndpoint =
+        'https://sastayhotels.pk/mobile_thankyou.php';
 
     try {
       // Log the request for debugging
@@ -320,7 +154,10 @@ class ApiServiceHotel extends GetxService {
                 response.data['code'] == 200) {
               return true;
             }
-          } else if (response.data.toString().toLowerCase().contains('success')) {
+          } else if (response.data
+              .toString()
+              .toLowerCase()
+              .contains('success')) {
             return true;
           }
         }
@@ -346,6 +183,169 @@ class ApiServiceHotel extends GetxService {
     }
   }
 
+  final String apiKey = 'd2608a45ff6c31a8feda78765ae53600';
+  final String secretKey = '93a80d2ffb';
+
+  String getSignature() {
+    // Get current timestamp in seconds
+    int utcDate = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+
+    // Assemble the string similar to PHP
+    String assemble = '$apiKey$secretKey$utcDate';
+
+    // Generate SHA-256 hash
+    var bytes = utf8.encode(assemble);
+    var digest = sha256.convert(bytes);
+    print(digest);
+
+    return digest.toString();
+  }
+
+  Future<void> fetchHotel({
+    required String checkInDate,
+    required String checkOutDate,
+    required List<Map<String, dynamic>> rooms,
+  }) async {
+    String signature = getSignature();
+
+    var headers = {
+      'Api-key': apiKey,
+      'X-Signature': signature,
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip',
+      'Content-Type': 'application/json'
+    };
+    print(signature);
+
+    var data = json.encode({
+      "stay": {"checkIn": checkInDate, "checkOut": checkOutDate},
+      "occupancies": rooms
+          .map((room) => {
+        "rooms": 1,
+        "adults": room['Adult'],
+        "children": room['Children'],
+        if (room['Children'] > 0) "childAges": room['ChildrenAges']
+      })
+          .toList(),
+      "hotels": {
+        "hotel": [24196,24197,24199,24202,24203,24204,24216,24217,24218,24219,24220,24221,24222,24225,24226,24229,24230,24340,24341,24399,24400,24401,24403,24406,24407,24408,24409,24412,24413,24421,24422,24423    ]
+      }
+    });
+
+    try {
+      var response = await dio.request(
+        'https://api.hotelbeds.com/hotel-api/1.0/hotels',
+        options: Options(method: 'POST', headers: headers),
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        print(response.data);
+        // Store the original response
+        controller.originalResponse.value = response.data;
+
+        final hotels = response.data['hotels']['hotels'] as List;
+        controller.sessionId.value = response.data['auditData']['token'];
+
+        // Transform hotel data for the UI
+        controller.hotels.value = hotels.map((hotel) {
+          final minRate = double.parse(hotel['minRate']);
+          return {
+            'hotelCode': hotel['code'],
+            'name': hotel['name'],
+            'rating': int.parse(hotel['categoryCode'][0]),
+            'address': '${hotel['zoneName']}, ${hotel['destinationName']}',
+            'price': minRate.toStringAsFixed(2),
+            'image': 'assets/img/cardbg/4.jpg',
+            'latitude': hotel['latitude'],
+            'longitude': hotel['longitude'],
+            'hotelCity': hotel['destinationName']
+          };
+        }).toList();
+
+        // Store original hotels data
+        controller.originalHotels.value = List.from(controller.hotels);
+      }
+    } catch (e) {
+      print("Error fetching hotels: $e");
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> checkRate(
+      {required List<String> rateKeys}) async {
+    String signature = getSignature();
+
+    final headers = {
+      'Api-key': apiKey,
+      'X-Signature': signature,
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip',
+      'Content-Type': 'application/json'
+    };
+
+    // Format the request body properly
+    var rooms = rateKeys.map((rateKey) => {"rateKey": rateKey}).toList();
+    var requestBody = {"rooms": rooms};
+    var data = json.encode(requestBody);
+
+    // Pretty print the request data
+    print('\n=== Request Data ===');
+    JsonEncoder encoder = JsonEncoder.withIndent('  ');
+    print(encoder.convert(requestBody));
+
+    try {
+      final response = await dio.post(
+          'https://api.hotelbeds.com/hotel-api/1.0/checkrates',
+          options: Options(headers: headers),
+          data: data);
+
+      if (response.statusCode == 200) {
+        // Split the response logging into smaller chunks
+        print('\n=== Response Data ===');
+
+        // Convert response data to pretty JSON string
+        String prettyJson = encoder.convert(response.data);
+
+        // Split the pretty JSON into manageable chunks (e.g., 1000 characters)
+        const int chunkSize = 1000;
+        List<String> chunks = [];
+
+        for (var i = 0; i < prettyJson.length; i += chunkSize) {
+          var end = (i + chunkSize < prettyJson.length)
+              ? i + chunkSize
+              : prettyJson.length;
+          chunks.add(prettyJson.substring(i, end));
+        }
+
+        // Print each chunk with a separator
+        for (var i = 0; i < chunks.length; i++) {
+          print('\n--- Chunk ${i + 1}/${chunks.length} ---');
+          print(chunks[i]);
+        }
+
+        return response.data as Map<String, dynamic>;
+      } else {
+        print('\n=== Error Response ===');
+        print('Status Code: ${response.statusCode}');
+        print('Status Message: ${response.statusMessage}');
+        return null;
+      }
+    } catch (e) {
+      print('\n=== Exception Caught ===');
+      print('Error checking rates: $e');
+
+      // If the error has response data, try to print it
+      if (e is DioError && e.response?.data != null) {
+        print('\n=== Error Response Data ===');
+        try {
+          print(encoder.convert(e.response?.data));
+        } catch (jsonError) {
+          print(e.response?.data.toString());
+        }
+      }
+
+      return null;
+    }
+  }
 }
-
-

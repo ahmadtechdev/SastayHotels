@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../widgets/colors.dart';
 import '../../../form/controllers/flight_search_controller.dart';
@@ -47,27 +48,6 @@ class _FlightCardState extends State<FlightCard>
   }
 
   // Calculate total layover time
-  String calculateTotalLayoverTime() {
-    int totalLayoverMinutes = 0;
-
-    // Get total leg elapsed time from legDesc
-    int totalLegTime = widget.flight.legElapsedTime ?? 0;
-
-    // Sum up all individual flight times
-    int totalFlightTime = 0;
-    for (var schedule in widget.flight.stopSchedules) {
-      totalFlightTime += schedule['elapsedTime'] as int? ?? 0;
-    }
-
-    // Layover time is the difference
-    totalLayoverMinutes = totalLegTime - totalFlightTime;
-
-    if (totalLayoverMinutes <= 0) return 'N/A';
-
-    final hours = totalLayoverMinutes ~/ 60;
-    final minutes = totalLayoverMinutes % 60;
-    return '${hours}h ${minutes}m';
-  }
 
 // Add this utility function to translate cabin codes
   String getCabinClassName(String cabinCode) {
@@ -130,35 +110,55 @@ class _FlightCardState extends State<FlightCard>
     return widget.flight.baggageAllowance.type;
   }
 
+  // Add these utility methods for date formatting
+  String formatTimeFromDateTime(String dateTimeString) {
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      return DateFormat('HH:mm').format(dateTime);
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  String formatFullDateTime(String dateTimeString) {
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      return DateFormat('E, d MMM yyyy').format(dateTime);
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     print("stop schedules");
-    print(widget.flight.stopSchedules);
+    print(widget.flight.departureTime);
+    print(widget.flight.arrivalTime);
     final searchConroller = Get.put(FlightSearchController());
     String formatTime(String time) {
       if (time.isEmpty) return 'N/A';
       return time.split(':').sublist(0, 2).join(':'); // Extract HH:mm
     }
 
-// Find the matching departure time based on the origin city
+    // Update these methods to handle the new DateTime format
     String getDepartureTime() {
       final stop = widget.flight.stopSchedules.firstWhere(
-        (schedule) =>
-            schedule['departure']['city'] == searchConroller.origins.first,
+            (schedule) =>
+        schedule['departure']['city'] == searchConroller.origins.first,
         orElse: () => {},
       );
-      return stop.isNotEmpty ? formatTime(stop['departure']['time']) : 'N/A';
+      return stop.isNotEmpty ? formatTimeFromDateTime(stop['departure']['dateTime']) : 'N/A';
     }
 
-// Find the matching arrival time based on the destination city
     String getArrivalTime() {
       final stop = widget.flight.stopSchedules.firstWhere(
-        (schedule) =>
-            schedule['arrival']['city'] == searchConroller.destinations.first,
+            (schedule) =>
+        schedule['arrival']['city'] == searchConroller.destinations.first,
         orElse: () => {},
       );
-      return stop.isNotEmpty ? formatTime(stop['arrival']['time']) : 'N/A';
+      return stop.isNotEmpty ? formatTimeFromDateTime(stop['arrival']['dateTime']) : 'N/A';
     }
+
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -565,6 +565,10 @@ class _FlightCardState extends State<FlightCard>
     // Calculate layover time for segments within the same leg
     String? layoverTime;
 
+    // Update the departure and arrival time display
+    final departureDateTime = schedule['departure']['dateTime'];
+    final arrivalDateTime = schedule['arrival']['dateTime'];
+
     // Find which leg this schedule belongs to
     for (var legSchedule in widget.flight.legSchedules) {
       final schedules = legSchedule['schedules'] as List;
@@ -684,7 +688,15 @@ class _FlightCardState extends State<FlightCard>
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['departure']['time'].toString().split('+')[0],
+                      formatTimeFromDateTime(departureDateTime),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      formatFullDateTime(departureDateTime),
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -732,7 +744,15 @@ class _FlightCardState extends State<FlightCard>
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     Text(
-                      schedule['arrival']['time'].toString().split('+')[0],
+                      formatTimeFromDateTime(arrivalDateTime),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      formatFullDateTime(arrivalDateTime),
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],

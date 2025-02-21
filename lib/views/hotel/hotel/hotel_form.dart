@@ -1,4 +1,3 @@
-
 import 'package:flight_bocking/widgets/date_range_slector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -34,7 +33,7 @@ class HotelForm extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Obx(
-              () => CustomDateRangeSelector(
+          () => CustomDateRangeSelector(
             dateRange: hotelDateController.dateRange.value,
             onDateRangeChanged: hotelDateController.updateDateRange,
             nights: hotelDateController.nights.value,
@@ -56,32 +55,34 @@ class HotelForm extends StatelessWidget {
             final guestsController = Get.find<GuestsController>();
 
             // Prepare API parameters
-            String destinationCode = "160-0";
-            String countryCode = "AE";
-            String nationality = "AE";
-            String currency = "USD";
-            String checkInDate = hotelDateController.checkInDate.value.toIso8601String();
-            String checkOutDate = hotelDateController.checkOutDate.value.toIso8601String();
+            // String destinationCode = "160-0";
+            // String countryCode = "AE";
+            // String nationality = "AE";
+            // String currency = "USD";
+            String checkInDate =
+                hotelDateController.checkInDate.value.toIso8601String();
+            String checkOutDate =
+                hotelDateController.checkOutDate.value.toIso8601String();
 
             // Create rooms array with the new structure
             List<Map<String, dynamic>> rooms = List.generate(
               guestsController.roomCount.value,
-                  (index) => {
+              (index) => {
                 "RoomIdentifier": index + 1,
                 "Adult": guestsController.rooms[index].adults.value,
                 "Children": guestsController.rooms[index].children.value,
                 if (guestsController.rooms[index].children.value > 0)
-                  "ChildrenAges": guestsController.rooms[index].childrenAges.toList(),
+                  "ChildrenAges":
+                      guestsController.rooms[index].childrenAges.toList(),
               },
             );
+            print('the rooms is ${rooms}');
 
             try {
+              var apiService = Get.put(ApiServiceHotel());
+
               // Call the API
-              await ApiServiceHotel().fetchHotels(
-                destinationCode: destinationCode,
-                countryCode: countryCode,
-                nationality: nationality,
-                currency: currency,
+              await apiService.fetchHotel(
                 checkInDate: checkInDate,
                 checkOutDate: checkOutDate,
                 rooms: rooms,
@@ -107,11 +108,13 @@ class HotelForm extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        const Icon(Icons.error_outline,
+                            color: Colors.red, size: 48),
                         const SizedBox(height: 16),
                         const Text(
                           'Something went wrong',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -125,7 +128,8 @@ class HotelForm extends StatelessWidget {
                             backgroundColor: TColors.primary,
                             minimumSize: const Size(200, 45),
                           ),
-                          child: const Text('OK', style: TextStyle(color: Colors.white)),
+                          child: const Text('OK',
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),

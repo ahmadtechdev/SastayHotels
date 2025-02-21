@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -434,98 +437,86 @@ class PackageSelectionDialog extends StatelessWidget {
       ),
     );
   }
+
   void onSelectPackage() async {
     try {
       final apiService = ApiServiceFlight();
+      final flightAvailabilityService = FlightAvailabilityService();
       final token = await apiService.getValidToken() ?? await apiService.generateToken();
 
-      // Get origin and destination from the selected flight
-      final origin = flight.from;
-      final destination = flight.to;
-
-      // Clean location codes - remove any spaces and brackets
-      String cleanValue(String value) {
-        return value.split('(').first.trim().toUpperCase();
-      }
-
-      final cleanOrigin = cleanValue(origin);
-      final cleanDestination = cleanValue(destination);
-
-      // Get dates from the flight date controller
-      final departureDate = _formatDateTime(flightDateController.departureDate.value);
-      final returnDate = flightDateController.tripType.value == 'Return'
-          ? _formatDateTime(flightDateController.returnDate.value)
-          : '';
-
-      // Get passenger counts from travelers controller
-      final adultCount = travelersController.adultCount.value;
-      final childCount = travelersController.childrenCount.value;
-      final infantCount = travelersController.infantCount.value;
-
-      // Get cabin class from travelers controller
-      final cabinClass = travelersController.travelClass.value;
-
-      // Create flight segments based on the selected flight
+      // Extract flight segments from the selected flight
       final List<Map<String, dynamic>> flightSegments = [];
 
-      // Add outbound flight segment
-      // flightSegments.add({
-      //   "ClassOfService": flight.classOfService,
-      //   "Number": flight.flightNumber,
-      //   "DepartureDateTime": flight.departureDateTime,
-      //   "ArrivalDateTime": flight.arrivalDateTime,
-      //   "Type": "A",
-      //   "OriginLocation": {"LocationCode": cleanOrigin},
-      //   "DestinationLocation": {"LocationCode": cleanDestination},
-      //   "Airline": {
-      //     "Operating": flight.operatingCarrier,
-      //     "Marketing": flight.marketingCarrier
-      //   }
-      // });
-
-      // If it's a return flight and we're checking the second flight
-      if (!isAnyFlightRemaining && flightController.selectedFirstFlight.value != null) {
-        final firstFlight = flightController.selectedFirstFlight.value!;
-        // flightSegments.add({
-        //   "ClassOfService": firstFlight.classOfService,
-        //   "Number": firstFlight.flightNumber,
-        //   "DepartureDateTime": firstFlight.departureDateTime,
-        //   "ArrivalDateTime": firstFlight.arrivalDateTime,
-        //   "Type": "A",
-        //   "OriginLocation": {"LocationCode": destination},
-        //   "DestinationLocation": {"LocationCode": origin},
-        //   "Airline": {
-        //     "Operating": firstFlight.operatingCarrier,
-        //     "Marketing": firstFlight.marketingCarrier
-        //   }
-        // });
+      // Process all flight segments
+      for (var legSchedule in flight.legSchedules) {
+        final schedules = legSchedule['schedules'] as List;
+        for (var schedule in schedules) {
+          final carrier = schedule['carrier'];
+          flightSegments.add({
+            "ClassOfService": flight.cabinClass,
+            "Number": carrier['marketingFlightNumber'], // Leave as string
+            "DepartureDateTime": flight.departureTime,
+            // "DepartureDateTime": "2025-02-20T22:40:00",
+            "ArrivalDateTime": flight.arrivalTime,
+            // "ArrivalDateTime": "2025-02-22T10:30:00",
+            "Type": "A",
+            "OriginLocation": {
+              "LocationCode": schedule['departure']['airport']
+            },
+            "DestinationLocation": {
+              "LocationCode": schedule['arrival']['airport']
+            },
+            "Airline": {
+              "Operating": carrier['operating'] ?? carrier['marketing'],
+              "Marketing": carrier['marketing']
+            }
+          });
+        }
       }
 
-      final availabilityResponse = await apiService.checkFlightPackageAvailability(
+      final origin = flight.from.split('(')[1].split(')')[0].trim();
+      final destination = flight.to.split('(')[1].split(')')[0].trim();
+
+      print("flight segments");
+      print(flightSegments);
+
+      final availabilityResponse = await flightAvailabilityService.checkFlightAvailability(
         token: token,
         origin: origin,
         destination: destination,
-        departureDateTime: departureDate,
-        returnDateTime: returnDate,
-        cabinClass: cabinClass,
-        adultCount: adultCount,
-        childCount: childCount,
-        infantCount: infantCount,
+        departureDateTime: _formatDateTime(flightDateController.departureDate.value),
+        returnDateTime: flightDateController.tripType.value == 'Return'
+            ? _formatDateTime(flightDateController.returnDate.value)
+            : null,
+        cabinClass: travelersController.travelClass.value,
+        adultCount: travelersController.adultCount.value,
+        childCount: travelersController.childrenCount.value,
+        infantCount: travelersController.infantCount.value,
         flights: flightSegments,
       );
 
       if (availabilityResponse != null) {
-        // Handle successful availability check
-        // You might want to update the UI or proceed with booking
+        print(availabilityResponse);
         print('Package availability confirmed');
+        // Handle successful availability check
+
+        if (flightController.currentScenario.value == FlightScenario.oneWay ||
+            !isAnyFlightRemaining) {
+          Get.to(() => const ReviewTripPage(isMulti: false));
+        } else {
+          flightController.isSelectingFirstFlight.value = false;
+          Get.back();
+        }
       }
     } catch (e) {
       print('Error checking flight package availability: $e');
-      // Show error message to user
       Get.snackbar(
         'Error',
         'Unable to check package availability. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
       );
     }
   }
@@ -573,5 +564,231 @@ class PackageSelectionDialog extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class FlightAvailabilityService {
+  final Dio dio;
+  static const String baseUrl = 'https://api.havail.sabre.com';
+
+  FlightAvailabilityService({Dio? dio}) : dio = dio ?? Dio(BaseOptions(
+    baseUrl: baseUrl,
+    validateStatus: (status) => true,
+  ));
+
+  Future<Map<String, dynamic>?> checkFlightAvailability({
+    required String token,
+    required String origin,
+    required String destination,
+    required String departureDateTime,
+    String? returnDateTime,
+    required String cabinClass,
+    required int adultCount,
+    required int childCount,
+    required int infantCount,
+    required List<Map<String, dynamic>> flights,
+  }) async {
+    try {
+      // Validate input parameters
+      if (flights.isEmpty) {
+        throw Exception('No flight segments provided');
+      }
+
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
+      // Build passenger types with proper validation
+      final List<Map<String, dynamic>> passengerTypes = [];
+      if (adultCount > 0) {
+        passengerTypes.add({
+          "Code": "ADT",
+          "Quantity": adultCount,
+          "TPA_Extensions": {}
+        });
+      }
+      if (childCount > 0) {
+        passengerTypes.add({
+          "Code": "CNN",
+          "Quantity": childCount,
+          "TPA_Extensions": {}
+        });
+      }
+      if (infantCount > 0) {
+        passengerTypes.add({
+          "Code": "INF",
+          "Quantity": infantCount,
+          "TPA_Extensions": {}
+        });
+      }
+
+      // Process flight segments with proper type handling
+      List<Map<String, dynamic>> processedFlights = flights.map((flight) {
+        return {
+          "ClassOfService": flight['ClassOfService'] ?? 'L',
+          "Number": flight['Number'],
+          "DepartureDateTime": flight['DepartureDateTime'],
+          "ArrivalDateTime": flight['ArrivalDateTime'],
+          "Type": flight['Type'] ?? 'A',
+          "OriginLocation": {
+            "LocationCode": flight['OriginLocation']['LocationCode']
+          },
+          "DestinationLocation": {
+            "LocationCode": flight['DestinationLocation']['LocationCode']
+          },
+          "Airline": {
+            "Operating": flight['Airline']['Operating'],
+            "Marketing": flight['Airline']['Marketing']
+          }
+        };
+      }).toList();
+
+      // Build origin destination information
+      final List<Map<String, dynamic>> originDestInfo = [
+        {
+          "RPH": "1",
+          "DepartureDateTime": departureDateTime,
+          "OriginLocation": {
+            "LocationCode": origin.toUpperCase()
+          },
+          "DestinationLocation": {
+            "LocationCode": destination.toUpperCase()
+          },
+          "TPA_Extensions": {
+            "Flight": processedFlights.where((f) =>
+            f['OriginLocation']['LocationCode'] == origin.toUpperCase() ||
+                f['DestinationLocation']['LocationCode'] == destination.toUpperCase()
+            ).toList(),
+            "SegmentType": {
+              "Code": "O"
+            }
+          }
+        }
+      ];
+
+      // Add return flight if exists
+      if (returnDateTime != null) {
+        originDestInfo.add({
+          "RPH": "2",
+          "DepartureDateTime": returnDateTime,
+          "OriginLocation": {
+            "LocationCode": destination.toUpperCase()
+          },
+          "DestinationLocation": {
+            "LocationCode": origin.toUpperCase()
+          },
+          "TPA_Extensions": {
+            "Flight": processedFlights.where((f) =>
+            f['OriginLocation']['LocationCode'] == destination.toUpperCase() ||
+                f['DestinationLocation']['LocationCode'] == origin.toUpperCase()
+            ).toList(),
+            "SegmentType": {
+              "Code": "O"
+            }
+          }
+        });
+      }
+
+      final requestData = {
+        "OTA_AirLowFareSearchRQ": {
+          "Version": "4",
+          "TravelPreferences": {
+            "LookForAlternatives": false,
+            "TPA_Extensions": {
+              "VerificationItinCallLogic": {
+                "AlwaysCheckAvailability": true,
+                "Value": "B"
+              }
+            }
+          },
+          "TravelerInfoSummary": {
+            "SeatsRequested": [adultCount + childCount],
+            "AirTravelerAvail": [
+              {
+                "PassengerTypeQuantity": passengerTypes
+              }
+            ],
+            "PriceRequestInformation": {
+              "TPA_Extensions": {
+                "BrandedFareIndicators": {
+                  "MultipleBrandedFares": true,
+                  "ReturnBrandAncillaries": true
+                }
+              }
+            }
+          },
+          "POS": {
+            "Source": [
+              {
+                "PseudoCityCode": "6MD8",
+                "RequestorID": {
+                  "Type": "1",
+                  "ID": "1",
+                  "CompanyName": {
+                    "Code": "TN"
+                  }
+                }
+              }
+            ]
+          },
+          "OriginDestinationInformation": originDestInfo,
+          "TPA_Extensions": {
+            "IntelliSellTransaction": {
+              "RequestType": {
+                "Name": "50ITINS"
+              }
+            }
+          }
+        }
+      };
+
+      print('Request Body:');
+      _printJsonPretty(requestData);
+
+      final response = await dio.post(
+        '/v4/shop/flights/revalidate',
+        options: Options(headers: headers),
+        data: requestData,
+      );
+
+      if (response.statusCode == 200) {
+        _printJsonPretty(response.data);
+
+        return response.data;
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          error: 'Failed to check flight availability: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      print('DioError in flight availability check: ${e.message}');
+      print('Response data: ${e.response?.data}');
+      rethrow;
+    } catch (e) {
+      print('Error in flight availability check: $e');
+      rethrow;
+    }
+  }
+
+  // Helper method to handle flight number parsing
+  String _parseFlightNumber(dynamic number) {
+    if (number is int) {
+      return number.toString();
+    } else if (number is String) {
+      return number;
+    }
+    throw FormatException('Invalid flight number format: $number');
+  }
+
+  /// Helper function to print large JSON data in readable format
+  void _printJsonPretty(dynamic jsonData) {
+    const int chunkSize = 1000;
+    final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+    for (int i = 0; i < jsonString.length; i += chunkSize) {
+      print(jsonString.substring(i, i + chunkSize > jsonString.length ? jsonString.length : i + chunkSize));
+    }
   }
 }

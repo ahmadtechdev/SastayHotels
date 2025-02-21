@@ -4,11 +4,8 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:flight_bocking/widgets/colors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-import '../../../services/api_service_hotel.dart';
 import 'search_hotel_controller.dart';
 import 'select_room/selectroom.dart';
-
 
 class HotelScreen extends StatefulWidget {
   const HotelScreen({super.key});
@@ -552,13 +549,60 @@ class HotelCard extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: ElevatedButton(
               onPressed: () {
-                controller.hotelCode.value = hotel['hotelCode'];
-                controller.hotelCity.value = hotel['hotelCity'];
+                // Update hotel information
+                controller.hotelCode.value = hotel['hotelCode'].toString();
+                controller.hotelCity.value = hotel['hotelCity'] ?? '';
+                controller.hotelName.value = hotel['name'] ?? 'Unknown Hotel';
+                controller.destinationName.value = hotel['address'] ?? '';
+                controller.zoneName.value = hotel['zoneName'] ?? '';
+                controller.categoryName.value = hotel['rating'].toString();
 
+                // Clear previous room data
                 controller.roomsdata.clear();
 
-                ApiServiceHotel().fetchRoomDetails(
-                    hotel['hotelCode'], controller.sessionId.value);
+                // Transform rooms data from the original response
+                final hotelData = controller
+                    .originalResponse.value['hotels']?['hotels']
+                    ?.firstWhere(
+                        (h) =>
+                            h['code'].toString() ==
+                            hotel['hotelCode'].toString(),
+                        orElse: () => null);
+
+                if (hotelData != null && hotelData['rooms'] != null) {
+                  final roomsData = (hotelData['rooms'] as List).map((room) {
+                    final rates = (room['rates'] as List?)?.map((rate) {
+                          return {
+                            'rateKey': rate['rateKey'],
+                            'rateClass': rate['rateClass'],
+                            'rateType': rate['rateType'],
+                            'boardCode': rate['boardCode'],
+                            'boardName': rate['boardName'],
+                            'meal': rate['boardName'],
+                            'price': {
+                              'net': double.tryParse(
+                                      rate['net']?.toString() ?? '0') ??
+                                  0,
+                              'total': double.tryParse(
+                                      rate['net']?.toString() ?? '0') ??
+                                  0,
+                            },
+                            'cancellationPolicies':
+                                rate['cancellationPolicies'] ?? [],
+                          };
+                        }).toList() ??
+                        [];
+
+                    return {
+                      'roomCode': room['code'],
+                      'roomName': room['name'],
+                      'rates': rates,
+                    };
+                  }).toList();
+
+                  controller.roomsdata.value = roomsData;
+                }
+
                 controller.filterhotler();
                 Get.to(() => const SelectRoomScreen());
               },
@@ -573,7 +617,7 @@ class HotelCard extends StatelessWidget {
               child: const Text('Select Room',
                   style: TextStyle(color: TColors.secondary)),
             ),
-          ),
+          )
         ],
       ),
     );
@@ -598,7 +642,7 @@ class HotelCard extends StatelessWidget {
           ),
         ),
         errorWidget: (context, url, error) => Image.asset(
-          'assets/img/cardbg/broken-image.png',
+          'assets/img/cardbg/4.jpg',
           height: 200,
           width: double.infinity,
           fit: BoxFit.cover,
@@ -607,7 +651,7 @@ class HotelCard extends StatelessWidget {
     } else {
       // If not a URL, assume it's a local asset path
       return Image.asset(
-        imageUrl.isEmpty ? 'assets/img/cardbg/broken-image.png' : imageUrl,
+        imageUrl.isEmpty ? 'assets/img/cardbg/4.jpg' : imageUrl,
         height: 200,
         width: double.infinity,
         fit: BoxFit.cover,
