@@ -143,22 +143,25 @@ class _FlightCardState extends State<FlightCard>
     // Update these methods to handle the new DateTime format
     String getDepartureTime() {
       final stop = widget.flight.stopSchedules.firstWhere(
-            (schedule) =>
-        schedule['departure']['city'] == searchConroller.origins.first,
+        (schedule) =>
+            schedule['departure']['city'] == searchConroller.origins.first,
         orElse: () => {},
       );
-      return stop.isNotEmpty ? formatTimeFromDateTime(stop['departure']['dateTime']) : 'N/A';
+      return stop.isNotEmpty
+          ? formatTimeFromDateTime(stop['departure']['dateTime'])
+          : 'N/A';
     }
 
     String getArrivalTime() {
       final stop = widget.flight.stopSchedules.firstWhere(
-            (schedule) =>
-        schedule['arrival']['city'] == searchConroller.destinations.first,
+        (schedule) =>
+            schedule['arrival']['city'] == searchConroller.destinations.first,
         orElse: () => {},
       );
-      return stop.isNotEmpty ? formatTimeFromDateTime(stop['arrival']['dateTime']) : 'N/A';
+      return stop.isNotEmpty
+          ? formatTimeFromDateTime(stop['arrival']['dateTime'])
+          : 'N/A';
     }
-
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -182,7 +185,6 @@ class _FlightCardState extends State<FlightCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 // SingleChildScrollView(
                 //   child: Row(
                 //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -294,10 +296,9 @@ class _FlightCardState extends State<FlightCard>
                 //   ),
                 // ),
                 for (var legSchedule in widget.flight.legSchedules)
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-
+                  SingleChildScrollView(
+                    child: Column(
+                      children: [
                         Row(
                           children: [
                             Image.asset(
@@ -333,7 +334,8 @@ class _FlightCardState extends State<FlightCard>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    formatTime(legSchedule['departure']['time'].toString()),
+                                    formatTime(legSchedule['departure']['time']
+                                        .toString()),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -402,7 +404,8 @@ class _FlightCardState extends State<FlightCard>
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    formatTime(legSchedule['arrival']['time'].toString()),
+                                    formatTime(legSchedule['arrival']['time']
+                                        .toString()),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -420,14 +423,13 @@ class _FlightCardState extends State<FlightCard>
                             ],
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-
                     GetX<FlightController>(
                       builder: (controller) => Container(
                         padding: const EdgeInsets.symmetric(
@@ -551,7 +553,8 @@ class _FlightCardState extends State<FlightCard>
       Map<String, dynamic> schedule, int index, int totalSegments) {
     // Get flight number and carrier from the schedule
     final carrier = schedule['carrier'] ?? {};
-    final flightNumber = '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}';
+    final flightNumber =
+        '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}';
     final marketingCarrier = carrier['marketing'] ?? 'Unknown';
     final airlineInfo = getAirlineInfo(marketingCarrier);
     FlightSegmentInfo? segmentInfo;
@@ -572,11 +575,12 @@ class _FlightCardState extends State<FlightCard>
     for (var legSchedule in widget.flight.legSchedules) {
       final schedules = legSchedule['schedules'] as List;
       final currentScheduleIndex = schedules.indexWhere((s) =>
-      s['departure']['time'] == schedule['departure']['time'] &&
+          s['departure']['time'] == schedule['departure']['time'] &&
           s['arrival']['time'] == schedule['arrival']['time']);
 
       // If found and not the last schedule in this leg
-      if (currentScheduleIndex != -1 && currentScheduleIndex < schedules.length - 1) {
+      if (currentScheduleIndex != -1 &&
+          currentScheduleIndex < schedules.length - 1) {
         // Get arrival time of current flight
         final currentArrivalTime = schedule['arrival']['time'].toString();
 
@@ -706,7 +710,7 @@ class _FlightCardState extends State<FlightCard>
                   const Icon(Icons.flight, color: TColors.primary),
                   Container(
                     padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),

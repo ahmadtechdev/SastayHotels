@@ -1,3 +1,5 @@
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/filter_modal.dart';
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:async';
@@ -5,13 +7,14 @@ import 'dart:async';
 import '../../../../widgets/colors.dart';
 import '../booking_flight/booking_flight.dart';
 
-
 class ReviewTripPage extends StatefulWidget {
-  final bool isMulti; // Add 'final' for immutability
+  final bool isMulti; // Indicates if it's a multi-city trip
+  final Flight flight; // Add the selected flight parameter
 
   const ReviewTripPage({
     super.key,
-    required this.isMulti, // Mark the parameter as required
+    required this.isMulti,
+    required this.flight, // Mark the parameter as required
   });
 
   @override
@@ -86,15 +89,13 @@ class ReviewTripPageState extends State<ReviewTripPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Flight Details Card
-            const SizedBox(height: 8,),
-            _reviewContainer(typeFlight: 'Departing'),
-            if(widget.isMulti) ...[
-              const SizedBox(height: 8,),
-              _reviewContainer(typeFlight: 'Returning'),
-            ],
-
-            // Add-ons Section
+            const SizedBox(height: 8),
+            // _reviewContainer(typeFlight: 'Departing'),
+            // Show the FlightCard for the selected flight
+            FlightCard(
+              flight: widget.flight, // Pass the selected flight here
+              showReturnFlight: widget.isMulti,
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               child: Text(
@@ -106,7 +107,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 1500),
                 curve: Curves.easeInOut,
@@ -115,7 +117,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: _animatedShadow,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SizedBox(
                   width: double.infinity,
                   child: Column(
@@ -141,9 +144,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(
-                        height: 12,
-                      ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Image.asset(
@@ -151,9 +152,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                             height: 100,
                             width: 100,
                           ),
-                          const SizedBox(
-                            width: 8,
-                          ),
+                          const SizedBox(width: 8),
                           const SizedBox(
                             width: 180,
                             child: Column(
@@ -164,10 +163,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                                   style: TextStyle(
                                       color: TColors.grey, fontSize: 11),
                                   softWrap: true,
-                                  // Ensures text wraps to the next line
                                   overflow: TextOverflow.visible,
-                                  // Ensures overflow is handled visibly
-                                  maxLines: null, // Allows unlimited lines
+                                  maxLines: null,
                                 ),
                                 SizedBox(height: 8),
                                 Row(
@@ -176,7 +173,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                                         size: 14, color: TColors.primary),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Zero cancellation fees', style: TextStyle(fontSize: 11),
+                                      'Zero cancellation fees',
+                                      style: TextStyle(fontSize: 11),
                                     ),
                                   ],
                                 ),
@@ -186,7 +184,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                                     Icon(Icons.check,
                                         size: 14, color: TColors.primary),
                                     SizedBox(width: 8),
-                                    Text('Guaranteed refund',  style: TextStyle(fontSize: 11)),
+                                    Text('Guaranteed refund',
+                                        style: TextStyle(fontSize: 11)),
                                   ],
                                 ),
                                 SizedBox(height: 4),
@@ -199,10 +198,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                                       'Ensured flexibility for your trip',
                                       style: TextStyle(fontSize: 11),
                                       softWrap: true,
-                                      // Ensures text wraps to the next line
                                       overflow: TextOverflow.visible,
-                                      // Ensures overflow is handled visibly
-                                      maxLines: null, // Allows unlimited lines
+                                      maxLines: null,
                                     ),
                                   ],
                                 ),
@@ -211,18 +208,17 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                           ),
                         ],
                       ),
-                      // const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {},
                           child: const Text(
                             'Terms & Conditions',
-                            style: TextStyle(color: TColors.primary, fontSize: 12),
+                            style:
+                                TextStyle(color: TColors.primary, fontSize: 12),
                           ),
                         ),
                       ),
-                      // const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -242,7 +238,6 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                 ),
               ),
             ),
-
           ],
         ),
       ),
@@ -259,11 +254,10 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   children: [
                     Text(
                       'Review Details',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: TColors.grey),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: TColors.grey),
                     ),
-                   SizedBox(
-                     height: 2,
-                   ),
+                    SizedBox(height: 2),
                     Text(
                       'PKR 35,866',
                       style: TextStyle(
@@ -274,10 +268,10 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   ],
                 ),
                 SizedBox(
-                  width:200,
+                  width: 200,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(()=>const BookingForm());
+                      Get.to(() => const BookingForm());
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
@@ -288,25 +282,23 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                     ),
                     child: const Text(
                       'Book',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(
-            height: 2,
-          )
+          const SizedBox(height: 2),
         ],
-      ) ,
+      ),
     );
   }
 
-  Widget _reviewContainer({required String typeFlight}){
+  Widget _reviewContainer({required String typeFlight}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical:0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
         decoration: BoxDecoration(
@@ -323,7 +315,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Row(
+            Row(
               children: [
                 Text(
                   typeFlight,
@@ -420,12 +412,9 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   ),
                 ),
                 const Spacer(),
-                // TextButton(
-                //   onPressed: () {},
-                //   child: const Text('Change'),
-                // ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: TColors.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(42),
