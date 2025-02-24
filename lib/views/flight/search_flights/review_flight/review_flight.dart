@@ -99,7 +99,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               child: Text(
-                'Add-Ons',
+                'Booking Amount',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -124,114 +124,19 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Sasta Refund',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            'PKR 849',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: TColors.primary,
-                            ),
-                          ),
-                        ],
+                      _buildPriceRow('Adult Price x 2', 'PKR 556,827.00'),
+                      const SizedBox(height: 8),
+                      _buildPriceRow('Adult Price x 1', 'PKR 278,414.00'),
+                      const SizedBox(height: 8),
+                      _buildPriceRow('Infant Price x 1', 'PKR 25,787.00'),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Image.asset(
-                            "assets/img/refund2.png",
-                            height: 100,
-                            width: 100,
-                          ),
-                          const SizedBox(width: 8),
-                          const SizedBox(
-                            width: 180,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Enhance your booking experience with:',
-                                  style: TextStyle(
-                                      color: TColors.grey, fontSize: 11),
-                                  softWrap: true,
-                                  overflow: TextOverflow.visible,
-                                  maxLines: null,
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(Icons.check,
-                                        size: 14, color: TColors.primary),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Zero cancellation fees',
-                                      style: TextStyle(fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.check,
-                                        size: 14, color: TColors.primary),
-                                    SizedBox(width: 8),
-                                    Text('Guaranteed refund',
-                                        style: TextStyle(fontSize: 11)),
-                                  ],
-                                ),
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.check,
-                                        size: 14, color: TColors.primary),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Ensured flexibility for your trip',
-                                      style: TextStyle(fontSize: 11),
-                                      softWrap: true,
-                                      overflow: TextOverflow.visible,
-                                      maxLines: null,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            'Terms & Conditions',
-                            style:
-                                TextStyle(color: TColors.primary, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: TColors.primary,
-                            foregroundColor: TColors.background,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(42),
-                            ),
-                          ),
-                          child: const Text('+ Add'),
-                        ),
+                      _buildPriceRow(
+                        'Total Amount',
+                        'PKR 861,026.00',
+                        isTotal: true,
                       ),
                     ],
                   ),
@@ -271,7 +176,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   width: 200,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.to(() => const BookingForm());
+                      Get.to(() => BookingForm(flight: widget.flight));
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: TColors.primary,
@@ -436,4 +341,137 @@ class ReviewTripPageState extends State<ReviewTripPage> {
       ),
     );
   }
+
+  Widget _buildPriceRow(String label, String amount, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? TColors.primary : TColors.grey,
+          ),
+        ),
+        Text(
+          amount,
+          style: TextStyle(
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? TColors.primary : Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
 }
+// const Row(
+//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                         children: [
+//                           Text(
+//                             'Sasta Refund',
+//                             style: TextStyle(
+//                               fontWeight: FontWeight.bold,
+//                               fontSize: 14,
+//                             ),
+//                           ),
+//                           Text(
+//                             'PKR 849',
+//                             style: TextStyle(
+//                               fontWeight: FontWeight.bold,
+//                               fontSize: 14,
+//                               color: TColors.primary,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       const SizedBox(height: 12),
+//                       Row(
+//                         children: [
+//                           Image.asset(
+//                             "assets/img/refund2.png",
+//                             height: 100,
+//                             width: 100,
+//                           ),
+//                           const SizedBox(width: 8),
+//                           const SizedBox(
+//                             width: 180,
+//                             child: Column(
+//                               crossAxisAlignment: CrossAxisAlignment.start,
+//                               children: [
+//                                 Text(
+//                                   'Enhance your booking experience with:',
+//                                   style: TextStyle(
+//                                       color: TColors.grey, fontSize: 11),
+//                                   softWrap: true,
+//                                   overflow: TextOverflow.visible,
+//                                   maxLines: null,
+//                                 ),
+//                                 SizedBox(height: 8),
+//                                 Row(
+//                                   children: [
+//                                     Icon(Icons.check,
+//                                         size: 14, color: TColors.primary),
+//                                     SizedBox(width: 8),
+//                                     Text(
+//                                       'Zero cancellation fees',
+//                                       style: TextStyle(fontSize: 11),
+//                                     ),
+//                                   ],
+//                                 ),
+//                                 SizedBox(height: 4),
+//                                 Row(
+//                                   children: [
+//                                     Icon(Icons.check,
+//                                         size: 14, color: TColors.primary),
+//                                     SizedBox(width: 8),
+//                                     Text('Guaranteed refund',
+//                                         style: TextStyle(fontSize: 11)),
+//                                   ],
+//                                 ),
+//                                 SizedBox(height: 4),
+//                                 Row(
+//                                   children: [
+//                                     Icon(Icons.check,
+//                                         size: 14, color: TColors.primary),
+//                                     SizedBox(width: 8),
+//                                     Text(
+//                                       'Ensured flexibility for your trip',
+//                                       style: TextStyle(fontSize: 11),
+//                                       softWrap: true,
+//                                       overflow: TextOverflow.visible,
+//                                       maxLines: null,
+//                                     ),
+//                                   ],
+//                                 ),
+//                               ],
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       Align(
+//                         alignment: Alignment.centerRight,
+//                         child: TextButton(
+//                           onPressed: () {},
+//                           child: const Text(
+//                             'Terms & Conditions',
+//                             style:
+//                                 TextStyle(color: TColors.primary, fontSize: 12),
+//                           ),
+//                         ),
+//                       ),
+//                       SizedBox(
+//                         width: double.infinity,
+//                         child: ElevatedButton(
+//                           onPressed: () {},
+//                           style: ElevatedButton.styleFrom(
+//                             backgroundColor: TColors.primary,
+//                             foregroundColor: TColors.background,
+//                             shape: RoundedRectangleBorder(
+//                               borderRadius: BorderRadius.circular(42),
+//                             ),
+//                           ),
+//                           child: const Text('+ Add'),
+//                         ),
+//                       ),

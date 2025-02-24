@@ -1,12 +1,17 @@
+import 'package:flight_bocking/views/flight/search_flights/booking_flight/booking_flight_controller.dart';
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/filter_modal.dart';
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
+import 'package:flight_bocking/views/hotel/hotel/guests/guests_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:get/get.dart';
 
 import '../../../../widgets/colors.dart';
-import '../../../../widgets/date_selecter.dart';
-
 
 class BookingForm extends StatefulWidget {
-  const BookingForm({super.key});
+  final Flight flight; // Add a flight parameter
+
+  const BookingForm(
+      {super.key, required this.flight}); // Require flight in constructor
 
   @override
   State<BookingForm> createState() => _BookingFormState();
@@ -14,15 +19,12 @@ class BookingForm extends StatefulWidget {
 
 class _BookingFormState extends State<BookingForm> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  String? _selectedTitle;
-  bool _receiveUpdates = true;
+  final BookingFlightController bookingController =
+      Get.put(BookingFlightController());
+  final GuestsController guestsController = Get.find<GuestsController>();
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -56,9 +58,8 @@ class _BookingFormState extends State<BookingForm> {
                 const SizedBox(height: 24),
                 _buildFlightDetails(),
                 const SizedBox(height: 24),
-                _buildContactDetails(),
+                _buildRoomCards(),
                 const SizedBox(height: 24),
-                _buildTravelerDetails(),
                 const SizedBox(height: 24),
               ],
             ),
@@ -129,484 +130,9 @@ class _BookingFormState extends State<BookingForm> {
   }
 
   Widget _buildFlightDetails() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: TColors.background,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Text(
-                'Departing',
-                style: TextStyle(color: TColors.black),
-              ),
-              SizedBox(
-                width: 8,
-              ),
-              Icon(
-                Icons.circle,
-                size: 8,
-              ),
-              SizedBox(
-                width: 8,
-              ),
-              Icon(
-                Icons.calendar_today,
-                size: 14,
-                color: TColors.grey,
-              ),
-              SizedBox(
-                width: 8,
-              ),
-              Text('07 Dec, 2024',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: TColors.grey,
-                  )),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.flight_takeoff,
-                      color: TColors.primary.withOpacity(0.7)),
-                  const SizedBox(width: 8),
-                  const Text('KHI - ISB', style: TextStyle(fontSize: 16)),
-                ],
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: TColors.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(42),
-                  border: Border.all(color: TColors.primary.withOpacity(0.3)),
-                ),
-                child: const Text(
-                  'Details',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: TColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactDetails() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Contact Details',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "Mobile Number",
-          style: TextStyle(
-              color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        IntlPhoneField(
-          controller: _phoneController,
-          showDropdownIcon: false,
-          decoration: InputDecoration(
-            fillColor: TColors.background,
-            filled: true,
-            hintText: 'Enter Your Mobile Number',
-            hintStyle: const TextStyle(fontSize: 14, color: TColors.placeholder),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          initialCountryCode: 'PK', // Default country
-          onChanged: (phone) {
-            print(phone.completeNumber); // Full phone number with country code
-          },
-          onCountryChanged: (country) {
-            print('Country selected: ${country.name} (+${country.dialCode})');
-          },
-          validator: (value) {
-            if (value == null || value.number.isEmpty) {
-              return 'Please enter mobile number';
-            }
-            return null;
-          },
-        ),
-
-        const Text(
-          "e.g. +92 3027253781",
-          style: TextStyle(color: TColors.grey, fontSize: 12),
-        ),
-        const SizedBox(height: 16),
-        const Row(
-          children: [
-            Text(
-              "Email",
-              style: TextStyle(
-                  color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(width: 8,),
-            Icon(Icons.info_outline, size: 14, color: TColors.grey,),
-
-            SizedBox(width: 4,),
-            Text(
-              "(your ticket will be emailed here)",
-              style: TextStyle(color: TColors.grey, fontSize: 12),
-            ),
-          ],
-        ),
-        TextFormField(
-          controller: _emailController,
-          decoration: InputDecoration(
-            hintText: 'Enter your email',
-            hintStyle: const TextStyle(fontSize: 14, color: TColors.placeholder),
-            fillColor: TColors.background,
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter email';
-            }
-            return null;
-          },
-        ),
-        const Text(
-          "e.g. name@outlook.com",
-          style: TextStyle(color: TColors.grey, fontSize: 12),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Checkbox(
-              value: _receiveUpdates,
-              onChanged: (value) {
-                setState(() {
-                  _receiveUpdates = value ?? true;
-                });
-              },
-              activeColor: TColors.primary,
-            ),
-            const Expanded(
-              child: Text(
-                'I agree to receive travel related information and deals.',
-                style: TextStyle(fontSize: 12, color: TColors.grey),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTravelerDetails() {
-
-    DateTime selectedDate = DateTime.now();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Traveler details for Adult 1',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            fillColor: TColors.background,
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          hint: const Text("Select your traveler"),
-          items: [
-            // Add a new traveler
-            const DropdownMenuItem<String>(
-              enabled: false,
-              child: Text(
-                "New Traveler",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            DropdownMenuItem<String>(
-              value: "add_new",
-              child: GestureDetector(
-                onTap: () {
-                  // Handle the "Add a new traveler" action
-                  print("Add a new traveler clicked");
-                },
-                child: const Text(
-                  "+ Add a new traveler",
-                  style: TextStyle(
-                    color: TColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Divider section
-            const DropdownMenuItem<String>(
-              enabled: false,
-              child: Text(
-                "Select from my account",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            // Traveler options
-            const DropdownMenuItem<String>(
-              value: "ahmad_raza_ali",
-              child: Text("Ahmad Raza Ali"),
-            ),
-            const DropdownMenuItem<String>(
-              value: "john_doe",
-              child: Text("John Doe"),
-            ),
-          ],
-          onChanged: (value) {
-            if (value != null && value != "add_new") {
-              print("Selected: $value");
-            }
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select a traveler';
-            }
-            return null;
-          },
-        ),
-
-
-        const SizedBox(height: 16),
-        const Text(
-          "Title",
-          style: TextStyle(
-              color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        Container(
-          padding: const EdgeInsets.only(left: 8, right: 20),
-          decoration: BoxDecoration(
-            color: TColors.background,
-            border: Border.all(color: TColors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Radio<String>(
-                    value: 'Mr',
-                    groupValue: _selectedTitle,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTitle = value!;
-                      });
-                    },
-                    activeColor: TColors.primary,
-                  ),
-                  const Text('Mr'),
-                ],
-              ),
-              IntrinsicHeight(
-                child: Row(
-                  children: [
-                    const VerticalDivider(
-                      color: TColors.grey,
-                      thickness: 1,
-                    ),
-                    Radio<String>(
-                      value: 'Mrs',
-                      groupValue: _selectedTitle,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTitle = value!;
-                        });
-                      },
-                      activeColor: TColors.primary,
-                    ),
-                    const Text('Mrs'),
-                  ],
-                ),
-              ),
-              IntrinsicHeight(
-                child: Row(
-                  children: [
-                    const VerticalDivider(
-                      color: TColors.grey,
-                      thickness: 1,
-                    ),
-                    Radio<String>(
-                      value: 'Ms',
-                      groupValue: _selectedTitle,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTitle = value!;
-                        });
-                      },
-                      activeColor: TColors.primary,
-                    ),
-                    const Text('Ms'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "First Name & Middle Name (if any)",
-          style: TextStyle(
-              color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        TextFormField(
-          decoration: InputDecoration(
-            fillColor: TColors.background,
-            filled: true,
-            suffixIcon: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Padding(
-                      padding: const EdgeInsets.all(25.0),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: TColors.background,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/img/1.png', // Your asset image path
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              child: const Icon(Icons.info_outline),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter first name';
-            }
-            return null;
-          },
-        ),
-
-        const Text(
-          "Enter name as per CNIC to avoid boarding issues",
-          style: TextStyle(color: TColors.grey, fontSize: 12),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "Last Name",
-          style: TextStyle(
-              color: TColors.text, fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        TextFormField(
-          decoration: InputDecoration(
-            hintStyle: const TextStyle(
-                color: TColors.placeholder,
-                fontSize: 12,
-                fontWeight: FontWeight.w500),
-            fillColor: TColors.background,
-            filled: true,
-            suffixIcon: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Padding(
-                      padding: const EdgeInsets.all(25.0),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: TColors.background,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/img/2.png', // Your asset image path
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              child: const Icon(Icons.info_outline),
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter last name';
-            }
-            return null;
-          },
-        ),
-        const Text(
-          "Enter name as per CNIC to avoid boarding issues",
-          style: TextStyle(color: TColors.grey, fontSize: 12),
-        ),
-
-        const SizedBox(height: 16),
-        DateSelector(fontSize: 16, initialDate: selectedDate, onDateChanged: (DateTime value) {  },)
-      ],
+    return FlightCard(
+      flight: widget.flight, // Pass the selected flight here
+      showReturnFlight: false, // Set to true if you want to show return flight
     );
   }
 
@@ -669,6 +195,346 @@ class _BookingFormState extends State<BookingForm> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRoomCards() {
+    return Column(
+      children: List.generate(
+        bookingController.roomGuests.length,
+        (roomIndex) => _buildRoomCard(roomIndex),
+      ),
+    );
+  }
+
+  Widget _buildRoomCard(int roomIndex) {
+    final roomGuests = bookingController.roomGuests[roomIndex];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Room ${roomIndex + 1}',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFAB00),
+                  ),
+                ),
+                const Spacer(),
+                _buildBadge("Refundable")
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(
+              roomGuests.adults.length,
+              (adultIndex) => _buildGuestField(
+                guestInfo: roomGuests.adults[adultIndex],
+                index: adultIndex,
+                isAdult: true,
+              ),
+            ),
+            ...List.generate(
+              roomGuests.children.length,
+              (childIndex) => _buildGuestField(
+                guestInfo: roomGuests.children[childIndex],
+                index: childIndex,
+                isAdult: false,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGuestField({
+    required HotelGuestInfo guestInfo,
+    required int index,
+    required bool isAdult,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildDropdown(
+                  controller: guestInfo.titleController,
+                  hint: 'Title',
+                  items: isAdult ? ['Mr.', 'Mrs.', 'Ms.'] : ['Mstr.', 'Miss.'],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  isAdult ? "Adult ${index + 1}" : "Child ${index + 1}",
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: TColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: guestInfo.firstNameController,
+                  hint: 'First Name',
+                  prefixIcon: Icons.person_outline,
+                  iconColor: const Color(0xFFFFAB00),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildTextField(
+                  controller: guestInfo.lastNameController,
+                  hint: 'Last Name',
+                  prefixIcon: Icons.person_outline,
+                  iconColor: const Color(0xFFFFAB00),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookerInfoCard() {
+    return Card(
+      elevation: 4,
+      color: TColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Booker Information',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFFFAB00),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: _buildDropdown(
+                    controller: bookingController.titleController,
+                    hint: 'Title',
+                    items: ['Mr.', 'Mrs.', 'Ms.'],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.firstNameController,
+                    hint: 'First Name',
+                    prefixIcon: Icons.person_outline,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.lastNameController,
+                    hint: 'Last Name',
+                    prefixIcon: Icons.person_outline,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: bookingController.emailController,
+              hint: 'Email',
+              prefixIcon: Icons.email_outlined,
+              iconColor: const Color(0xFFFFAB00),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: bookingController.phoneController,
+              hint: 'Phone Number',
+              prefixIcon: Icons.phone_outlined,
+              iconColor: const Color(0xFFFFAB00),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.addressController,
+                    hint: 'Address Line',
+                    prefixIcon: Icons.location_on_outlined,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: bookingController.cityController,
+                    hint: 'City',
+                    prefixIcon: Icons.location_city_outlined,
+                    iconColor: const Color(0xFFFFAB00),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    TextEditingController? controller,
+    required String hint,
+    required IconData prefixIcon,
+    required Color iconColor,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+          prefixIcon: Icon(prefixIcon, color: iconColor),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required TextEditingController controller,
+    required String hint,
+    required List<String> items,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: controller.text.isEmpty ? null : controller.text,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+        ),
+        hint:
+            Text(hint, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        items: items.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            controller.text = value;
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildCheckboxTile(
+    String title,
+    bool value,
+    Function(bool?) onChanged,
+  ) {
+    return CheckboxListTile(
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14),
+      ),
+      value: value,
+      onChanged: onChanged,
+      activeColor: const Color(0xFFFFAB00),
+      controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _buildBadge(String text) {
+    final isRefundable = text.toLowerCase() == 'refundable';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isRefundable ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isRefundable ? Colors.green.shade700 : Colors.red.shade700,
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
       ),
     );
   }
