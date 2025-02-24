@@ -31,8 +31,64 @@ class PackageSelectionDialog extends StatelessWidget {
   final flightDateController = Get.find<FlightDateController>();
   final travelersController = Get.find<TravelersController>();
 
+  // Helper method to get segment details for display
+  List<Map<String, String>> _getSegmentDetails() {
+    List<Map<String, String>> details = [];
+
+    // Match segments with flight stops
+    for (var i = 0; i < flight.stopSchedules.length; i++) {
+      if (i < flight.segmentInfo.length) {
+        final segment = flight.segmentInfo[i];
+        final schedule = flight.stopSchedules[i];
+
+        details.add({
+          'from': schedule['departure']['city'] ?? 'Unknown',
+          'to': schedule['arrival']['city'] ?? 'Unknown',
+          'cabinCode': segment.cabinCode,
+          'mealCode': segment.mealCode,
+        });
+      }
+    }
+
+    return details;
+  }
+
+  // Helper method to get cabin name
+  String _getCabinName(String code) {
+    switch (code.toUpperCase()) {
+      case 'F':
+        return 'First Class';
+      case 'C':
+        return 'Business Class';
+      case 'Y':
+        return 'Economy Class';
+      case 'W':
+        return 'Premium Economy';
+      default:
+        return 'Economy Class';
+    }
+  }
+
+  // Helper method to get meal description
+  String _getMealDescription(String code) {
+    switch (code.toUpperCase()) {
+      case 'M':
+        return 'Meal Included';
+      case 'S':
+        return 'Snack Included';
+      case 'R':
+        return 'Refreshment';
+      case 'N':
+        return 'No Meal Service';
+      default:
+        return 'Meal Service TBD';
+    }
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
+    // Rest of the build method remains the same
     return Scaffold(
       backgroundColor: TColors.background2,
       appBar: AppBar(
@@ -61,8 +117,9 @@ class PackageSelectionDialog extends StatelessWidget {
 
   Widget _buildFlightInfo() {
 
-
     final searchConroller = Get.put(FlightSearchController());
+    final segmentDetails = _getSegmentDetails();
+
     String formatTime(String time) {
       if (time.isEmpty) return 'N/A';
       return time.split(':').sublist(0, 2).join(':'); // Extract HH:mm
@@ -89,7 +146,7 @@ class PackageSelectionDialog extends StatelessWidget {
     }
 
 
-    return Container(
+    return  Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -105,6 +162,7 @@ class PackageSelectionDialog extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // Airline info
           Row(
             children: [
               Image.asset(
@@ -123,79 +181,46 @@ class PackageSelectionDialog extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const SizedBox(height: 16),
+          // Flight segments details
+          ...segmentDetails.map((segment) => Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    // flight.departureTime,
-                    getDepartureTime(),
+                    '${segment['from']} → ${segment['to']}',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                       color: TColors.text,
                     ),
                   ),
                   Text(
-                    flight.from,
+                    _getCabinName(segment['cabinCode'] ?? ''),
                     style: const TextStyle(
                       fontSize: 14,
-                      color: TColors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
-                    flight.duration,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: TColors.grey,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Icon(
-                      Icons.flight_takeoff,
                       color: TColors.primary,
                     ),
                   ),
-                  Text(
-                    flight.isNonStop ? 'Nonstop' : 'With Stops',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: TColors.grey,
-                    ),
-                  ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    // flight.arrivalTime,
-                    getArrivalTime(),
+                    _getMealDescription(segment['mealCode'] ?? ''),
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: TColors.text,
-                    ),
-                  ),
-                  Text(
-                    flight.to,
-                    style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: TColors.grey,
                     ),
                   ),
                 ],
               ),
+              if (segment != segmentDetails.last) const Divider(height: 16),
             ],
-          ),
+          )).toList(),
         ],
       ),
     );
@@ -444,41 +469,36 @@ class PackageSelectionDialog extends StatelessWidget {
       final flightAvailabilityService = FlightAvailabilityService();
       final token = await apiService.getValidToken() ?? await apiService.generateToken();
 
-      // Extract flight segments from the selected flight
       final List<Map<String, dynamic>> flightSegments = [];
 
-      // Process all flight segments
-      for (var legSchedule in flight.legSchedules) {
-        final schedules = legSchedule['schedules'] as List;
-        for (var schedule in schedules) {
-          final carrier = schedule['carrier'];
-          flightSegments.add({
-            "ClassOfService": flight.cabinClass,
-            "Number": carrier['marketingFlightNumber'], // Leave as string
-            "DepartureDateTime": flight.departureTime,
-            // "DepartureDateTime": "2025-02-20T22:40:00",
-            "ArrivalDateTime": flight.arrivalTime,
-            // "ArrivalDateTime": "2025-02-22T10:30:00",
-            "Type": "A",
-            "OriginLocation": {
-              "LocationCode": schedule['departure']['airport']
-            },
-            "DestinationLocation": {
-              "LocationCode": schedule['arrival']['airport']
-            },
-            "Airline": {
-              "Operating": carrier['operating'] ?? carrier['marketing'],
-              "Marketing": carrier['marketing']
-            }
-          });
-        }
+      // Use segmentInfo to build flight segments
+      for (var i = 0; i < flight.stopSchedules.length; i++) {
+        final schedule = flight.stopSchedules[i];
+        final segmentInfo = i < flight.segmentInfo.length ? flight.segmentInfo[i] : null;
+        final carrier = schedule['carrier'];
+
+        flightSegments.add({
+          "ClassOfService": segmentInfo?.bookingCode,
+          "Number": carrier['marketingFlightNumber'],
+          "DepartureDateTime": schedule['departure']['dateTime'],
+          "ArrivalDateTime": schedule['arrival']['dateTime'],
+          "Type": "A",
+          "OriginLocation": {
+            "LocationCode": schedule['departure']['airport']
+          },
+          "DestinationLocation": {
+            "LocationCode": schedule['arrival']['airport']
+          },
+          "Airline": {
+            "Operating": carrier['operating'] ?? carrier['marketing'],
+            "Marketing": carrier['marketing']
+          }
+        });
       }
 
+      // Rest of the availability check remains the same
       final origin = flight.from.split('(')[1].split(')')[0].trim();
       final destination = flight.to.split('(')[1].split(')')[0].trim();
-
-      print("flight segments");
-      print(flightSegments);
 
       final availabilityResponse = await flightAvailabilityService.checkFlightAvailability(
         token: token,
@@ -496,10 +516,6 @@ class PackageSelectionDialog extends StatelessWidget {
       );
 
       if (availabilityResponse != null) {
-        print(availabilityResponse);
-        print('Package availability confirmed');
-        // Handle successful availability check
-
         if (flightController.currentScenario.value == FlightScenario.oneWay ||
             !isAnyFlightRemaining) {
           Get.to(() => const ReviewTripPage(isMulti: false));
@@ -616,6 +632,10 @@ class FlightAvailabilityService {
         });
       }
       if (infantCount > 0) {
+
+
+
+
         passengerTypes.add({
           "Code": "INF",
           "Quantity": infantCount,

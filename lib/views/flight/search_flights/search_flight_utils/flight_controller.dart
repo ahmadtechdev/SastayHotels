@@ -324,7 +324,7 @@ extension FlightDateTimeExtension on FlightController {
               bookingCode: segment['segment']['bookingCode'] ?? '',
               cabinCode: segment['segment']['cabinCode'] ?? '',
               mealCode: segment['segment']['mealCode'] ?? '',
-              seatsAvailable: segment['segment']['seatsAvailable'] ?? 'N',
+              seatsAvailable: segment['segment']['seatsAvailable'] as String ?? '',
             ));
           }
         }
