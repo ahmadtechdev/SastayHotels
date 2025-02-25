@@ -561,4 +561,5 @@ class BookingHotelScreen extends StatelessWidget {
       ),
     );
   }
+
 }

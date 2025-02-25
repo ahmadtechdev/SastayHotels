@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,7 +9,6 @@ import '../../../../services/api_service_flight.dart';
 import '../../../../widgets/colors.dart';
 
 import '../../form/controllers/flight_date_controller.dart';
-import '../../form/controllers/flight_search_controller.dart';
 import '../../form/travelers/traveler_controller.dart';
 import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
@@ -31,64 +31,8 @@ class PackageSelectionDialog extends StatelessWidget {
   final flightDateController = Get.find<FlightDateController>();
   final travelersController = Get.find<TravelersController>();
 
-  // Helper method to get segment details for display
-  List<Map<String, String>> _getSegmentDetails() {
-    List<Map<String, String>> details = [];
-
-    // Match segments with flight stops
-    for (var i = 0; i < flight.stopSchedules.length; i++) {
-      if (i < flight.segmentInfo.length) {
-        final segment = flight.segmentInfo[i];
-        final schedule = flight.stopSchedules[i];
-
-        details.add({
-          'from': schedule['departure']['city'] ?? 'Unknown',
-          'to': schedule['arrival']['city'] ?? 'Unknown',
-          'cabinCode': segment.cabinCode,
-          'mealCode': segment.mealCode,
-        });
-      }
-    }
-
-    return details;
-  }
-
-  // Helper method to get cabin name
-  String _getCabinName(String code) {
-    switch (code.toUpperCase()) {
-      case 'F':
-        return 'First Class';
-      case 'C':
-        return 'Business Class';
-      case 'Y':
-        return 'Economy Class';
-      case 'W':
-        return 'Premium Economy';
-      default:
-        return 'Economy Class';
-    }
-  }
-
-  // Helper method to get meal description
-  String _getMealDescription(String code) {
-    switch (code.toUpperCase()) {
-      case 'M':
-        return 'Meal Included';
-      case 'S':
-        return 'Snack Included';
-      case 'R':
-        return 'Refreshment';
-      case 'N':
-        return 'No Meal Service';
-      default:
-        return 'Meal Service TBD';
-    }
-  }
-
-  @override
   @override
   Widget build(BuildContext context) {
-    // Rest of the build method remains the same
     return Scaffold(
       backgroundColor: TColors.background2,
       appBar: AppBar(
@@ -99,15 +43,20 @@ class PackageSelectionDialog extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          isAnyFlightRemaining ? 'Select Return Flight Package' : 'Select Flight Package',
+          isAnyFlightRemaining
+              ? 'Select Return Flight Package'
+              : 'Select Flight Package',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Column(
           children: [
             _buildFlightInfo(),
-            _buildPackagesList(),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: _buildPackagesList(),
+            ),
             const SizedBox(height: 10),
           ],
         ),
@@ -116,191 +65,85 @@ class PackageSelectionDialog extends StatelessWidget {
   }
 
   Widget _buildFlightInfo() {
-
-    final searchConroller = Get.put(FlightSearchController());
-    final segmentDetails = _getSegmentDetails();
-
-    String formatTime(String time) {
-      if (time.isEmpty) return 'N/A';
-      return time.split(':').sublist(0, 2).join(':'); // Extract HH:mm
-    }
-
-// Find the matching departure time based on the origin city
-    String getDepartureTime() {
-      final stop = flight.stopSchedules.firstWhere(
-            (schedule) =>
-        schedule['departure']['city'] == searchConroller.origins.first,
-        orElse: () => {},
-      );
-      return stop.isNotEmpty ? formatTime(stop['departure']['time']) : 'N/A';
-    }
-
-    // Find the matching arrival time based on the destination city
-    String getArrivalTime() {
-      final stop = flight.stopSchedules.firstWhere(
-            (schedule) =>
-        schedule['arrival']['city'] == searchConroller.destinations.first,
-        orElse: () => {},
-      );
-      return stop.isNotEmpty ? formatTime(stop['arrival']['time']) : 'N/A';
-    }
-
-
-    return  Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: TColors.background,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Airline info
-          Row(
-            children: [
-              Image.asset(
-                flight.imgPath,
-                height: 32,
-                width: 50,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                flight.airline,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: TColors.text,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Flight segments details
-          ...segmentDetails.map((segment) => Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${segment['from']} → ${segment['to']}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: TColors.text,
-                    ),
-                  ),
-                  Text(
-                    _getCabinName(segment['cabinCode'] ?? ''),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: TColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    _getMealDescription(segment['mealCode'] ?? ''),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: TColors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              if (segment != segmentDetails.last) const Divider(height: 16),
-            ],
-          )).toList(),
-        ],
-      ),
+    return FlightCard(
+      flight: flight,
+      showReturnFlight: false,
     );
   }
 
   Widget _buildPackagesList() {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 16, bottom: 8),
-            child: Text(
-              'Available Packages',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: TColors.text,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            'Available Packages',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: TColors.text,
             ),
           ),
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              padEnds: false,
-              itemCount: flight.packages.length,
-              itemBuilder: (context, index) {
-                return AnimatedBuilder(
-                  animation: _pageController,
-                  builder: (context, child) {
-                    double value = 1.0;
-                    if (_pageController.position.haveDimensions) {
-                      value = _pageController.page! - index;
-                      value = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0);
-                    }
-                    return Transform.scale(
-                      scale: Curves.easeOutQuint.transform(value),
-                      child: _buildPackageCard(flight.packages[index]),
-                    );
-                  },
-                );
-              },
-            ),
+        ),
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            padEnds: false,
+            itemCount: flight.packages.length,
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: _pageController,
+                builder: (context, child) {
+                  double value = 1.0;
+                  if (_pageController.position.haveDimensions) {
+                    value = _pageController.page! - index;
+                    value = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0);
+                  }
+                  return Transform.scale(
+                    scale: Curves.easeOutQuint.transform(value),
+                    child: _buildPackageCard(flight.packages[index]),
+                  );
+                },
+              );
+            },
           ),
-          SizedBox(
-            height: 50,
-            child: Center(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    flight.packages.length,
-                        (index) => AnimatedBuilder(
-                      animation: _pageController,
-                      builder: (context, child) {
-                        double value = 0;
-                        if (_pageController.position.haveDimensions) {
-                          value = _pageController.page! - index;
-                        }
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: 8,
-                          width: value.abs() < 0.5 ? 24 : 8,
-                          decoration: BoxDecoration(
-                            color: value.abs() < 0.5
-                                ? TColors.primary
-                                : TColors.grey.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      },
-                    ),
+        ),
+        SizedBox(
+          height: 50,
+          child: Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  flight.packages.length,
+                  (index) => AnimatedBuilder(
+                    animation: _pageController,
+                    builder: (context, child) {
+                      double value = 0;
+                      if (_pageController.position.haveDimensions) {
+                        value = _pageController.page! - index;
+                      }
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: 8,
+                        width: value.abs() < 0.5 ? 24 : 8,
+                        decoration: BoxDecoration(
+                          color: value.abs() < 0.5
+                              ? TColors.primary
+                              : TColors.grey.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -357,7 +200,6 @@ class PackageSelectionDialog extends StatelessWidget {
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
-
                     ],
                   ),
                 ),
@@ -365,7 +207,6 @@ class PackageSelectionDialog extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-
                     Text(
                       package.totalPrice.toStringAsFixed(2),
                       style: const TextStyle(
@@ -388,39 +229,42 @@ class PackageSelectionDialog extends StatelessWidget {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildPackageDetail(
-                    Icons.airline_seat_recline_normal,
-                    'Cabin',
-                    package.cabinName,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPackageDetail(
-                    Icons.luggage,
-                    'Baggage',
-                    '${package.baggageAllowance.pieces} pieces',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPackageDetail(
-                    Icons.restaurant,
-                    'Meal',
-                    package.mealCode == 'M' ? 'Meal Included' : 'No Meal',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPackageDetail(
-                    Icons.event_seat,
-                    'Seats Available',
-                    package.seatsAvailable.toString(),
-                  ),
-                  _buildPackageDetail(
-                    Icons.currency_exchange,
-                    'Refundable',
-                    package.isNonRefundable ? 'Non-Refundable' : 'Refundable',
-                  ),
-                ],
+              physics: NeverScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildPackageDetail(
+                      Icons.airline_seat_recline_normal,
+                      'Cabin',
+                      package.cabinName,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPackageDetail(
+                      Icons.luggage,
+                      'Baggage',
+                      '${package.baggageAllowance.pieces} pieces',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPackageDetail(
+                      Icons.restaurant,
+                      'Meal',
+                      package.mealCode == 'M' ? 'Meal Included' : 'No Meal',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPackageDetail(
+                      Icons.event_seat,
+                      'Seats Available',
+                      package.seatsAvailable.toString(),
+                    ),
+                    _buildPackageDetail(
+                      Icons.currency_exchange,
+                      'Refundable',
+                      package.isNonRefundable ? 'Non-Refundable' : 'Refundable',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -428,17 +272,20 @@ class PackageSelectionDialog extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
               onPressed: () {
-
-                // Example usage in flight_package.dart
                 onSelectPackage();
 
-                if (flightController.currentScenario.value == FlightScenario.oneWay ||
-                    !isAnyFlightRemaining) {
-                  Get.to(() => const ReviewTripPage(isMulti: false));
-                } else {
-                  flightController.isSelectingFirstFlight.value = false;
-                  Get.back();
-                }
+                // if (flightController.currentScenario.value ==
+                //     FlightScenario.oneWay ||
+                //     !isAnyFlightRemaining) {
+                //   // Pass the selected flight to ReviewTripPage
+                //   Get.to(() => ReviewTripPage(
+                //     isMulti: false,
+                //     flight: flight, // Pass the selected flight here
+                //   ));
+                // } else {
+                //   flightController.isSelectingFirstFlight.value = false;
+                //   // Get.back();
+                // }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: TColors.primary,
@@ -449,7 +296,9 @@ class PackageSelectionDialog extends StatelessWidget {
                 elevation: 2,
               ),
               child: Text(
-                isAnyFlightRemaining ? 'Select Return Package' : 'Select Package',
+                isAnyFlightRemaining
+                    ? 'Select Return Package'
+                    : 'Select Package',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -461,84 +310,6 @@ class PackageSelectionDialog extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void onSelectPackage() async {
-    try {
-      final apiService = ApiServiceFlight();
-      final flightAvailabilityService = FlightAvailabilityService();
-      final token = await apiService.getValidToken() ?? await apiService.generateToken();
-
-      final List<Map<String, dynamic>> flightSegments = [];
-
-      // Use segmentInfo to build flight segments
-      for (var i = 0; i < flight.stopSchedules.length; i++) {
-        final schedule = flight.stopSchedules[i];
-        final segmentInfo = i < flight.segmentInfo.length ? flight.segmentInfo[i] : null;
-        final carrier = schedule['carrier'];
-
-        flightSegments.add({
-          "ClassOfService": segmentInfo?.bookingCode,
-          "Number": carrier['marketingFlightNumber'],
-          "DepartureDateTime": schedule['departure']['dateTime'],
-          "ArrivalDateTime": schedule['arrival']['dateTime'],
-          "Type": "A",
-          "OriginLocation": {
-            "LocationCode": schedule['departure']['airport']
-          },
-          "DestinationLocation": {
-            "LocationCode": schedule['arrival']['airport']
-          },
-          "Airline": {
-            "Operating": carrier['operating'] ?? carrier['marketing'],
-            "Marketing": carrier['marketing']
-          }
-        });
-      }
-
-      // Rest of the availability check remains the same
-      final origin = flight.from.split('(')[1].split(')')[0].trim();
-      final destination = flight.to.split('(')[1].split(')')[0].trim();
-
-      final availabilityResponse = await flightAvailabilityService.checkFlightAvailability(
-        token: token,
-        origin: origin,
-        destination: destination,
-        departureDateTime: _formatDateTime(flightDateController.departureDate.value),
-        returnDateTime: flightDateController.tripType.value == 'Return'
-            ? _formatDateTime(flightDateController.returnDate.value)
-            : null,
-        cabinClass: travelersController.travelClass.value,
-        adultCount: travelersController.adultCount.value,
-        childCount: travelersController.childrenCount.value,
-        infantCount: travelersController.infantCount.value,
-        flights: flightSegments,
-      );
-
-      if (availabilityResponse != null) {
-        if (flightController.currentScenario.value == FlightScenario.oneWay ||
-            !isAnyFlightRemaining) {
-          Get.to(() => const ReviewTripPage(isMulti: false));
-        } else {
-          flightController.isSelectingFirstFlight.value = false;
-          Get.back();
-        }
-      }
-    } catch (e) {
-      print('Error checking flight package availability: $e');
-      Get.snackbar(
-        'Error',
-        'Unable to check package availability. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-    }
-  }
-
-  String _formatDateTime(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T00:00:01';
   }
 
   Widget _buildPackageDetail(IconData icon, String title, String value) {
@@ -581,136 +352,66 @@ class PackageSelectionDialog extends StatelessWidget {
       ),
     );
   }
-}
 
-class FlightAvailabilityService {
-  final Dio dio;
-  static const String baseUrl = 'https://api.havail.sabre.com';
-
-  FlightAvailabilityService({Dio? dio}) : dio = dio ?? Dio(BaseOptions(
-    baseUrl: baseUrl,
-    validateStatus: (status) => true,
-  ));
-
-  Future<Map<String, dynamic>?> checkFlightAvailability({
-    required String token,
-    required String origin,
-    required String destination,
-    required String departureDateTime,
-    String? returnDateTime,
-    required String cabinClass,
-    required int adultCount,
-    required int childCount,
-    required int infantCount,
-    required List<Map<String, dynamic>> flights,
-  }) async {
+  void onSelectPackage() async {
     try {
-      // Validate input parameters
-      if (flights.isEmpty) {
-        throw Exception('No flight segments provided');
-      }
+      final apiService = ApiServiceFlight();
+      final travelersController = Get.find<TravelersController>();
+      final flightController = Get.find<FlightController>();
 
-      final headers = {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      };
+      // Extract flight segments and organize them based on the flight scenario
+      final List<Map<String, dynamic>> originDestinations = [];
 
-      // Build passenger types with proper validation
-      final List<Map<String, dynamic>> passengerTypes = [];
-      if (adultCount > 0) {
-        passengerTypes.add({
-          "Code": "ADT",
-          "Quantity": adultCount,
-          "TPA_Extensions": {}
-        });
-      }
-      if (childCount > 0) {
-        passengerTypes.add({
-          "Code": "CNN",
-          "Quantity": childCount,
-          "TPA_Extensions": {}
-        });
-      }
-      if (infantCount > 0) {
+      // Process all flight segments for each leg schedule
+      for (var legIndex = 0;
+          legIndex < flight.legSchedules.length;
+          legIndex++) {
+        final legSchedule = flight.legSchedules[legIndex];
+        final List<Map<String, dynamic>> flightSegments = [];
 
+        // Process all schedules within this leg
+        for (var schedule in legSchedule['schedules']) {
+          final carrier = schedule['carrier'];
+          flightSegments.add({
+            "ClassOfService": flight.cabinClass,
+            "Number": carrier['marketingFlightNumber'],
+            "DepartureDateTime": schedule['departure']['dateTime'],
+            "ArrivalDateTime": schedule['arrival']['dateTime'],
+            "Type": "A",
+            "OriginLocation": {
+              "LocationCode": schedule['departure']['airport']
+            },
+            "DestinationLocation": {
+              "LocationCode": schedule['arrival']['airport']
+            },
+            "Airline": {
+              "Operating": carrier['operating'] ?? carrier['marketing'],
+              "Marketing": carrier['marketing']
+            }
+          });
+        }
 
-
-
-        passengerTypes.add({
-          "Code": "INF",
-          "Quantity": infantCount,
-          "TPA_Extensions": {}
-        });
-      }
-
-      // Process flight segments with proper type handling
-      List<Map<String, dynamic>> processedFlights = flights.map((flight) {
-        return {
-          "ClassOfService": flight['ClassOfService'] ?? 'L',
-          "Number": flight['Number'],
-          "DepartureDateTime": flight['DepartureDateTime'],
-          "ArrivalDateTime": flight['ArrivalDateTime'],
-          "Type": flight['Type'] ?? 'A',
+        // Create origin destination information for this leg
+        final originDestination = {
+          "RPH": (legIndex + 1).toString(),
+          "DepartureDateTime": legSchedule['departure']['dateTime'],
           "OriginLocation": {
-            "LocationCode": flight['OriginLocation']['LocationCode']
+            "LocationCode": legSchedule['departure']['airport']
           },
           "DestinationLocation": {
-            "LocationCode": flight['DestinationLocation']['LocationCode']
+            "LocationCode": legSchedule['arrival']['airport']
           },
-          "Airline": {
-            "Operating": flight['Airline']['Operating'],
-            "Marketing": flight['Airline']['Marketing']
+          "TPA_Extensions": {
+            "Flight": flightSegments,
+            "SegmentType": {"Code": "O"}
           }
         };
-      }).toList();
 
-      // Build origin destination information
-      final List<Map<String, dynamic>> originDestInfo = [
-        {
-          "RPH": "1",
-          "DepartureDateTime": departureDateTime,
-          "OriginLocation": {
-            "LocationCode": origin.toUpperCase()
-          },
-          "DestinationLocation": {
-            "LocationCode": destination.toUpperCase()
-          },
-          "TPA_Extensions": {
-            "Flight": processedFlights.where((f) =>
-            f['OriginLocation']['LocationCode'] == origin.toUpperCase() ||
-                f['DestinationLocation']['LocationCode'] == destination.toUpperCase()
-            ).toList(),
-            "SegmentType": {
-              "Code": "O"
-            }
-          }
-        }
-      ];
-
-      // Add return flight if exists
-      if (returnDateTime != null) {
-        originDestInfo.add({
-          "RPH": "2",
-          "DepartureDateTime": returnDateTime,
-          "OriginLocation": {
-            "LocationCode": destination.toUpperCase()
-          },
-          "DestinationLocation": {
-            "LocationCode": origin.toUpperCase()
-          },
-          "TPA_Extensions": {
-            "Flight": processedFlights.where((f) =>
-            f['OriginLocation']['LocationCode'] == destination.toUpperCase() ||
-                f['DestinationLocation']['LocationCode'] == origin.toUpperCase()
-            ).toList(),
-            "SegmentType": {
-              "Code": "O"
-            }
-          }
-        });
+        originDestinations.add(originDestination);
       }
 
-      final requestData = {
+      // Create the request body
+      final requestBody = {
         "OTA_AirLowFareSearchRQ": {
           "Version": "4",
           "TravelPreferences": {
@@ -723,10 +424,29 @@ class FlightAvailabilityService {
             }
           },
           "TravelerInfoSummary": {
-            "SeatsRequested": [adultCount + childCount],
+            "SeatsRequested": [
+              travelersController.adultCount.value +
+                  travelersController.childrenCount.value
+            ],
             "AirTravelerAvail": [
               {
-                "PassengerTypeQuantity": passengerTypes
+                "PassengerTypeQuantity": [
+                  if (travelersController.adultCount.value > 0)
+                    {
+                      "Code": "ADT",
+                      "Quantity": travelersController.adultCount.value
+                    },
+                  if (travelersController.childrenCount.value > 0)
+                    {
+                      "Code": "CHD",
+                      "Quantity": travelersController.childrenCount.value
+                    },
+                  if (travelersController.infantCount.value > 0)
+                    {
+                      "Code": "INF",
+                      "Quantity": travelersController.infantCount.value
+                    }
+                ]
               }
             ],
             "PriceRequestInformation": {
@@ -745,70 +465,58 @@ class FlightAvailabilityService {
                 "RequestorID": {
                   "Type": "1",
                   "ID": "1",
-                  "CompanyName": {
-                    "Code": "TN"
-                  }
+                  "CompanyName": {"Code": "TN"}
                 }
               }
             ]
           },
-          "OriginDestinationInformation": originDestInfo,
+          "OriginDestinationInformation": originDestinations,
           "TPA_Extensions": {
             "IntelliSellTransaction": {
-              "RequestType": {
-                "Name": "50ITINS"
-              }
+              "RequestType": {"Name": "50ITINS"}
             }
           }
         }
       };
 
-      print('Request Body:');
-      _printJsonPretty(requestData);
-
-      final response = await dio.post(
-        '/v4/shop/flights/revalidate',
-        options: Options(headers: headers),
-        data: requestData,
+      // Check flight availability
+      final response = await apiService.checkFlightAvailability(
+        type: flightController.currentScenario.value.index,
+        flightSegments: originDestinations
+            .expand((od) =>
+                (od['TPA_Extensions']['Flight'] as List<Map<String, dynamic>>))
+            .toList(),
+        adult: travelersController.adultCount.value,
+        child: travelersController.childrenCount.value,
+        infant: travelersController.infantCount.value,
+        requestBody: requestBody,
       );
 
-      if (response.statusCode == 200) {
-        _printJsonPretty(response.data);
+      // Handle the response and navigation
+      if (response.containsKey('groupedItineraryResponse')) {
 
-        return response.data;
+          Get.to(() => ReviewTripPage(
+                isMulti: false,
+                flight: flight,
+              ));
+
       } else {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          error: 'Failed to check flight availability: ${response.statusCode}',
-        );
+        throw Exception('Invalid response format');
       }
-    } on DioException catch (e) {
-      print('DioError in flight availability check: ${e.message}');
-      print('Response data: ${e.response?.data}');
-      rethrow;
     } catch (e) {
-      print('Error in flight availability check: $e');
-      rethrow;
+      print('Error checking flight package availability: $e');
+      Get.snackbar(
+        'Error',
+        'This flight package is no longer available. Please select another option.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
-  // Helper method to handle flight number parsing
-  String _parseFlightNumber(dynamic number) {
-    if (number is int) {
-      return number.toString();
-    } else if (number is String) {
-      return number;
-    }
-    throw FormatException('Invalid flight number format: $number');
-  }
-
-  /// Helper function to print large JSON data in readable format
-  void _printJsonPretty(dynamic jsonData) {
-    const int chunkSize = 1000;
-    final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-    for (int i = 0; i < jsonString.length; i += chunkSize) {
-      print(jsonString.substring(i, i + chunkSize > jsonString.length ? jsonString.length : i + chunkSize));
-    }
+  String _formatDateTime(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T00:00:01';
   }
 }

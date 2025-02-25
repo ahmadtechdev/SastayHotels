@@ -121,64 +121,65 @@ class FlightBookingPage extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    '${searchConroller.origins.first} ',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: TColors.text,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Icon(
-                    Icons.swap_horiz,
-                    size: 20,
-                    color: TColors.text,
-                  ),
-                  Text(
-                    ' ${searchConroller.origins.last}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: TColors.text,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   children: [
+              //     Text(
+              //       '${searchConroller.origins.first} ',
+              //       style: const TextStyle(
+              //         fontSize: 16,
+              //         color: TColors.text,
+              //         fontWeight: FontWeight.bold,
+              //       ),
+              //     ),
+              //     const Icon(
+              //       Icons.swap_horiz,
+              //       size: 20,
+              //       color: TColors.text,
+              //     ),
+              //     Text(
+              //       ' ${searchConroller.origins.last}',
+              //       style: const TextStyle(
+              //         fontSize: 16,
+              //         color: TColors.text,
+              //         fontWeight: FontWeight.bold,
+              //       ),
+              //     ),
+              //   ],
+              // ),
               Row(
                 children: [
                   Text(
                     '${controller.flights.length} Flights Found',
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: TColors.text,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Get.off(() => const HomeScreen());
-                    },
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.edit,
-                          size: 16,
-                          color: TColors.text,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Change',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: TColors.text,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     Get.off(() => const HomeScreen());
+                  //   },
+                  //   child: const Row(
+                  //     children: [
+                  //       Icon(
+                  //         Icons.edit,
+                  //         size: 16,
+                  //         color: TColors.text,
+                  //       ),
+                  //       SizedBox(width: 4),
+                  //       Text(
+                  //         'Change',
+                  //         style: TextStyle(
+                  //           fontSize: 16,
+                  //           color: TColors.text,
+                  //           fontWeight: FontWeight.bold,
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
             ],

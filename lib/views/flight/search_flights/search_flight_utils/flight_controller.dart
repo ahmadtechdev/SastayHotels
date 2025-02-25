@@ -10,35 +10,47 @@ import 'filter_modal.dart';
 class FilterState {
   final RangeValues priceRange;
   final Set<String> selectedAirlines;
-  final bool isRefundable;
+  final bool isRefundable; // This will represent "Refundable"
+  final bool isNonRefundable; // This will represent "Non-Refundable"
+  final bool isRefundableAll; // This will represent "All"
   final bool isNonStop;
   final Set<String> departureTimeRanges;
   final Set<String> arrivalTimeRanges;
+  final Set<String> selectedStops;
 
   FilterState({
     required this.priceRange,
     required this.selectedAirlines,
     this.isRefundable = false,
+    this.isNonRefundable = false,
+    this.isRefundableAll = true, // Default to true to include all
     this.isNonStop = false,
     required this.departureTimeRanges,
     required this.arrivalTimeRanges,
+    required this.selectedStops,
   });
 
   FilterState copyWith({
     RangeValues? priceRange,
     Set<String>? selectedAirlines,
     bool? isRefundable,
+    bool? isNonRefundable,
+    bool? isRefundableAll,
     bool? isNonStop,
     Set<String>? departureTimeRanges,
     Set<String>? arrivalTimeRanges,
+    Set<String>? selectedStops,
   }) {
     return FilterState(
       priceRange: priceRange ?? this.priceRange,
       selectedAirlines: selectedAirlines ?? this.selectedAirlines,
       isRefundable: isRefundable ?? this.isRefundable,
+      isNonRefundable: isNonRefundable ?? this.isNonRefundable,
+      isRefundableAll: isRefundableAll ?? this.isRefundableAll,
       isNonStop: isNonStop ?? this.isNonStop,
       departureTimeRanges: departureTimeRanges ?? this.departureTimeRanges,
       arrivalTimeRanges: arrivalTimeRanges ?? this.arrivalTimeRanges,
+      selectedStops: selectedStops ?? this.selectedStops,
     );
   }
 }
@@ -54,7 +66,43 @@ class FlightController extends GetxController {
     isNonStop: false,
     departureTimeRanges: {},
     arrivalTimeRanges: {},
+    selectedStops: {},
   ));
+
+  void toggleRefundableAll(bool value) {
+    filterState.value = filterState.value.copyWith(
+      isRefundableAll: value,
+      isRefundable:
+      !value, // Ensure that if "All" is selected, other options are deselected
+      isNonRefundable: !value,
+    );
+  }
+
+  void toggleRefundable(bool value) {
+    filterState.value = filterState.value.copyWith(
+      isRefundable: value,
+      isRefundableAll: false, // Deselect "All" if "Refundable" is selected
+      isNonRefundable: false,
+    );
+  }
+
+  void toggleNonRefundable(bool value) {
+    filterState.value = filterState.value.copyWith(
+      isNonRefundable: value,
+      isRefundableAll: false, // Deselect "All" if "Non-Refundable" is selected
+      isRefundable: false,
+    );
+  }
+
+  void toggleStopOption(String option, bool isSelected) {
+    var stops = Set<String>.from(filterState.value.selectedStops);
+    if (isSelected) {
+      stops.add(option);
+    } else {
+      stops.remove(option);
+    }
+    filterState.value = filterState.value.copyWith(selectedStops: stops);
+  }
 
   // Scenario tracking
   final Rx<FlightScenario> currentScenario = FlightScenario.oneWay.obs;
@@ -79,9 +127,9 @@ class FlightController extends GetxController {
     if (currentScenario.value == FlightScenario.oneWay) {
       // Directly proceed to package selection for one-way trips
       Get.to(() => PackageSelectionDialog(
-            flight: flight,
-            isAnyFlightRemaining: false,
-          ));
+        flight: flight,
+        isAnyFlightRemaining: false,
+      ));
     } else {
       // For return trips
       if (isSelectingFirstFlight.value) {
@@ -118,7 +166,7 @@ class FlightController extends GetxController {
     initializeFilterRanges();
     ever(filterState, (_) => applyFilters());
     ever(sortType,
-        (_) => sortFlights()); // Sort flights when sorting type changes
+            (_) => sortFlights()); // Sort flights when sorting type changes
   }
 
   void initializeFilterRanges() {
@@ -146,15 +194,22 @@ class FlightController extends GetxController {
         return false;
       }
 
-      // Refundable filter
-      if (filterState.value.isRefundable && !flight.isRefundable) {
-        return false;
-      } // Non Stop filter
+      // Refundable filter logic
+      if (!filterState.value.isRefundableAll) {
+        if (filterState.value.isRefundable && !flight.isRefundable) {
+          return false;
+        }
+        if (filterState.value.isNonRefundable && flight.isRefundable) {
+          return false;
+        }
+      }
+
+      // Non-stop filter
       if (filterState.value.isNonStop && !flight.isNonStop) {
         return false;
       }
 
-      // Time range filters
+      // Time range filters for departure
       if (filterState.value.departureTimeRanges.isNotEmpty) {
         bool matchesDeparture = false;
         for (var range in filterState.value.departureTimeRanges) {
@@ -166,6 +221,7 @@ class FlightController extends GetxController {
         if (!matchesDeparture) return false;
       }
 
+      // Time range filters for arrival
       if (filterState.value.arrivalTimeRanges.isNotEmpty) {
         bool matchesArrival = false;
         for (var range in filterState.value.arrivalTimeRanges) {
@@ -177,13 +233,22 @@ class FlightController extends GetxController {
         if (!matchesArrival) return false;
       }
 
+      // Stop options filter
+      if (filterState.value.selectedStops.isNotEmpty) {
+        int stopCount = flight.stopSchedules.length - 1; // Calculate stop count
+        if (!filterState.value.selectedStops
+            .contains(stopCount.toString() + ' Stop') &&
+            !filterState.value.selectedStops.contains('All')) {
+          return false;
+        }
+      }
+
       return true;
     }).toList();
 
     filteredFlights.value = filtered;
-  }
+  } // New: Sort flights based on the selected sort type
 
-  // New: Sort flights based on the selected sort type
   void sortFlights() {
     if (sortType.value == 'Cheapest') {
       filteredFlights.sort((a, b) => a.price.compareTo(b.price));
@@ -279,10 +344,6 @@ class FlightController extends GetxController {
     );
   }
 
-  void toggleRefundable(bool value) {
-    filterState.value = filterState.value.copyWith(isRefundable: value);
-  }
-
   void toggleNonStop(bool value) {
     filterState.value = filterState.value.copyWith(isNonStop: value);
   }
@@ -296,6 +357,7 @@ class FlightController extends GetxController {
       isNonStop: false,
       departureTimeRanges: {},
       arrivalTimeRanges: {},
+      selectedStops: {},
     );
     sortType.value = 'Suggested'; // Reset sorting type as well
   }
@@ -310,7 +372,7 @@ extension FlightDateTimeExtension on FlightController {
     try {
       // Get fare components which correspond to each leg
       final fareComponents = fareInfo['passengerInfoList'][0]['passengerInfo']
-          ['fareComponents'] as List;
+      ['fareComponents'] as List;
 
       // Iterate through each leg
       for (var i = 0; i < legs.length; i++) {
@@ -324,7 +386,7 @@ extension FlightDateTimeExtension on FlightController {
               bookingCode: segment['segment']['bookingCode'] ?? '',
               cabinCode: segment['segment']['cabinCode'] ?? '',
               mealCode: segment['segment']['mealCode'] ?? '',
-              seatsAvailable: segment['segment']['seatsAvailable'] as String ?? '',
+              seatsAvailable: segment['segment']['seatsAvailable'] ?? 'N',
             ));
           }
         }
@@ -413,7 +475,7 @@ extension FlightDateTimeExtension on FlightController {
 
       for (var group in itineraryGroups) {
         final legDescriptions =
-            group['groupDescription']['legDescriptions'] as List?;
+        group['groupDescription']['legDescriptions'] as List?;
         if (legDescriptions == null) continue;
 
         final itineraries = group['itineraries'] as List?;
@@ -455,7 +517,7 @@ extension FlightDateTimeExtension on FlightController {
             if (legDesc == null) continue;
 
             final baseDate =
-                legDescriptions[legIndex]['departureDate'] as String;
+            legDescriptions[legIndex]['departureDate'] as String;
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
 
@@ -467,9 +529,9 @@ extension FlightDateTimeExtension on FlightController {
               if (schedule == null) continue;
 
               final departureDateAdjustment =
-                  scheduleRef['departureDateAdjustment'] as int?;
+              scheduleRef['departureDateAdjustment'] as int?;
               final arrivalDateAdjustment =
-                  schedule['arrival']['dateAdjustment'] as int?;
+              schedule['arrival']['dateAdjustment'] as int?;
 
               final departureDateTime = _calculateFlightDateTime(baseDate,
                   schedule['departure']['time'], departureDateAdjustment);
@@ -479,9 +541,9 @@ extension FlightDateTimeExtension on FlightController {
 
               final scheduleWithDateTime = Map<String, dynamic>.from(schedule);
               scheduleWithDateTime['departure'] =
-                  Map<String, dynamic>.from(schedule['departure']);
+              Map<String, dynamic>.from(schedule['departure']);
               scheduleWithDateTime['arrival'] =
-                  Map<String, dynamic>.from(schedule['arrival']);
+              Map<String, dynamic>.from(schedule['arrival']);
 
               scheduleWithDateTime['departure']['dateTime'] =
                   _formatDateTimeWithoutMillis(departureDateTime);
@@ -495,7 +557,7 @@ extension FlightDateTimeExtension on FlightController {
               if (currentLegSchedules.length > 1) {
                 for (int i = 0; i < currentLegSchedules.length - 1; i++) {
                   currentLegStops.add(currentLegSchedules[i]['arrival']
-                          ['city'] ??
+                  ['city'] ??
                       "Unknown City");
                 }
               }
@@ -527,54 +589,54 @@ extension FlightDateTimeExtension on FlightController {
               imgPath: airlineInfo.logoPath,
               airline: airlineInfo.name,
               flightNumber:
-                  '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
+              '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
               departureTime: firstSchedule['departure']['dateTime'],
               arrivalTime: lastSchedule['arrival']['dateTime'],
               duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
               price:
-                  (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
+              (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
               from:
-                  '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
+              '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
               to: '${lastSchedule['arrival']['city'] ?? 'Unknown'} (${lastSchedule['arrival']['airport'] ?? 'Unknown'})',
               legSchedules: legSchedules,
               stopSchedules: allStopSchedules,
               type: getFareType(mainFareInfo),
               isRefundable: !(mainFareInfo['passengerInfoList'][0]
-                      ['passengerInfo']['nonRefundable'] ??
+              ['passengerInfo']['nonRefundable'] ??
                   true),
               isNonStop: allStopSchedules.length == 1,
               departureTerminal:
-                  firstSchedule['departure']['terminal']?.toString() ?? 'Main',
+              firstSchedule['departure']['terminal']?.toString() ?? 'Main',
               arrivalTerminal:
-                  lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
+              lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
               departureCity:
-                  firstSchedule['departure']['city']?.toString() ?? 'Unknown',
+              firstSchedule['departure']['city']?.toString() ?? 'Unknown',
               arrivalCity:
-                  lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
+              lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
               aircraftType:
-                  carrier['equipment']['code']?.toString() ?? 'Unknown',
+              carrier['equipment']['code']?.toString() ?? 'Unknown',
               taxes: parseTaxes(mainFareInfo['passengerInfoList'][0]
-                      ['passengerInfo']['taxes'] ??
+              ['passengerInfo']['taxes'] ??
                   []),
               baggageAllowance: _parseBaggageAllowance(
                   mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['baggageInformation'] as List? ??
+                  ['baggageInformation'] as List? ??
                       [],
                   baggageAllowanceDescsMap),
               packages: packages,
               stops: allStops
                   .where((stop) =>
-                      stop != firstSchedule['departure']['city'] &&
-                      stop != lastSchedule['arrival']['city'])
+              stop != firstSchedule['departure']['city'] &&
+                  stop != lastSchedule['arrival']['city'])
                   .toList(),
               legElapsedTime: totalDuration,
               cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['fareComponents'][0]['segments'][0]['segment']
-                      ['cabinCode'] ??
+              ['fareComponents'][0]['segments'][0]['segment']
+              ['cabinCode'] ??
                   'Y',
               mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['fareComponents'][0]['segments'][0]['segment']
-                      ['mealCode'] ??
+              ['fareComponents'][0]['segments'][0]['segment']
+              ['mealCode'] ??
                   'N',
               groupId: itinerary['id'].toString(),
               segmentInfo: segmentInfoList,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-
 import '../../../../../widgets/colors.dart';
 import '../flight_controller.dart';
 
@@ -30,9 +29,9 @@ class FilterBottomSheet extends StatelessWidget {
                   children: [
                     _buildPriceRange(),
                     const Divider(),
-                    _buildRefundableFilter(),
+                    _buildRefundableOptions(),
                     const Divider(),
-                    _buildNonStopFilter(),
+                    _buildStopOptionFilter(),
                     const Divider(),
                     _buildAirlinesFilter(),
                     const Divider(),
@@ -101,8 +100,12 @@ class FilterBottomSheet extends StatelessWidget {
               ),
               RangeSlider(
                 values: range,
-                min: controller.flights.map((f) => f.price).reduce((a, b) => a < b ? a : b),
-                max: controller.flights.map((f) => f.price).reduce((a, b) => a > b ? a : b),
+                min: controller.flights
+                    .map((f) => f.price)
+                    .reduce((a, b) => a < b ? a : b),
+                max: controller.flights
+                    .map((f) => f.price)
+                    .reduce((a, b) => a > b ? a : b),
                 activeColor: TColors.primary,
                 inactiveColor: TColors.grey.withOpacity(0.2),
                 onChanged: controller.updatePriceRange,
@@ -114,21 +117,99 @@ class FilterBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildRefundableFilter() {
-    return Obx(() => CheckboxListTile(
-      title: const Text('Refundable'),
-      value: controller.filterState.value.isRefundable,
-      activeColor: TColors.primary,
-      onChanged: (value) => controller.toggleRefundable(value ?? false),
-    ));
+  Widget _buildRefundableOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Refundable',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Obx(() {
+          return Column(
+            children: [
+              CheckboxListTile(
+                title: const Text('All'),
+                value: controller.filterState.value.isRefundableAll,
+                activeColor: TColors.primary,
+                onChanged: (value) {
+                  controller.toggleRefundableAll(value ?? false);
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Refundable'),
+                value: controller.filterState.value.isRefundable,
+                activeColor: TColors.primary,
+                onChanged: (value) {
+                  controller.toggleRefundable(value ?? false);
+                  controller.filterState.value = controller.filterState.value.copyWith(
+                    isRefundableAll: false,
+                    isNonRefundable: false,
+                  );
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Non-Refundable'),
+                value: controller.filterState.value.isNonRefundable,
+                activeColor: TColors.primary,
+                onChanged: (value) {
+                  controller.toggleNonRefundable(value ?? false);
+                  controller.filterState.value = controller.filterState.value.copyWith(
+                    isRefundableAll: false,
+                    isRefundable: false,
+                  );
+                },
+              ),
+            ],
+          );
+        }),
+      ],
+    );
   }
-  Widget _buildNonStopFilter() {
-    return Obx(() => CheckboxListTile(
-      title: const Text('Non Stop'),
-      value: controller.filterState.value.isNonStop,
-      activeColor: TColors.primary,
-      onChanged: (value) => controller.toggleNonStop(value ?? false),
-    ));
+
+  Widget _buildStopOptionFilter() {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Stops',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          CheckboxListTile(
+            title: const Text('Non Stop'),
+            value: controller.filterState.value.isNonStop,
+            activeColor: TColors.primary,
+            onChanged: (value) => controller.toggleNonStop(value ?? false),
+          ),
+          CheckboxListTile(
+            title: const Text('1 Stop'),
+            value:
+            controller.filterState.value.selectedStops.contains('1 Stop'),
+            activeColor: TColors.primary,
+            onChanged: (value) =>
+                controller.toggleStopOption('1 Stop', value ?? false),
+          ),
+          CheckboxListTile(
+            title: const Text('2 Stops'),
+            value:
+            controller.filterState.value.selectedStops.contains('2 Stops'),
+            activeColor: TColors.primary,
+            onChanged: (value) =>
+                controller.toggleStopOption('2 Stops', value ?? false),
+          ),
+          CheckboxListTile(
+            title: const Text('All'),
+            value: controller.filterState.value.selectedStops.contains('All'),
+            activeColor: TColors.primary,
+            onChanged: (value) =>
+                controller.toggleStopOption('All', value ?? false),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildAirlinesFilter() {
@@ -144,7 +225,8 @@ class FilterBottomSheet extends StatelessWidget {
         const SizedBox(height: 8),
         ...airlines.map((airline) => Obx(() => CheckboxListTile(
           title: Text(airline),
-          value: controller.filterState.value.selectedAirlines.contains(airline),
+          value: controller.filterState.value.selectedAirlines
+              .contains(airline),
           activeColor: TColors.primary,
           onChanged: (_) => controller.toggleAirline(airline),
         ))),
@@ -176,7 +258,8 @@ class FilterBottomSheet extends StatelessWidget {
             title: Text(range),
             value: selectedRanges.contains(range),
             activeColor: TColors.primary,
-            onChanged: (_) => controller.toggleTimeRange(range, isDeparture),
+            onChanged: (_) =>
+                controller.toggleTimeRange(range, isDeparture),
           );
         })),
       ],
