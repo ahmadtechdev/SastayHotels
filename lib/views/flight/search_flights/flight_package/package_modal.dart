@@ -38,7 +38,7 @@ class FlightPackageInfo {
     }
   }
 
-  factory FlightPackageInfo.fromApiResponse(Map<String, dynamic> fareInfo, Map<int, Map<String, dynamic>> fareComponentDescs) {
+  factory FlightPackageInfo.fromApiResponse(Map<String, dynamic> fareInfo) {
     try {
       final passengerInfo = fareInfo['passengerInfoList'][0]['passengerInfo'];
       final fareComponents = passengerInfo['fareComponents'][0];

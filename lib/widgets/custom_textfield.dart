@@ -1,21 +1,56 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'colors.dart';
+
+class AirportData {
+  final String code;
+  final String name;
+  final String cityName;
+  final String countryName;
+  final String cityCode;
+
+  AirportData({
+    required this.code,
+    required this.name,
+    required this.cityName,
+    required this.countryName,
+    required this.cityCode,
+  });
+
+  factory AirportData.fromJson(Map<String, dynamic> json) {
+    return AirportData(
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      cityName: json['city_name'] ?? '',
+      countryName: json['country_name'] ?? '',
+      cityCode: json['city_code'] ?? '',
+    );
+  }
+}
+
+enum FieldType {
+  departure,
+  destination,
+}
 
 class CustomTextField extends StatefulWidget {
   final String hintText;
   final IconData icon;
-  final String? initialValue; // Optional initial value
-  final ValueChanged<String>? onChanged; // Callback for value changes
-  final TextEditingController? controller; // Controller for the text field
+  final String? initialValue;
+  final Function(String name, String code)? onCitySelected;
+  final TextEditingController? controller;
+  final FieldType fieldType;
 
   const CustomTextField({
     super.key,
     required this.hintText,
     required this.icon,
     this.initialValue,
-    this.onChanged,
-    this.controller, // Allow an external controller to be passed
+    this.onCitySelected,
+    this.controller,
+    this.fieldType = FieldType.departure,
   });
 
   @override
@@ -24,29 +59,119 @@ class CustomTextField extends StatefulWidget {
 
 class _CustomTextFieldState extends State<CustomTextField> {
   late TextEditingController _controller;
+  List<AirportData> airports = [];
+  List<AirportData> defaultAirports = [];
+  bool isLoading = false;
+  String errorMessage = '';
+
+  // Define city codes for departure defaults
+  final List<String> departureAirportCodes = [
+    "KHI", "LHE", "ISB", "LYP", "PEW", "MUX", "SKT"
+  ];
+
+  // Define city codes for destination defaults
+  final List<String> destinationAirportCodes = [
+    "DXB", "JED", "MED", "LON", "CDG", "IST", "KUL", "GYD", "BKK"
+  ];
 
   @override
   void initState() {
     super.initState();
-    // If no controller is provided, create a local one
     _controller = widget.controller ?? TextEditingController(text: widget.initialValue);
+    _fetchAirports();
   }
 
   @override
   void dispose() {
-    // Dispose the local controller only if it's not provided externally
     if (widget.controller == null) {
       _controller.dispose();
     }
     super.dispose();
   }
 
+  Future<void> _fetchAirports() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = '';
+      });
+
+      final response = await http.get(Uri.parse('https://agent1.pk/api.php?type=airports'));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['status'] == 'success' && jsonData['data'] is List) {
+          final List<dynamic> airportsData = jsonData['data'];
+          setState(() {
+            airports = airportsData.map((item) => AirportData.fromJson(item)).toList();
+
+            // Once we have all airports, filter for default lists
+            _filterDefaultAirports();
+          });
+        } else {
+          setState(() {
+            errorMessage = 'Invalid data format';
+          });
+        }
+      } else {
+        setState(() {
+          errorMessage = 'Failed to load airports. Status: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _filterDefaultAirports() {
+    if (airports.isEmpty) return;
+
+    // Get the appropriate airport code list based on field type
+    final airportCodes = widget.fieldType == FieldType.departure
+        ? departureAirportCodes
+        : destinationAirportCodes;
+
+    // Filter airports list to find matching airports by code
+    defaultAirports = airports.where((airport) {
+      // Match by airport code directly
+      return airportCodes.contains(airport.code);
+    }).toList();
+
+    // If we couldn't find all airports, log a warning
+    if (defaultAirports.length < airportCodes.length) {
+      print('Warning: Could not find all default airports in API response.');
+      print('Found ${defaultAirports.length} out of ${airportCodes.length}');
+    }
+
+    // Sort the default airports to match the order of the airport codes
+    defaultAirports.sort((a, b) {
+      final indexA = airportCodes.indexOf(a.code);
+      final indexB = airportCodes.indexOf(b.code);
+
+      // If a code isn't found (shouldn't happen), put it at the end
+      if (indexA == -1) return 1;
+      if (indexB == -1) return -1;
+
+      return indexA.compareTo(indexB);
+    });
+
+    // Force refresh UI
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showCitySuggestions(context),
+      onTap: () => _showAirportSuggestions(context),
       child: AbsorbPointer(
-        // Prevents focus on TextField so that we can use onTap to show the popup
         child: TextField(
           controller: _controller,
           decoration: InputDecoration(
@@ -64,21 +189,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 
-  void _showCitySuggestions(BuildContext context) {
-    List<Map<String, String>> cities = [
-      {'name': 'Dubai', 'details': 'City: Dubai, United Arab Emirates'},
-      {'name': 'Mecca, Makkah', 'details': 'City: Mecca, Makkah, Saudi Arabia'},
-      {'name': 'Medina', 'details': 'City: Medina, Saudi Arabia'},
-      {'name': 'Istanbul', 'details': 'City: Istanbul, Turkey'},
-      {'name': 'New York', 'details': 'City: New York, United States'},
-      {'name': 'London', 'details': 'City: London, United Kingdom'},
-      {'name': 'Antalya', 'details': 'City: Antalya, Turkey'},
-      {'name': 'Kuala Lumpur', 'details': 'City: Kuala Lumpur, Malaysia'},
-      {'name': 'Bangkok', 'details': 'City: Bangkok, Thailand'},
-    ];
-
+  void _showAirportSuggestions(BuildContext context) {
     String searchQuery = '';
-    List<Map<String, String>> filteredCities = List.from(cities);
+    // Initially show default airports or loading indicator
+    List<AirportData> displayedAirports = defaultAirports;
 
     showModalBottomSheet(
       backgroundColor: Colors.white,
@@ -90,93 +204,135 @@ class _CustomTextFieldState extends State<CustomTextField> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            // Handle initial loading state
+            Widget airportsList;
+
+            if (isLoading) {
+              airportsList = const Center(child: CircularProgressIndicator());
+            } else if (errorMessage.isNotEmpty) {
+              airportsList = Center(child: Text(errorMessage, style: const TextStyle(color: Colors.red)));
+            } else if (searchQuery.isEmpty && defaultAirports.isEmpty) {
+              airportsList = const Center(
+                child: Text(
+                  'Loading default airports...',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            } else if (searchQuery.isNotEmpty && displayedAirports.isEmpty) {
+              airportsList = const Center(
+                child: Text(
+                  'No matching airports found',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              );
+            } else {
+              airportsList = ListView.builder(
+                itemCount: displayedAirports.length,
+                itemBuilder: (context, index) {
+                  final airport = displayedAirports[index];
+                  return ListTile(
+                    leading: const Icon(Icons.location_on, color: TColors.primary),
+                    title: Text(
+                      '${airport.cityName} (${airport.code})',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text('${airport.name}, ${airport.countryName}'),
+                    onTap: () {
+                      // Display city name with code in parentheses
+                      _controller.text = '${airport.cityName} (${airport.code})';
+
+                      // Call the callback with both name and code
+                      if (widget.onCitySelected != null) {
+                        widget.onCitySelected!(airport.cityName, airport.cityCode);
+                      }
+
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              );
+            }
+
             return FractionallySizedBox(
               heightFactor: 0.9,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Destination',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search),
-                          hintText: 'Enter City Name',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          widget.fieldType == FieldType.departure
+                              ? 'Select Departure Airport'
+                              : 'Select Destination Airport',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value.toLowerCase();
-                            filteredCities = cities
-                                .where((city) =>
-                                city['name']!.toLowerCase().contains(searchQuery))
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search by city or airport name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value.toLowerCase();
+                          if (searchQuery.isEmpty) {
+                            // Show default airports when search is empty
+                            displayedAirports = defaultAirports;
+                          } else {
+                            // Filter all airports based on search query
+                            displayedAirports = airports
+                                .where((airport) =>
+                            airport.cityName.toLowerCase().contains(searchQuery) ||
+                                airport.name.toLowerCase().contains(searchQuery) ||
+                                airport.code.toLowerCase().contains(searchQuery) ||
+                                airport.countryName.toLowerCase().contains(searchQuery))
                                 .toList();
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Top Destinations',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      filteredCities.isNotEmpty
-                          ? ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: filteredCities.length,
-                        itemBuilder: (context, index) {
-                          final city = filteredCities[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on,
-                                color: TColors.primary),
-                            title: Text(
-                              city['name']!,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(city['details']!),
-                            onTap: () {
-                              // Update the controller text with the selected city
-                              _controller.text = city['name']!;
-                              Navigator.pop(context);
-                              if (widget.onChanged != null) {
-                                widget.onChanged!(city['name']!);
-                              }
-                            },
-                          );
-                        },
-                      )
-                          : const Center(
-                        child: Text(
-                          'No cities found',
-                          style: TextStyle(color: Colors.grey),
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          searchQuery.isEmpty ? 'Suggested Airports' : 'Search Results',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                    ],
-                  ),
+                        if (searchQuery.isNotEmpty)
+                          Text(
+                            '${displayedAirports.length} results',
+                            style: const TextStyle(color: TColors.grey),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(child: airportsList),
+                  ],
                 ),
               ),
             );
           },
         );
       },
-    );
+    ).then((_) {
+      // Reset to default airports for next time
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 }

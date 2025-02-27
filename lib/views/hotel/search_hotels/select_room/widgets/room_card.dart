@@ -7,6 +7,8 @@ class RoomCard extends StatelessWidget {
   final int nights;
   final Function(dynamic) onSelect;
   final bool isSelected;
+  final bool showBookNowButton;
+  final bool isLoading; // Add this new parameter
 
   const RoomCard({
     super.key,
@@ -14,6 +16,8 @@ class RoomCard extends StatelessWidget {
     required this.nights,
     required this.onSelect,
     required this.isSelected,
+    this.showBookNowButton = false,
+    this.isLoading = false, // Default to false
   });
 
   String _getFormattedPrice(dynamic price) {
@@ -131,7 +135,7 @@ class RoomCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '\$${_getFormattedPrice(pricePerNight)}',
+                          'PKR ${(_getPricePerNight() * 278.5).toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -151,7 +155,7 @@ class RoomCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '\$${_getFormattedPrice(totalPrice)}',
+                          'PKR ${(_getTotalPrice() * 278.5).toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -187,28 +191,51 @@ class RoomCard extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
-                // Select Button
-                SizedBox(
+                // Button - Either "Select Room" or "Book Now" depending on the flag
+                Container(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => onSelect(room),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isSelected ? Colors.green : TColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width:
+                            double.infinity, // Make button container full width
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : () => onSelect(room),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: showBookNowButton
+                                ? Colors.green
+                                : (isSelected ? Colors.green : TColors.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            showBookNowButton
+                                ? (isLoading
+                                    ? 'Checking Availability...'
+                                    : 'Book Now')
+                                : (isSelected ? 'Selected' : 'Select Room'),
+                            style: const TextStyle(
+                              color: TColors.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isSelected ? 'Selected' : 'Select Room',
-                      style: const TextStyle(
-                        color: TColors.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                      if (isLoading)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: TColors.secondary,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                    ],
                   ),
-                ),
+                )
               ],
             ),
           ),

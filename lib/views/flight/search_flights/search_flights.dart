@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../widgets/colors.dart';
-import '../../../home_search/home.dart';
 
 import '../form/controllers/flight_search_controller.dart';
 import 'search_flight_utils/flight_controller.dart';
@@ -103,7 +102,7 @@ class FlightBookingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final searchConroller = Get.put(FlightSearchController());
+
     return Scaffold(
       backgroundColor: TColors.background2,
       appBar: AppBar(

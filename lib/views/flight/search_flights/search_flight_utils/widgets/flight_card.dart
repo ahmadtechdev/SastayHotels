@@ -1,8 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../services/api_service_flight.dart';
 import '../../../../../widgets/colors.dart';
 import '../../../form/controllers/flight_search_controller.dart';
 import '../filter_modal.dart';
@@ -301,10 +302,29 @@ class _FlightCardState extends State<FlightCard>
                       children: [
                         Row(
                           children: [
-                            Image.asset(
-                              widget.flight.imgPath,
-                              height: 32,
-                              width: 50,
+                            // Image.asset(
+                            //   widget.flight.imgPath,
+                            //   height: 32,
+                            //   width: 50,
+                            // ),
+                            CachedNetworkImage(
+                              imageUrl: widget.flight.imgPath,
+                              height: 24,
+                              width: 24,
+                              placeholder: (context, url) => SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => CachedNetworkImage(
+                                imageUrl: 'https://cdn-icons-png.flaticon.com/128/15700/15700374.png',
+                                height: 24,
+                                width: 24,
+                                errorWidget: (context, url, error) => const Icon(Icons.flight, size: 24),
+                              ),
+                              fit: BoxFit.contain,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -327,100 +347,103 @@ class _FlightCardState extends State<FlightCard>
                         const SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    formatTime(legSchedule['departure']['time']
-                                        .toString()),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${legSchedule['departure']['city']} (${legSchedule['departure']['airport']})',
-                                    style: const TextStyle(
-                                      color: TColors.grey,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    '${legSchedule['elapsedTime'] ~/ 60}h ${legSchedule['elapsedTime'] % 60}m',
-                                    style: const TextStyle(
-                                      color: TColors.grey,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        height: 2,
-                                        width: 70,
-                                        color: Colors.grey[300],
-                                      ),
-                                      const Icon(
-                                        Icons.flight,
-                                        size: 20,
-                                        color: TColors.primary,
-                                      ),
-                                    ],
-                                  ),
-                                  if (legSchedule['stops'].isEmpty)
-                                    const Text(
-                                      'Nonstop',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: TColors.grey,
-                                      ),
-                                    )
-                                  else
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      '${legSchedule['stops'].length} ${legSchedule['stops'].length == 1 ? 'stop' : 'stops'}',
+                                      formatTime(legSchedule['departure']['time']
+                                          .toString()),
                                       style: const TextStyle(
-                                        fontSize: 14,
-                                        color: TColors.grey,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  if (legSchedule['stops'].isNotEmpty)
                                     Text(
-                                      legSchedule['stops'].join(', '),
+                                      '${legSchedule['departure']['city']} (${legSchedule['departure']['airport']})',
                                       style: const TextStyle(
-                                        fontSize: 12,
                                         color: TColors.grey,
+                                        fontSize: 16,
                                       ),
                                     ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    formatTime(legSchedule['arrival']['time']
-                                        .toString()),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    Text(
+                                      '${legSchedule['elapsedTime'] ~/ 60}h ${legSchedule['elapsedTime'] % 60}m',
+                                      style: const TextStyle(
+                                        color: TColors.grey,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${legSchedule['arrival']['city']} (${legSchedule['arrival']['airport']})',
-                                    style: const TextStyle(
-                                      color: TColors.grey,
-                                      fontSize: 16,
+                                    Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          height: 2,
+                                          width: 70,
+                                          color: Colors.grey[300],
+                                        ),
+                                        const Icon(
+                                          Icons.flight,
+                                          size: 20,
+                                          color: TColors.primary,
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    if (legSchedule['stops'].isEmpty)
+                                      const Text(
+                                        'Nonstop',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: TColors.grey,
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        '${legSchedule['stops'].length} ${legSchedule['stops'].length == 1 ? 'stop' : 'stops'}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: TColors.grey,
+                                        ),
+                                      ),
+                                    if (legSchedule['stops'].isNotEmpty)
+                                      Text(
+                                        legSchedule['stops'].join(', '),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: TColors.grey,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      formatTime(legSchedule['arrival']['time']
+                                          .toString()),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${legSchedule['arrival']['city']} (${legSchedule['arrival']['airport']})',
+                                      style: const TextStyle(
+                                        color: TColors.grey,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -556,7 +579,10 @@ class _FlightCardState extends State<FlightCard>
     final flightNumber =
         '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}';
     final marketingCarrier = carrier['marketing'] ?? 'Unknown';
-    final airlineInfo = getAirlineInfo(marketingCarrier);
+    // final airlineInfo = getAirlineInfo(marketingCarrier);
+    final ApiServiceFlight apiService = Get.find<ApiServiceFlight>();
+    final airlineMap = apiService.getAirlineMap();
+    final airlineInfo = getAirlineInfo(marketingCarrier, airlineMap);
     FlightSegmentInfo? segmentInfo;
     if (index < widget.flight.segmentInfo.length) {
       segmentInfo = widget.flight.segmentInfo[index];
@@ -628,24 +654,16 @@ class _FlightCardState extends State<FlightCard>
           // Flight number and carrier info
           Row(
             children: [
-              Image.asset(
-                airlineInfo.logoPath,
-                height: 24,
-                width: 24,
-              ),
+              const Icon(Icons.flight_takeoff,
+                  size: 16, color: TColors.primary),
               const SizedBox(width: 8),
               Text(
-                '${airlineInfo.name} $flightNumber',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                ' Segment ${index + 1}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          // Cabin Class information
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -661,20 +679,45 @@ class _FlightCardState extends State<FlightCard>
               ),
             ),
           ),
-          const SizedBox(height: 12),
 
+          const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.flight_takeoff,
-                  size: 16, color: TColors.primary),
+              CachedNetworkImage(
+                imageUrl: airlineInfo.logoPath,
+                height: 24,
+                width: 24,
+                placeholder: (context, url) => SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                errorWidget: (context, url, error) => CachedNetworkImage(
+                  imageUrl: 'https://cdn-icons-png.flaticon.com/128/15700/15700374.png',
+                  height: 24,
+                  width: 24,
+                  errorWidget: (context, url, error) => const Icon(Icons.flight, size: 24),
+                ),
+                fit: BoxFit.contain,
+              ),
               const SizedBox(width: 8),
               Text(
-                'Flight Segment ${index + 1}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                '${airlineInfo.name} $flightNumber',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+
+
+          // Cabin Class information
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -683,7 +726,7 @@ class _FlightCardState extends State<FlightCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      schedule['departure']['city'],
+                      schedule['departure']['city']?? "UNK",
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
@@ -739,7 +782,7 @@ class _FlightCardState extends State<FlightCard>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      schedule['arrival']['city'],
+                      schedule['arrival']['city'] ?? "UNK",
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(

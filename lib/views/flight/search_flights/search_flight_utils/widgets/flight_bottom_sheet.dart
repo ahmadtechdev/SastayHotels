@@ -143,7 +143,8 @@ class FilterBottomSheet extends StatelessWidget {
                 activeColor: TColors.primary,
                 onChanged: (value) {
                   controller.toggleRefundable(value ?? false);
-                  controller.filterState.value = controller.filterState.value.copyWith(
+                  controller.filterState.value =
+                      controller.filterState.value.copyWith(
                     isRefundableAll: false,
                     isNonRefundable: false,
                   );
@@ -155,7 +156,8 @@ class FilterBottomSheet extends StatelessWidget {
                 activeColor: TColors.primary,
                 onChanged: (value) {
                   controller.toggleNonRefundable(value ?? false);
-                  controller.filterState.value = controller.filterState.value.copyWith(
+                  controller.filterState.value =
+                      controller.filterState.value.copyWith(
                     isRefundableAll: false,
                     isRefundable: false,
                   );
@@ -168,103 +170,120 @@ class FilterBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildStopOptionFilter() {
-    return Obx(() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Stops',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          CheckboxListTile(
-            title: const Text('Non Stop'),
-            value: controller.filterState.value.isNonStop,
-            activeColor: TColors.primary,
-            onChanged: (value) => controller.toggleNonStop(value ?? false),
-          ),
-          CheckboxListTile(
-            title: const Text('1 Stop'),
-            value:
-            controller.filterState.value.selectedStops.contains('1 Stop'),
-            activeColor: TColors.primary,
-            onChanged: (value) =>
-                controller.toggleStopOption('1 Stop', value ?? false),
-          ),
-          CheckboxListTile(
-            title: const Text('2 Stops'),
-            value:
-            controller.filterState.value.selectedStops.contains('2 Stops'),
-            activeColor: TColors.primary,
-            onChanged: (value) =>
-                controller.toggleStopOption('2 Stops', value ?? false),
-          ),
-          CheckboxListTile(
-            title: const Text('All'),
-            value: controller.filterState.value.selectedStops.contains('All'),
-            activeColor: TColors.primary,
-            onChanged: (value) =>
-                controller.toggleStopOption('All', value ?? false),
-          ),
-        ],
-      );
-    });
-  }
+  // Modify the following methods in your FilterBottomSheet class
 
-  Widget _buildAirlinesFilter() {
-    final airlines = controller.flights.map((f) => f.airline).toSet().toList();
-
+Widget _buildStopOptionFilter() {
+  return Obx(() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Airlines',
+          'Stops',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        ...airlines.map((airline) => Obx(() => CheckboxListTile(
-          title: Text(airline),
-          value: controller.filterState.value.selectedAirlines
-              .contains(airline),
+        // Add "All" as the first option
+        CheckboxListTile(
+          title: const Text('All'),
+          value: controller.filterState.value.selectedStops.contains('All'),
           activeColor: TColors.primary,
-          onChanged: (_) => controller.toggleAirline(airline),
-        ))),
-      ],
-    );
-  }
-
-  Widget _buildTimeRangeFilter(bool isDeparture) {
-    final timeRanges = [
-      '00:00 - 06:00',
-      '06:00 - 12:00',
-      '12:00 - 18:00',
-      '18:00 - 00:00'
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          isDeparture ? 'Departure Time' : 'Arrival Time',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          onChanged: (value) => controller.toggleStopOption('All', value ?? false),
         ),
-        const SizedBox(height: 8),
-        ...timeRanges.map((range) => Obx(() {
-          final selectedRanges = isDeparture
-              ? controller.filterState.value.departureTimeRanges
-              : controller.filterState.value.arrivalTimeRanges;
-          return CheckboxListTile(
-            title: Text(range),
-            value: selectedRanges.contains(range),
-            activeColor: TColors.primary,
-            onChanged: (_) =>
-                controller.toggleTimeRange(range, isDeparture),
-          );
-        })),
+        CheckboxListTile(
+          title: const Text('Non Stop'),
+          value: controller.filterState.value.selectedStops.contains('0 Stops'),
+          activeColor: TColors.primary,
+          onChanged: (value) => controller.toggleStopOption('0 Stops', value ?? false),
+        ),
+        CheckboxListTile(
+          title: const Text('1 Stop'),
+          value: controller.filterState.value.selectedStops.contains('1 Stop'),
+          activeColor: TColors.primary,
+          onChanged: (value) => controller.toggleStopOption('1 Stop', value ?? false),
+        ),
+        CheckboxListTile(
+          title: const Text('2 Stops'),
+          value: controller.filterState.value.selectedStops.contains('2 Stops'),
+          activeColor: TColors.primary,
+          onChanged: (value) => controller.toggleStopOption('2 Stops', value ?? false),
+        ),
       ],
     );
-  }
+  });
+}
+
+Widget _buildAirlinesFilter() {
+  final airlines = controller.flights.map((f) => f.airline).toSet().toList();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Airlines',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      // Add "All Airlines" as the first option
+      Obx(() => CheckboxListTile(
+        title: const Text('All Airlines'),
+        value: controller.filterState.value.selectedAirlines.contains('All Airlines'),
+        activeColor: TColors.primary,
+        onChanged: (_) => controller.toggleAirline('All Airlines'),
+      )),
+      // List individual airlines
+      ...airlines.map((airline) => Obx(() => CheckboxListTile(
+        title: Text(airline),
+        value: controller.filterState.value.selectedAirlines.contains(airline),
+        activeColor: TColors.primary,
+        onChanged: (_) => controller.toggleAirline(airline),
+      ))),
+    ],
+  );
+}
+
+Widget _buildTimeRangeFilter(bool isDeparture) {
+  final timeRanges = [
+    '00:00 - 06:00',
+    '06:00 - 12:00',
+    '12:00 - 18:00',
+    '18:00 - 00:00'
+  ];
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        isDeparture ? 'Departure Time' : 'Arrival Time',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      // Add "All Times" as the first option
+      Obx(() {
+        final selectedRanges = isDeparture
+            ? controller.filterState.value.departureTimeRanges
+            : controller.filterState.value.arrivalTimeRanges;
+        return CheckboxListTile(
+          title: const Text('All Times'),
+          value: selectedRanges.contains('All Times'),
+          activeColor: TColors.primary,
+          onChanged: (_) => controller.toggleTimeRange('All Times', isDeparture),
+        );
+      }),
+      // List individual time ranges
+      ...timeRanges.map((range) => Obx(() {
+        final selectedRanges = isDeparture
+            ? controller.filterState.value.departureTimeRanges
+            : controller.filterState.value.arrivalTimeRanges;
+        return CheckboxListTile(
+          title: Text(range),
+          value: selectedRanges.contains(range),
+          activeColor: TColors.primary,
+          onChanged: (_) => controller.toggleTimeRange(range, isDeparture),
+        );
+      })),
+    ],
+  );
+}
 
   Widget _buildBottomButtons(BuildContext context) {
     return Container(

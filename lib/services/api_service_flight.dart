@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/filter_modal.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,6 +9,23 @@ class ApiServiceFlight extends GetxService {
   static const String _baseUrl = 'https://api.havail.sabre.com';
   static const String _tokenKey = 'flight_api_token';
   static const String _tokenExpiryKey = 'flight_token_expiry';
+
+  // Add a property to store the airline map
+  final Rx<Map<String, AirlineInfo>> airlineMap = Rx<Map<String, AirlineInfo>>({});
+  // Add a method to get the airline map
+  Map<String, AirlineInfo> getAirlineMap() {
+    return airlineMap.value;
+  }
+  // Initialize airline data when service starts
+  @override
+  void onInit() {
+    super.onInit();
+    // Fetch airline data when service initializes
+    fetchAirlineData().then((data) {
+      airlineMap.value = data;
+    });
+  }
+
 
   // Cabin class mapping
   static const Map<String, String> _cabinClassMapping = {
@@ -266,10 +284,6 @@ class ApiServiceFlight extends GetxService {
     try {
       final token = await getValidToken() ?? await generateToken();
 
-
-
-
-
       print('Request Body:');
       _printJsonPretty(requestBody);
 
@@ -291,7 +305,8 @@ class ApiServiceFlight extends GetxService {
       if (response.statusCode == 200) {
         return response.data;
       } else {
-        throw Exception('Failed to check flight availability: ${response.statusCode}');
+        throw Exception(
+            'Failed to check flight availability: ${response.statusCode}');
       }
     } catch (e) {
       print('Error checking flight availability: $e');
@@ -312,4 +327,58 @@ class ApiServiceFlight extends GetxService {
     }
   }
 
+  Future<Map<String, AirlineInfo>> fetchAirlineData() async {
+    Map<String, AirlineInfo> tempAirlineMap = {};
+
+    try {
+      var response = await dio.request(
+        'https://agent1.pk/api.php?type=airlines',
+        options: Options(
+          method: 'GET',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        var data = response.data['data'];
+        _printJsonPretty(data);
+        for (var item in data) {
+          // Clean and format the logo URL
+          String logoUrl = item['logo'];
+
+          // Remove any escaped characters like \t, \n, etc.
+          logoUrl = logoUrl.replaceAll(RegExp(r'^\t+'), '');
+          print(logoUrl);
+
+          // // Ensure URL starts with https://
+          // if (!logoUrl.startsWith('http://') && !logoUrl.startsWith('https://')) {
+          //   logoUrl = 'https://' + logoUrl;
+          // }
+
+          tempAirlineMap[item['code']] = AirlineInfo(
+            item['name'],
+            logoUrl,
+          );
+        }
+        // Update the stored airlineMap
+        airlineMap.value = tempAirlineMap;
+        print('Airline data fetched successfully. Total airlines: ${tempAirlineMap.length}');
+
+        // Log a few URLs for debugging
+        if (tempAirlineMap.isNotEmpty) {
+          print('Sample logo URLs:');
+          tempAirlineMap.entries.take(3).forEach((entry) {
+            print('${entry.key}: ${entry.value.logoPath}');
+          });
+        }
+      } else {
+        print('Failed to fetch airline data: ${response.statusMessage}');
+      }
+    } catch (e) {
+      print('Error fetching airline data: $e');
+    }
+
+    return tempAirlineMap;
+  }
 }
+
+

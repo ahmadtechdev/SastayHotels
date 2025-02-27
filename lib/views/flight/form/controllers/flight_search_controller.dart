@@ -14,19 +14,19 @@ class FlightSearchController extends GetxController {
   final flightController = Get.put(FlightController());
 
   // New observable variables for origin, destination, and trip type
-  var origins = RxList<String>(['KHI']); // Default first origin
-  var destinations = RxList<String>(['JED']); // Default first destination
+  var origins = RxList<String>([]);  // No default value
+  var destinations = RxList<String>([]);  // No default value
   var currentTripType = 0.obs; // 0: one-way, 1: return, 2: multi-city
 
   var isLoading = false.obs;
   var searchResults = Rxn<Map<String, dynamic>>();
   var errorMessage = ''.obs;
 
-  // Getter for formatted origins string
-  String get formattedOrigins => origins.isNotEmpty ? ',${origins.join(',')}' : ',KHI';
+// Getter for formatted origins string
+  String get formattedOrigins => origins.isNotEmpty ? ',${origins.join(',')}' : '';
 
-  // Getter for formatted destinations string
-  String get formattedDestinations => destinations.isNotEmpty ? ',${destinations.join(',')}' : ',JED';
+// Getter for formatted destinations string
+  String get formattedDestinations => destinations.isNotEmpty ? ',${destinations.join(',')}' : '';
 
   // Method to update origins and destinations
   void updateRoute(int index, {String? origin, String? destination}) {
@@ -68,8 +68,6 @@ class FlightSearchController extends GetxController {
   void clearRoutes() {
     origins.clear();
     destinations.clear();
-    origins.add('KHI');
-    destinations.add('JED');
   }
 
   Future<void> searchFlights() async {
@@ -89,37 +87,32 @@ class FlightSearchController extends GetxController {
         // For multi-city trips
         final flights = flightDateController.flights;
 
-        // Clear and update origins/destinations based on flights
-        origins.clear();
-        destinations.clear();
+        // Make sure we have cities selected for all flights
+        if (origins.length < flights.length || destinations.length < flights.length) {
+          errorMessage.value = 'Please select all departure and destination cities';
+          isLoading.value = false;
+          return;
+        }
 
+        // Format the dates for each flight
         for (int i = 0; i < flights.length; i++) {
           if (i > 0) {
             formattedDates += ',';
           } else {
             formattedDates += ',';
           }
-
-          // Update origins and destinations
-          String origin = flights[i]['origin'] ?? 'KHI';
-          if (i == 1) origin = 'DXB';  // For the second flight, use DXB as origin
-          String destination = flights[i]['destination'] ?? (i == 0 ? 'DXB' : 'JED');
-
-          origins.add(origin);
-          destinations.add(destination);
           formattedDates += _formatDate(flights[i]['date']);
-        }
-
-        // If there's only one flight, add a second one
-        if (flights.length == 1) {
-          origins.add('DXB');
-          destinations.add('JED');
-          DateTime nextDay = flights[0]['date'].add(Duration(days: 1));
-          formattedDates += ',${_formatDate(nextDay)}';
         }
       } else {
         // Handle one-way and return trips
-        clearRoutes(); // Reset to default values
+
+        // Make sure we have at least one origin and destination
+        if (origins.isEmpty || destinations.isEmpty) {
+          errorMessage.value = 'Please select both departure and destination cities';
+          isLoading.value = false;
+          return;
+        }
+
         formattedDates = ',${_formatDate(flightDateController.departureDate.value)}';
 
         if (currentTripType.value == 1) {

@@ -1,5 +1,7 @@
 // 1. First, let's update the Flight model to match the API response
 
+import '../../../../widgets/colors.dart';
+import '../../../../widgets/snackbar.dart';
 import '../flight_package/package_modal.dart';
 import 'flight_controller.dart';
 
@@ -24,9 +26,9 @@ class Flight {
   final List<TaxDesc> taxes;
   final BaggageAllowance baggageAllowance;
   final List<FlightPackageInfo> packages;
-  final List<String> stops;  // New field
+  final List<String> stops; // New field
   final List<Map<String, dynamic>> stopSchedules;
-  final int? legElapsedTime;  // Total elapsed time from the leg
+  final int? legElapsedTime; // Total elapsed time from the leg
   final String cabinClass;
   final String mealCode;
   final Flight? returnFlight; // For storing return flight information
@@ -38,14 +40,13 @@ class Flight {
   final String? returnFrom;
   final String? returnTo;
   final bool isRoundTrip;
-  final List<Flight>? connectedFlights; // For storing related flights in multi-city
+  final List<Flight>?
+      connectedFlights; // For storing related flights in multi-city
   final int? tripSequence; // To track order in multi-city trips
   final String? tripType; // "oneWay", "return", "multiCity"
   final List<Map<String, dynamic>> legSchedules;
   final List<FlightSegmentInfo> segmentInfo;
   // Add this new property
-
-
 
   Flight({
     required this.imgPath,
@@ -87,15 +88,14 @@ class Flight {
     this.connectedFlights,
     this.tripSequence,
     this.tripType,
-
   });
-
-
 }
 
 String getFareType(Map<String, dynamic> fareInfo) {
   try {
-    final cabinCode = fareInfo['passengerInfoList']?[0]?['passengerInfo']?['fareComponents']?[0]?['segments']?[0]?['segment']?['cabinCode'] as String?;
+    final cabinCode = fareInfo['passengerInfoList']?[0]?['passengerInfo']
+            ?['fareComponents']?[0]?['segments']?[0]?['segment']?['cabinCode']
+        as String?;
     switch (cabinCode) {
       case 'C':
         return 'Business';
@@ -111,12 +111,16 @@ String getFareType(Map<String, dynamic> fareInfo) {
 
 List<TaxDesc> parseTaxes(List<dynamic> taxes) {
   try {
-    return taxes.map((tax) => TaxDesc(
-      code: tax['code']?.toString() ?? 'Unknown',
-      amount: (tax['amount'] is int) ? tax['amount'].toDouble() : (tax['amount'] as double? ?? 0.0),
-      currency: tax['currency']?.toString() ?? 'PKR',
-      description: tax['description']?.toString() ?? 'No description',
-    )).toList();
+    return taxes
+        .map((tax) => TaxDesc(
+              code: tax['code']?.toString() ?? 'Unknown',
+              amount: (tax['amount'] is int)
+                  ? tax['amount'].toDouble()
+                  : (tax['amount'] as double? ?? 0.0),
+              currency: tax['currency']?.toString() ?? 'PKR',
+              description: tax['description']?.toString() ?? 'No description',
+            ))
+        .toList();
   } catch (e) {
     print('Error parsing taxes: $e');
     return [];
@@ -127,11 +131,7 @@ BaggageAllowance parseBaggageAllowance(List<dynamic> baggageInfo) {
   try {
     if (baggageInfo.isEmpty) {
       return BaggageAllowance(
-          pieces: 0,
-          weight: 0,
-          unit: '',
-          type: 'Check airline policy'
-      );
+          pieces: 0, weight: 0, unit: '', type: 'Check airline policy');
     }
 
     // Check if we have weight-based allowance
@@ -140,8 +140,8 @@ BaggageAllowance parseBaggageAllowance(List<dynamic> baggageInfo) {
           pieces: 0,
           weight: (baggageInfo[0]['allowance']['weight'] as num).toDouble(),
           unit: baggageInfo[0]['allowance']['unit'] ?? 'KG',
-          type: '${baggageInfo[0]['allowance']['weight']} ${baggageInfo[0]['allowance']['unit'] ?? 'KG'}'
-      );
+          type:
+              '${baggageInfo[0]['allowance']['weight']} ${baggageInfo[0]['allowance']['unit'] ?? 'KG'}');
     }
 
     // Check if we have piece-based allowance
@@ -150,25 +150,16 @@ BaggageAllowance parseBaggageAllowance(List<dynamic> baggageInfo) {
           pieces: baggageInfo[0]['allowance']['pieceCount'] as int,
           weight: 0,
           unit: 'PC',
-          type: '${baggageInfo[0]['allowance']['pieceCount']} PC'
-      );
+          type: '${baggageInfo[0]['allowance']['pieceCount']} PC');
     }
 
     // Default case
     return BaggageAllowance(
-        pieces: 0,
-        weight: 0,
-        unit: '',
-        type: 'Check airline policy'
-    );
+        pieces: 0, weight: 0, unit: '', type: 'Check airline policy');
   } catch (e) {
     print('Error parsing baggage allowance: $e');
     return BaggageAllowance(
-        pieces: 0,
-        weight: 0,
-        unit: '',
-        type: 'Check airline policy'
-    );
+        pieces: 0, weight: 0, unit: '', type: 'Check airline policy');
   }
 }
 
@@ -206,18 +197,21 @@ class AirlineInfo {
   final String name;
   final String logoPath;
 
-  AirlineInfo(this.name, this.logoPath);
+  AirlineInfo(this.name, this.logoPath);  
 }
 
-AirlineInfo getAirlineInfo(String code) {
-  final airlineMap = {
-    'SV': AirlineInfo('Saudi Airlines', 'assets/img/logos/air-arabia.png'),
-    'PK': AirlineInfo('Pakistan Airlines', 'assets/img/logos/pia.png'),
-    // Add more airlines as needed
-  };
-  return airlineMap[code] ?? AirlineInfo('Unknown Airline', 'assets/img/logos/pia.png');
-}
+AirlineInfo getAirlineInfo(String code, Map<String, AirlineInfo>? apiAirlineMap) {
+  // First try to get from API data
+  if (apiAirlineMap != null && apiAirlineMap.containsKey(code)) {
+    return apiAirlineMap[code]!;
+  }
 
+  CustomSnackBar(message: 'Airlines name and logo could not be loaded from API', backgroundColor: TColors.third);
+
+  return AirlineInfo(
+      'Unknown Airline',
+      'https://cdn-icons-png.flaticon.com/128/15700/15700374.png');
+}
 
 class PriceInfo {
   final double totalPrice;

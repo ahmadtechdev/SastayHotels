@@ -1,6 +1,24 @@
 import 'package:get/get.dart';
 
 class SelectRoomController extends GetxController {
+  var totalroomsprice = 0.0.obs;
+  void updateTotalRoomsPrice(Map<int, dynamic> selectedRooms) {
+    double totalPrice = 0.0;
+
+    // Calculate total price for selected rooms
+    selectedRooms.forEach((roomIndex, roomData) {
+      if (roomData['rates'] != null && roomData['rates'].isNotEmpty) {
+        final price = roomData['rates'][0]['price']?['net'];
+        if (price is num) {
+          totalPrice += price.toDouble();
+        }
+      }
+    });
+
+    // Update the observable total rooms price
+    totalroomsprice.value = totalPrice;
+  }
+
   // Store prebook API response
   final Rx<Map<String, dynamic>> prebookResponse = Rx<Map<String, dynamic>>({});
 

@@ -532,7 +532,7 @@ class HotelCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      'USD ${(hotel['price'] ?? 0.0)}',
+                      'PKR ${(double.parse(hotel['price'] ?? '0') * 278.5).toStringAsFixed(2)}',
                       style: const TextStyle(
                           fontSize: 18,
                           color: TColors.text,

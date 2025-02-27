@@ -1,6 +1,4 @@
-import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,7 +11,6 @@ import '../../form/travelers/traveler_controller.dart';
 import '../review_flight/review_flight.dart';
 import '../search_flight_utils/filter_modal.dart';
 import '../search_flight_utils/flight_controller.dart';
-import '../search_flights.dart';
 import 'package_modal.dart';
 
 class PackageSelectionDialog extends StatelessWidget {

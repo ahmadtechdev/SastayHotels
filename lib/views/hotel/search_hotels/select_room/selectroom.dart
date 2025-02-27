@@ -30,6 +30,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
 
   final apiService = ApiServiceHotel();
   bool isLoading = false;
+  int? loadingRoomIndex; // Track which room is currently loading
 
   Future<void> handleBookNow() async {
     setState(() {
@@ -122,30 +123,90 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
     super.dispose();
   }
 
-  void selectRoom(int roomIndex, dynamic room) {
-    setState(() {
-      selectedRooms[roomIndex] = room;
+ void selectRoom(int roomIndex, dynamic room) {
+  setState(() {
+    selectedRooms[roomIndex] = room;
 
-      // Store the complete room data including the rate key
+    // Store the complete room data including the rate key
+    if (room['rates'] != null && room['rates'].isNotEmpty) {
+      String? rateKey = room['rates'][0]['rateKey']?.toString();
+      if (rateKey != null && rateKey.isNotEmpty) {
+        selectRoomController.storeRateKey(roomIndex, rateKey);
+      }
+    }
+
+    // Update the controller
+    Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
+
+    // Update total rooms price
+    selectRoomController.updateTotalRoomsPrice(selectedRooms);
+
+    // Move to next tab if available
+    if (roomIndex < guestsController.roomCount.value - 1) {
+      _tabController.animateTo(roomIndex + 1);
+    }
+  });
+} 
+
+  // Update the observable total rooms price
+ 
+  bool get allRoomsSelected =>
+      selectedRooms.length == guestsController.roomCount.value;
+
+  // Updated method to handle single room booking with loading state
+  void bookSingleRoom(dynamic room) async {
+    // First select the room
+    selectRoom(0, room);
+    
+    // Set the loading state for this specific room
+    setState(() {
+      loadingRoomIndex = controller.roomsdata.indexOf(room);
+      isLoading = true;
+    });
+    
+    try {
+      // Extract rate key from selected room
+      List<String> rateKeys = [];
+      
       if (room['rates'] != null && room['rates'].isNotEmpty) {
         String? rateKey = room['rates'][0]['rateKey']?.toString();
         if (rateKey != null && rateKey.isNotEmpty) {
-          selectRoomController.storeRateKey(roomIndex, rateKey);
+          rateKeys.add(rateKey);
         }
       }
-
-      // Update the controller
-      Get.find<SearchHotelController>().updateSelectedRoom(roomIndex, room);
-
-      // Move to next tab if available
-      if (roomIndex < guestsController.roomCount.value - 1) {
-        _tabController.animateTo(roomIndex + 1);
+      
+      if (rateKeys.isEmpty) {
+        _showErrorDialog('No valid rate key found for selected room.');
+        return;
       }
-    });
+      
+      print('Rate key to be checked: $rateKeys');
+      
+      var response = await apiService.checkRate(rateKeys: rateKeys);
+      
+      if (response != null) {
+        Bookingcontroller.buying_price.value = response['hotel']['totalNet'];
+        print('the buying rate is ${Bookingcontroller.buying_price.value}');
+        
+        // Store the response in the controller
+        selectRoomController.storePrebookResponse(response);
+        
+        // Navigate to next screen
+        Get.to(() => BookingHotelScreen());
+      } else {
+        _showErrorDialog('Failed to validate room availability. Please try again.');
+      }
+    } catch (e) {
+      _showErrorDialog('An error occurred while processing your booking. Please try again.');
+      print('Booking error: $e');
+    } finally {
+      // Reset loading state
+      setState(() {
+        loadingRoomIndex = null;
+        isLoading = false;
+      });
+    }
   }
-
-  bool get allRoomsSelected =>
-      selectedRooms.length == guestsController.roomCount.value;
 
   @override
   Widget build(BuildContext context) {
@@ -202,6 +263,8 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
           groupedRooms[roomName]!.add(room);
         }
 
+        bool isSingleRoom = guestsController.roomCount.value == 1;
+
         if (guestsController.roomCount.value > 1) {
           return Column(
             children: [
@@ -224,6 +287,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                                         selectRoom(roomIndex, room),
                                     isSelected: (room) =>
                                         selectedRooms[roomIndex] == room,
+                                    isSingleRoom: false,
                                   )),
                         ],
                       ),
@@ -234,7 +298,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
             ],
           );
         } else {
-          // Single room view (original layout)
+          // Single room view with "Book Now" buttons directly on rooms
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,8 +308,10 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
                       roomTypeName: entry.key,
                       rooms: entry.value,
                       nights: dateController.nights.value,
-                      onRoomSelected: (room) => selectRoom(0, room),
+                      onRoomSelected: (room) => bookSingleRoom(room), 
                       isSelected: (room) => selectedRooms[0] == room,
+                      isSingleRoom: true,
+                      loadingRoomIndex: loadingRoomIndex, // Pass loading state
                     )),
               ],
             ),
@@ -253,7 +319,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
         }
       }),
       bottomNavigationBar:
-          guestsController.roomCount.value >= 1 && allRoomsSelected
+          guestsController.roomCount.value > 1 && allRoomsSelected
               ? Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -367,6 +433,8 @@ class RoomTypeSection extends StatefulWidget {
   final int nights;
   final Function(dynamic) onRoomSelected;
   final Function(dynamic) isSelected;
+  final bool isSingleRoom;
+  final int? loadingRoomIndex;
 
   const RoomTypeSection({
     super.key,
@@ -375,6 +443,8 @@ class RoomTypeSection extends StatefulWidget {
     required this.nights,
     required this.onRoomSelected,
     required this.isSelected,
+    this.isSingleRoom = false,
+    this.loadingRoomIndex,
   });
 
   @override
@@ -426,12 +496,22 @@ class _RoomTypeSectionState extends State<RoomTypeSection> {
           ),
         ),
         if (isExpanded)
-          ...widget.rooms.map((room) => RoomCard(
-                room: room,
-                nights: widget.nights,
-                onSelect: widget.onRoomSelected,
-                isSelected: widget.isSelected(room),
-              )),
+          ...widget.rooms.asMap().entries.map((entry) {
+            final dynamic room = entry.value;
+            
+            // Check if this specific room is being loaded
+            bool isRoomLoading = widget.loadingRoomIndex != null && 
+                widget.rooms.indexOf(room) == widget.loadingRoomIndex;
+                
+            return RoomCard(
+              room: room,
+              nights: widget.nights,
+              onSelect: widget.onRoomSelected,
+              isSelected: widget.isSelected(room),
+              showBookNowButton: widget.isSingleRoom,
+              isLoading: isRoomLoading, // Pass the loading state
+            );
+          }),
       ],
     );
   }
