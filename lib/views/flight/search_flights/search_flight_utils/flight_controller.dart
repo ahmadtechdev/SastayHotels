@@ -463,6 +463,14 @@ extension FlightDateTimeExtension on FlightController {
           legDescsMap[leg['id'] as int] = leg;
         }
       }
+  final fareComponentDescs = <int, Map<String, dynamic>>{};
+      if (groupedResponse['fareComponentDescs'] != null) {
+        for (var fare in groupedResponse['fareComponentDescs'] as List) {
+          fareComponentDescs[fare['id'] as int] = fare;
+        }
+      }
+
+      print(fareComponentDescs);
 
       final List<Flight> parsedFlights = [];
       final itineraryGroups = groupedResponse['itineraryGroups'] as List?;
@@ -493,7 +501,7 @@ extension FlightDateTimeExtension on FlightController {
             try {
               final fareInfo = pricing['fare'];
               if (fareInfo != null) {
-                packages.add(FlightPackageInfo.fromApiResponse(fareInfo));
+                packages.add(FlightPackageInfo.fromApiResponse(fareInfo, fareComponentDescs));
               }
             } catch (e) {
               print('Error parsing package: $e');
