@@ -67,7 +67,36 @@ class PackageSelectionDialog extends StatelessWidget {
       showReturnFlight: false,
     );
   }
-
+  String getMealInfo(String mealCode) {
+    switch (mealCode.toUpperCase()) {
+      case 'P':
+        return 'Alcoholic beverages for purchase';
+      case 'C':
+        return 'Complimentary alcoholic beverages';
+      case 'B':
+        return 'Breakfast';
+      case 'K':
+        return 'Continental breakfast';
+      case 'D':
+        return 'Dinner';
+      case 'F':
+        return 'Food for purchase';
+      case 'G':
+        return 'Food/Beverages for purchase';
+      case 'M':
+        return 'Meal';
+      case 'N':
+        return 'No meal service';
+      case 'R':
+        return 'Complimentary refreshments';
+      case 'V':
+        return 'Refreshments for purchase';
+      case 'S':
+        return 'Snack';
+      default:
+        return 'No Meal';
+    }
+  }
   Widget _buildPackagesList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,6 +139,9 @@ class PackageSelectionDialog extends StatelessWidget {
           height: 50,
           child: Center(
             child: SingleChildScrollView(
+
+              physics: const NeverScrollableScrollPhysics(),
+
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -144,7 +176,12 @@ class PackageSelectionDialog extends StatelessWidget {
     );
   }
 
+  // Inside _buildPackageCard method of PackageSelectionDialog
   Widget _buildPackageCard(FlightPackageInfo package) {
+    final headerColor = package.isSoldOut
+        ? Colors.grey
+        : TColors.primary;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -156,11 +193,6 @@ class PackageSelectionDialog extends StatelessWidget {
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
         ],
       ),
       child: Column(
@@ -170,8 +202,8 @@ class PackageSelectionDialog extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  TColors.primary,
-                  TColors.primary.withOpacity(0.8),
+                  headerColor,
+                  headerColor.withOpacity(0.8),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -189,7 +221,9 @@ class PackageSelectionDialog extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        package.cabinName,
+                        package.brandDescription.isNotEmpty
+                            ? package.brandDescription
+                            : package.cabinName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -201,32 +235,49 @@ class PackageSelectionDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      package.totalPrice.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontSize: 16,
+                if (!package.isSoldOut)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        package.totalPrice.toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: TColors.background,
+                        ),
+                      ),
+                      Text(
+                        package.currency,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: TColors.background.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (package.isSoldOut)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: TColors.background.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'SOLD OUT',
+                      style: TextStyle(
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: TColors.background,
                       ),
                     ),
-                    Text(
-                      package.currency,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: TColors.background.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
               ],
             ),
           ),
           Expanded(
             child: SingleChildScrollView(
-              physics: NeverScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -241,24 +292,33 @@ class PackageSelectionDialog extends StatelessWidget {
                     _buildPackageDetail(
                       Icons.luggage,
                       'Baggage',
-                      '${package.baggageAllowance.pieces} pieces',
+                      package.isSoldOut
+                          ? 'Not available'
+                          : '${package.baggageAllowance.type}',
                     ),
                     const SizedBox(height: 12),
                     _buildPackageDetail(
                       Icons.restaurant,
                       'Meal',
-                      package.mealCode == 'M' ? 'Meal Included' : 'No Meal',
+                      package.isSoldOut
+                          ? 'Not available'
+                          : getMealInfo(package.mealCode),
+                          // : (package.mealCode == 'M' ? 'Meal Included' : 'No Meal'),
                     ),
                     const SizedBox(height: 12),
                     _buildPackageDetail(
                       Icons.event_seat,
                       'Seats Available',
-                      package.seatsAvailable.toString(),
+                      package.isSoldOut
+                          ? '0'
+                          : package.seatsAvailable.toString(),
                     ),
                     _buildPackageDetail(
                       Icons.currency_exchange,
                       'Refundable',
-                      package.isNonRefundable ? 'Non-Refundable' : 'Refundable',
+                      package.isSoldOut
+                          ? 'Not applicable'
+                          : (package.isNonRefundable ? 'Non-Refundable' : 'Refundable'),
                     ),
                   ],
                 ),
@@ -268,24 +328,9 @@ class PackageSelectionDialog extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: () {
-                onSelectPackage();
-
-                // if (flightController.currentScenario.value ==
-                //     FlightScenario.oneWay ||
-                //     !isAnyFlightRemaining) {
-                //   // Pass the selected flight to ReviewTripPage
-                //   Get.to(() => ReviewTripPage(
-                //     isMulti: false,
-                //     flight: flight, // Pass the selected flight here
-                //   ));
-                // } else {
-                //   flightController.isSelectingFirstFlight.value = false;
-                //   // Get.back();
-                // }
-              },
+              onPressed: package.isSoldOut ? null : () => onSelectPackage(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: TColors.primary,
+                backgroundColor: package.isSoldOut ? Colors.grey : TColors.primary,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -293,13 +338,13 @@ class PackageSelectionDialog extends StatelessWidget {
                 elevation: 2,
               ),
               child: Text(
-                isAnyFlightRemaining
-                    ? 'Select Return Package'
-                    : 'Select Package',
-                style: const TextStyle(
+                package.isSoldOut
+                    ? 'Not Available'
+                    : (isAnyFlightRemaining ? 'Select Return Package' : 'Select Package'),
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: TColors.background,
+                  color: package.isSoldOut ? Colors.white70 : TColors.background,
                 ),
               ),
             ),
@@ -513,7 +558,4 @@ class PackageSelectionDialog extends StatelessWidget {
     }
   }
 
-  String _formatDateTime(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T00:00:01';
-  }
 }

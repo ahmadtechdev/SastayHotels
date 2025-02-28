@@ -26,6 +26,7 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
   final Map<int, dynamic> selectedRooms = {};
   final guestsController = Get.find<GuestsController>();
   final selectRoomController = Get.put(SelectRoomController());
+  // ignore: non_constant_identifier_names
   final Bookingcontroller = Get.put(BookingController());
 
   final apiService = ApiServiceHotel();
@@ -263,7 +264,6 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
           groupedRooms[roomName]!.add(room);
         }
 
-        bool isSingleRoom = guestsController.roomCount.value == 1;
 
         if (guestsController.roomCount.value > 1) {
           return Column(
@@ -392,15 +392,15 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
             children: [
               Text(
                 controller.zoneName.value,
-                style: TextStyle(
+                style: const TextStyle(
                   color: TColors.grey,
                   fontSize: 14,
                 ),
               ),
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Text(
                 controller.destinationName.value,
-                style: TextStyle(
+                style: const TextStyle(
                   color: TColors.grey,
                   fontSize: 14,
                 ),
@@ -410,11 +410,11 @@ class _SelectRoomScreenState extends State<SelectRoomScreen>
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.star, color: TColors.primary, size: 18),
-              SizedBox(width: 4),
+              const Icon(Icons.star, color: TColors.primary, size: 18),
+              const SizedBox(width: 4),
               Text(
                 '${controller.categoryName.value} Star Hotel',
-                style: TextStyle(
+                style: const TextStyle(
                   color: TColors.grey,
                   fontSize: 14,
                 ),

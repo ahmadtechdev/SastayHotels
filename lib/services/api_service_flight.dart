@@ -107,9 +107,9 @@ class ApiServiceFlight extends GetxService {
     required String cabin,
   }) async {
     try {
-      print('Fetching token...');
+
       final token = await getValidToken() ?? await generateToken();
-      print('Token received.');
+
 
       final originArray = origin.split(',');
       final destinationArray = destination.split(',');
@@ -340,14 +340,13 @@ class ApiServiceFlight extends GetxService {
 
       if (response.statusCode == 200) {
         var data = response.data['data'];
-        _printJsonPretty(data);
         for (var item in data) {
           // Clean and format the logo URL
           String logoUrl = item['logo'];
 
           // Remove any escaped characters like \t, \n, etc.
           logoUrl = logoUrl.replaceAll(RegExp(r'^\t+'), '');
-          print(logoUrl);
+          // print(logoUrl);
 
           // // Ensure URL starts with https://
           // if (!logoUrl.startsWith('http://') && !logoUrl.startsWith('https://')) {

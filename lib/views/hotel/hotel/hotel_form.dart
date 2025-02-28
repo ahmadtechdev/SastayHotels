@@ -76,7 +76,7 @@ class HotelForm extends StatelessWidget {
                       guestsController.rooms[index].childrenAges.toList(),
               },
             );
-            print('the rooms is ${rooms}');
+            print('the rooms is $rooms');
 
             try {
               var apiService = Get.put(ApiServiceHotel());

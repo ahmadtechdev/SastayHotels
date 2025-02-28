@@ -60,7 +60,7 @@ class _BookingFormState extends State<BookingForm> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: CheckboxListTile(
         title: RichText(
-          text: TextSpan(
+          text: const TextSpan(
             children: [
               TextSpan(
                 text: 'I accept the ',
@@ -173,7 +173,7 @@ class _BookingFormState extends State<BookingForm> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: TColors.primary,
@@ -439,19 +439,13 @@ class _BookingFormState extends State<BookingForm> {
       child: TextField(
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(Icons.calendar_today, color: TColors.primary),
+          prefixIcon: const Icon(Icons.calendar_today, color: TColors.primary),
           border: InputBorder.none,
           contentPadding:
           const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
         readOnly: true,
         onTap: () async {
-          final date = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(1900),
-            lastDate: DateTime(2100),
-          );
           // Handle the selected date
         },
       ),
@@ -472,18 +466,6 @@ class _BookingFormState extends State<BookingForm> {
     }
   }
 
-  List<String> _getTitleOptions(String type) {
-    switch (type) {
-      case 'adult':
-        return ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
-      case 'child':
-        return ['Mstr.', 'Miss'];
-      case 'infant':
-        return ['Inf.'];
-      default:
-        return ['Mr.', 'Mrs.', 'Ms.'];
-    }
-  }
 
   Widget _buildBookerDetails() {
     return Card(
@@ -610,10 +592,10 @@ class _BookingFormState extends State<BookingForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Total Amount'),
+              const Text('Total Amount'),
               Text(
                 'PKR ${widget.flight.price.toStringAsFixed(0)}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),

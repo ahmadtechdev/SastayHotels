@@ -1,6 +1,8 @@
-
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../services/api_service_flight.dart';
+import '../../../../../../widgets/colors.dart';
+import '../../../../../../widgets/snackbar.dart';
 
 import '../../search_flights/search_flight_utils/flight_controller.dart';
 import '../../search_flights/search_flights.dart';
@@ -13,38 +15,83 @@ class FlightSearchController extends GetxController {
   final flightDateController = Get.put(FlightDateController());
   final flightController = Get.put(FlightController());
 
-  // New observable variables for origin, destination, and trip type
-  var origins = RxList<String>([]);  // No default value
-  var destinations = RxList<String>([]);  // No default value
+
+  // Observable variables for origin, destination, and trip type
+  var origins = RxList<String>([]);
+  var destinations = RxList<String>([]);
   var currentTripType = 0.obs; // 0: one-way, 1: return, 2: multi-city
 
   var isLoading = false.obs;
   var searchResults = Rxn<Map<String, dynamic>>();
   var errorMessage = ''.obs;
 
-// Getter for formatted origins string
-  String get formattedOrigins => origins.isNotEmpty ? ',${origins.join(',')}' : '';
+  // Getter for formatted origins string
+  String get formattedOrigins =>
+      origins.isNotEmpty ? ',${origins.join(',')}' : '';
 
-// Getter for formatted destinations string
-  String get formattedDestinations => destinations.isNotEmpty ? ',${destinations.join(',')}' : '';
+  // Getter for formatted destinations string
+  String get formattedDestinations =>
+      destinations.isNotEmpty ? ',${destinations.join(',')}' : '';
 
   // Method to update origins and destinations
-  void updateRoute(int index, {String? origin, String? destination}) {
+  void updateRoute(int index,
+      {String? origin,
+        String? destination,
+        String? originName,
+        String? destinationName}) {
+    // Handle origin update
     if (origin != null) {
-      if (index >= origins.length) {
-        origins.add(origin);
-      } else {
-        origins[index] = origin;
+      // Ensure the origins list has enough elements
+      while (index >= origins.length) {
+        origins.add('');
+      }
+      origins[index] = origin;
+
+      // If we're in multi-city mode, update the UI display as well
+      if (flightDateController.tripType.value == 'Multi City' &&
+          index < flightDateController.flights.length) {
+        // Use the originName if provided, otherwise use the code
+        String cityDisplay = originName ?? origin;
+        flightDateController.flights[index]['origin'] = cityDisplay;
       }
     }
 
+    // Handle destination update
     if (destination != null) {
-      if (index >= destinations.length) {
-        destinations.add(destination);
-      } else {
-        destinations[index] = destination;
+      // Ensure the destinations list has enough elements
+      while (index >= destinations.length) {
+        destinations.add('');
+      }
+      destinations[index] = destination;
+
+      // If we're in multi-city mode, update the UI display
+      if (flightDateController.tripType.value == 'Multi City' &&
+          index < flightDateController.flights.length) {
+        // Use the destinationName if provided, otherwise use the code
+        String cityDisplay = destinationName ?? destination;
+        flightDateController.flights[index]['destination'] = cityDisplay;
+
+        // Auto-populate next flight's origin if there is one
+        if (index + 1 < flightDateController.flights.length) {
+          flightDateController.flights[index + 1]['origin'] = cityDisplay;
+
+          // Also ensure the origins array is updated
+          if (index + 1 >= origins.length) {
+            origins.add(destination);
+          } else {
+            origins[index + 1] = destination;
+          }
+
+          // Notify that the data has changed
+          flightDateController.update();
+        }
       }
     }
+
+    // Debug print to see current values
+    print('Origins: $origins');
+    print('Destinations: $destinations');
+    print('FlightDateController flights: ${flightDateController.flights}');
   }
 
   // Method to update trip type
@@ -80,6 +127,20 @@ class FlightSearchController extends GetxController {
       // Update trip type based on flightDateController
       updateTripType(flightDateController.tripType.value);
 
+      // Check if origin and destination are empty before proceeding
+      if (origins.isEmpty || destinations.isEmpty) {
+        // Show snackbar with error message
+        CustomSnackBar(
+            message: 'Please select both departure and destination cities',
+            backgroundColor: TColors.third)
+            .show();
+
+        errorMessage.value =
+        'Please select both departure and destination cities';
+        isLoading.value = false;
+        return;
+      }
+
       // Format dates based on trip type
       String formattedDates = '';
 
@@ -88,8 +149,15 @@ class FlightSearchController extends GetxController {
         final flights = flightDateController.flights;
 
         // Make sure we have cities selected for all flights
-        if (origins.length < flights.length || destinations.length < flights.length) {
-          errorMessage.value = 'Please select all departure and destination cities';
+        if (origins.length < flights.length ||
+            destinations.length < flights.length) {
+          CustomSnackBar(
+              message: 'Please select all departure and destination cities',
+              backgroundColor: TColors.third)
+              .show();
+
+          errorMessage.value =
+          'Please select all departure and destination cities';
           isLoading.value = false;
           return;
         }
@@ -105,18 +173,12 @@ class FlightSearchController extends GetxController {
         }
       } else {
         // Handle one-way and return trips
-
-        // Make sure we have at least one origin and destination
-        if (origins.isEmpty || destinations.isEmpty) {
-          errorMessage.value = 'Please select both departure and destination cities';
-          isLoading.value = false;
-          return;
-        }
-
-        formattedDates = ',${_formatDate(flightDateController.departureDate.value)}';
+        formattedDates =
+        ',${_formatDate(flightDateController.departureDate.value)}';
 
         if (currentTripType.value == 1) {
-          formattedDates += ',${_formatDate(flightDateController.returnDate.value)}';
+          formattedDates +=
+          ',${_formatDate(flightDateController.returnDate.value)}';
         }
       }
 
@@ -151,20 +213,29 @@ class FlightSearchController extends GetxController {
       Get.to(() => FlightBookingPage(
           scenario: currentTripType.value == 1
               ? FlightScenario.returnFlight
-              : (currentTripType.value == 2 ? FlightScenario.multiCity : FlightScenario.oneWay)
-      ));
-
+              : (currentTripType.value == 2
+              ? FlightScenario.multiCity
+              : FlightScenario.oneWay)));
     } catch (e, stackTrace) {
       print('Error in searchFlights: $e');
       print('Stack trace: $stackTrace');
       errorMessage.value = 'Error searching flights: $e';
 
+      Get.snackbar(
+        'Error',
+        'Error searching flights: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.7),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(10),
+        duration: const Duration(seconds: 3),
+        borderRadius: 10,
+        icon: const Icon(Icons.error, color: Colors.white),
+      );
+
       searchResults.value = null;
       flightController.loadFlights({
-        'groupedItineraryResponse': {
-          'scheduleDescs': [],
-          'itineraryGroups': []
-        }
+        'groupedItineraryResponse': {'scheduleDescs': [], 'itineraryGroups': []}
       });
     } finally {
       isLoading.value = false;
@@ -173,5 +244,13 @@ class FlightSearchController extends GetxController {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void onClose() {
+    // Clear data when the controller is closed to prevent data leaks
+    origins.clear();
+    destinations.clear();
+    super.onClose();
   }
 }

@@ -23,8 +23,6 @@ class FlightForm extends StatelessWidget {
     final flightDateController = Get.find<FlightDateController>();
     final searchController = Get.put(FlightSearchController());
 
-    // No need for text controllers here since we're handling values directly
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -34,6 +32,8 @@ class FlightForm extends StatelessWidget {
           child: TripTypeSelector(
             onTripTypeChanged: (selectedType) {
               flightDateController.updateTripType(selectedType);
+              // Clear routes when trip type changes
+              searchController.clearRoutes();
             },
           ),
         ),
@@ -42,106 +42,147 @@ class FlightForm extends StatelessWidget {
         // Multi-City Flights
         Obx(() => flightDateController.tripType.value == 'Multi City'
             ? Column(
-          children: [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: flightDateController.flights.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GetBuilder<FlightDateController>(
+                builder: (controller) => ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.flights.length,
+                  itemBuilder: (context, index) {
+                    return Column(
                       children: [
-                        Text(
-                          "Flight ${index + 1}",
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Flight ${index + 1}",
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            if (index >= 2)
+                              IconButton(
+                                icon: const Icon(Icons.close,
+                                    color: Colors.red),
+                                onPressed: () {
+                                  controller.removeFlight(index);
+                                  // Also update the search controller lists
+                                  if (index <
+                                      searchController.origins.length) {
+                                    searchController.origins
+                                        .removeAt(index);
+                                  }
+                                  if (index <
+                                      searchController
+                                          .destinations.length) {
+                                    searchController.destinations
+                                        .removeAt(index);
+                                  }
+                                },
+                              ),
+                          ],
                         ),
-                        if (index >= 2)
-                          IconButton(
-                            icon: const Icon(Icons.close,
-                                color: Colors.red),
-                            onPressed: () =>
-                                flightDateController.removeFlight(index),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      hintText: 'Enter departure city',
-                      icon: Icons.location_on,
-                      fieldType: FieldType.departure,
-                      onCitySelected: (name, code) {
-                        // Store original data
-                        flightDateController.flights[index]['origin'] = name;
-
-                        // Update the city code in the search controller
-                        searchController.updateRoute(index, origin: code);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      hintText: 'Enter destination city',
-                      icon: Icons.location_on,
-                      fieldType: FieldType.destination,
-                      onCitySelected: (name, code) {
-                        // Store original data
-                        flightDateController.flights[index]['destination'] = name;
-
-                        // Update the city code in the search controller
-                        searchController.updateRoute(index, destination: code);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Departure Date",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: TColors.grey,
-                          ),
-                        ),
-                        DateSelectionField(
-                          initialDate: flightDateController.flights[index]
-                          ['date'],
-                          fontSize: 12,
-                          onDateChanged: (date) {
-                            flightDateController
-                                .updateMultiCityFlightDate(index, date);
+                        const SizedBox(height: 12),
+                        CustomTextField(
+                          hintText: 'Enter departure city',
+                          icon: Icons.location_on,
+                          fieldType: FieldType.departure,
+                          initialValue: controller.flights[index]['origin'],
+                          onCitySelected: (name, code) {
+                            // Update both controllers with city name and code
+                            controller.flights[index]['origin'] = name;
+                            searchController.updateRoute(index,
+                                origin: code, originName: name);
+                            controller.update();
                           },
-                          firstDate: DateTime.now(),
                         ),
+                        const SizedBox(height: 12),
+                        CustomTextField(
+                          hintText: 'Enter destination city',
+                          icon: Icons.location_on,
+                          fieldType: FieldType.destination,
+                          initialValue: controller.flights[index]
+                          ['destination'],
+                          onCitySelected: (name, code) {
+                            // Update both controllers with city name and code
+                            controller.flights[index]['destination'] = name;
+                            searchController.updateRoute(index,
+                                destination: code, destinationName: name);
+                            controller.update();
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Departure Date",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: TColors.grey,
+                              ),
+                            ),
+                            DateSelectionField(
+                              initialDate: controller.flights[index]
+                              ['date'],
+                              fontSize: 12,
+                              onDateChanged: (date) {
+                                controller.updateMultiCityFlightDate(
+                                    index, date);
+                              },
+                              firstDate: DateTime.now(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                );
-              },
-            ),
-            TextButton.icon(
-              onPressed: () {
-                if (flightDateController.flights.length < 4) {
-                  flightDateController.addFlight();
-                } else {
-                  CustomSnackBar(
-                    message:
-                    "You can select up to 4 flights for a multi-city trip.",
-                    backgroundColor: TColors.third,
-                  ).show();
-                }
-              },
-              icon: const Icon(Icons.add, color: TColors.primary),
-              label: const Text(
-                'Add Flights',
-                style: TextStyle(color: TColors.primary),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        )
+              // Find the TextButton.icon for "Add Flights" and update the onPressed handler:
+
+              TextButton.icon(
+                onPressed: () {
+                  if (flightDateController.flights.length < 4) {
+                    // Get the last flight's date
+                    final lastFlightIndex = flightDateController.flights.length - 1;
+                    DateTime? lastDate = flightDateController.flights[lastFlightIndex]['date'];
+
+                    // Create new date one day after the last flight
+                    DateTime newDate = lastDate != null
+                        ? lastDate.add(const Duration(days: 1))
+                        : DateTime.now();
+
+                    // Add new flight with incremented date
+                    flightDateController.addFlight(initialDate: newDate);
+
+                    // Auto-populate origin from previous destination
+                    int newIndex = flightDateController.flights.length - 1;
+                    if (newIndex > 0 && searchController.destinations.length > newIndex - 1) {
+                      String prevDestCode = searchController.destinations[newIndex - 1];
+                      String prevDestName = flightDateController.flights[newIndex - 1]['destination'] ?? '';
+
+                      if (prevDestCode.isNotEmpty) {
+                        searchController.updateRoute(newIndex,
+                            origin: prevDestCode, originName: prevDestName);
+                      }
+                    }
+                    flightDateController.update();
+                  } else {
+                    CustomSnackBar(
+                      message: "You can select up to 4 flights for a multi-city trip.",
+                      backgroundColor: TColors.third,
+                    ).show();
+                  }
+                },
+                icon: const Icon(Icons.add, color: TColors.primary),
+                label: const Text(
+                  'Add Flights',
+                  style: TextStyle(color: TColors.primary),
+                ),
+              ), ] )
             : Column(
           children: [
             CustomTextField(
@@ -150,7 +191,8 @@ class FlightForm extends StatelessWidget {
               fieldType: FieldType.departure,
               onCitySelected: (name, code) {
                 // Update the origin in the search controller for index 0
-                searchController.updateRoute(0, origin: code);
+                searchController.updateRoute(0,
+                    origin: code, originName: name);
               },
             ),
             const SizedBox(height: 8),
@@ -160,7 +202,8 @@ class FlightForm extends StatelessWidget {
               fieldType: FieldType.destination,
               onCitySelected: (name, code) {
                 // Update the destination in the search controller for index 0
-                searchController.updateRoute(0, destination: code);
+                searchController.updateRoute(0,
+                    destination: code, destinationName: name);
               },
             ),
             const SizedBox(height: 8),

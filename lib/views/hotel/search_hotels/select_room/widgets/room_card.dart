@@ -20,10 +20,6 @@ class RoomCard extends StatelessWidget {
     this.isLoading = false, // Default to false
   });
 
-  String _getFormattedPrice(dynamic price) {
-    if (price == null) return '0.00';
-    return (price is num) ? price.toStringAsFixed(2) : '0.00';
-  }
 
   List<Map<String, dynamic>> _getCancellationPolicies() {
     final rates = room['rates'] as List?;
@@ -66,8 +62,8 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pricePerNight = _getPricePerNight();
-    final totalPrice = _getTotalPrice();
+    _getPricePerNight();
+    _getTotalPrice();
     final cancellationPolicies = _getCancellationPolicies();
 
     return Container(
@@ -192,7 +188,7 @@ class RoomCard extends StatelessWidget {
                 ],
 
                 // Button - Either "Select Room" or "Book Now" depending on the flag
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: Stack(
                     alignment: Alignment.center,

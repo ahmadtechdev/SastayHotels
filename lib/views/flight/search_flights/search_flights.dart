@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-
 import '../../../widgets/colors.dart';
-
-import '../form/controllers/flight_search_controller.dart';
 import 'search_flight_utils/flight_controller.dart';
 import 'search_flight_utils/widgets/currency_dialog.dart';
 import 'search_flight_utils/widgets/flight_bottom_sheet.dart';
@@ -69,36 +65,6 @@ class FlightBookingPage extends StatelessWidget {
     controller.setScenario(scenario);
   }
 
-  String _formatDate(String dateTimeStr) {
-    try {
-      // First, handle if it's just a time string (HH:mm)
-      if (dateTimeStr.contains(':') && !dateTimeStr.contains('-')) {
-        final timeParts = dateTimeStr.split(':');
-        if (timeParts.length == 2) {
-          final hour = int.tryParse(timeParts[0]);
-          final minute = int.tryParse(timeParts[1]);
-          if (hour != null && minute != null) {
-            final time = TimeOfDay(hour: hour, minute: minute);
-            // Convert to 12-hour format
-            final hourLabel = time.hour > 12 ? time.hour - 12 : time.hour;
-            final period = time.hour >= 12 ? 'PM' : 'AM';
-            return '${hourLabel.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period';
-          }
-        }
-        return dateTimeStr; // Return original if parsing fails
-      }
-
-      // Try parsing ISO format (assuming API returns ISO format)
-      final DateTime dateTime = DateTime.parse(dateTimeStr);
-
-      // Format date as "dd MMM" (e.g., "20 Dec")
-      final DateFormat formatter = DateFormat('dd MMM');
-      return formatter.format(dateTime);
-    } catch (e) {
-      print('Error formatting date: $e');
-      return dateTimeStr; // Return original string if parsing fails
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,9 +79,9 @@ class FlightBookingPage extends StatelessWidget {
           // Get the first flight to extract route information
           final firstFlight = controller.flights.isEmpty ? null : controller.flights[0];
 
-          if (firstFlight == null) {
-            return const CircularProgressIndicator();
-          }
+          // if (firstFlight == null) {
+          //   return const CircularProgressIndicator();
+          // }
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,3 +266,4 @@ class FlightBookingPage extends StatelessWidget {
     );
   }
 }
+

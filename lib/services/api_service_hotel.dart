@@ -1,8 +1,8 @@
 import 'dart:convert';
+// ignore: depend_on_referenced_packages
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../views/hotel/search_hotels/search_hotel_controller.dart';
 
@@ -31,15 +31,6 @@ class ApiServiceHotel extends GetxService {
     );
   }
 
-  /// Helper: Formats date strings to 'yyyy-MM-dd'.
-  String _formatDate(String isoDate) {
-    try {
-      return DateFormat('yyyy-MM-dd').format(DateTime.parse(isoDate));
-    } catch (e) {
-      print('Date formatting error: $e');
-      return isoDate; // Fallback to the original format if parsing fails.
-    }
-  }
 
   Future<Map<String, dynamic>?> getCancellationPolicy({
     required String sessionId,
@@ -291,7 +282,7 @@ class ApiServiceHotel extends GetxService {
 
     // Pretty print the request data
     print('\n=== Request Data ===');
-    JsonEncoder encoder = JsonEncoder.withIndent('  ');
+    JsonEncoder encoder = const JsonEncoder.withIndent('  ');
     print(encoder.convert(requestBody));
 
     try {
@@ -336,7 +327,7 @@ class ApiServiceHotel extends GetxService {
       print('Error checking rates: $e');
 
       // If the error has response data, try to print it
-      if (e is DioError && e.response?.data != null) {
+      if (e is DioException && e.response?.data != null) {
         print('\n=== Error Response Data ===');
         try {
           print(encoder.convert(e.response?.data));

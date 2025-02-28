@@ -6,7 +6,8 @@ class FlightDateController extends GetxController {
 
   // For One-way and Return trips
   final Rx<DateTime> departureDate = DateTime.now().obs;
-  final Rx<DateTime> returnDate = DateTime.now().add(const Duration(days:1)).obs;
+  final Rx<DateTime> returnDate =
+      DateTime.now().add(const Duration(days: 1)).obs;
 
   // For Multi-city trips
   final RxList<Map<String, dynamic>> flights = <Map<String, dynamic>>[
@@ -61,11 +62,12 @@ class FlightDateController extends GetxController {
   }
 
   // Add new flight for multi-city
-  void addFlight() {
+
+  void addFlight({DateTime? initialDate}) {
     flights.add({
-      'date': DateTime.now(),
       'origin': '',
       'destination': '',
+      'date': initialDate ?? DateTime.now()
     });
   }
 

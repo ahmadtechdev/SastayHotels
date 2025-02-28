@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:async';
 import 'package:flight_bocking/views/hotel/search_hotels/select_room/controller/select_room_controller.dart';
 import 'package:flight_bocking/widgets/colors.dart';

@@ -464,31 +464,107 @@ class FlightController extends GetxController {
 
 extension FlightDateTimeExtension on FlightController {
   // Add this method to parse segment information
+  Map<int, Map<String, dynamic>> parseFareComponentDescs(Map<String, dynamic> response) {
+    Map<int, Map<String, dynamic>> fareComponentDescsMap = {};
+
+    try {
+      if (response['groupedItineraryResponse'] != null &&
+          response['groupedItineraryResponse']['fareComponentDescs'] != null) {
+        final fareComponentDescs = response['groupedItineraryResponse']['fareComponentDescs'] as List;
+
+        for (var fareComponentDesc in fareComponentDescs) {
+          if (fareComponentDesc['id'] != null) {
+            fareComponentDescsMap[fareComponentDesc['id'] as int] = fareComponentDesc;
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing fareComponentDescs: $e');
+    }
+
+    return fareComponentDescsMap;
+  }
+
+  // Updated method to correctly map fareComponents to legInfo
   List<FlightSegmentInfo> parseSegmentInfo(
-      Map<String, dynamic> fareInfo, List<dynamic> legs) {
+      Map<String, dynamic> fareInfo,
+      List<dynamic> legs,
+      Map<int, Map<String, dynamic>> fareComponentDescsMap) {
     List<FlightSegmentInfo> segmentInfoList = [];
 
     try {
-      // Get fare components which correspond to each leg
-      final fareComponents = fareInfo['passengerInfoList'][0]['passengerInfo']
-          ['fareComponents'] as List;
+      final passengerInfo = fareInfo['passengerInfoList'][0]['passengerInfo'];
+      final fareComponents = passengerInfo['fareComponents'] as List;
 
-      // Iterate through each leg
-      for (var i = 0; i < legs.length; i++) {
-        if (i < fareComponents.length) {
-          final fareComponent = fareComponents[i];
-          final segments = fareComponent['segments'] as List;
+      // Create mapping for each leg to track its fareComponent
+      Map<int, String> legFareBasisMap = {};
 
-          // Add segment info for each segment in the fare component
-          for (var segment in segments) {
-            segmentInfoList.add(FlightSegmentInfo(
-              bookingCode: segment['segment']['bookingCode'] ?? '',
-              cabinCode: segment['segment']['cabinCode'] ?? '',
-              mealCode: segment['segment']['mealCode'] ?? '',
-              seatsAvailable: segment['segment']['seatsAvailable'] ?? 'N',
-            ));
+      // First, collect all fareComponents and their segment references
+      for (var fareComponent in fareComponents) {
+        String fareBasisCode = '';
+        if (fareComponent['ref'] != null) {
+          final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+          if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+            fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
           }
         }
+
+        // Get the segments this fareComponent applies to
+        final segments = fareComponent['segments'] as List;
+        for (var segment in segments) {
+          // If segment has a reference to a specific leg, map it
+          if (segment['segment']['legRef'] != null) {
+            int legRef = segment['segment']['legRef'] as int;
+            legFareBasisMap[legRef] = fareBasisCode;
+          }
+
+          // Create a segment info for each segment
+          segmentInfoList.add(FlightSegmentInfo(
+            bookingCode: segment['segment']['bookingCode']?.toString() ?? '',
+            cabinCode: segment['segment']['cabinCode']?.toString() ?? '',
+            mealCode: segment['segment']['mealCode']?.toString() ?? '',
+            seatsAvailable: segment['segment']['seatsAvailable']?.toString() ?? 'N',
+            fareBasisCode: fareBasisCode,
+          ));
+        }
+      }
+
+      // If we don't have specific leg references, try to match by position
+      if (legFareBasisMap.isEmpty && legs.length <= fareComponents.length) {
+        for (var i = 0; i < legs.length; i++) {
+          if (i < fareComponents.length) {
+            final fareComponent = fareComponents[i];
+
+            String fareBasisCode = '';
+            if (fareComponent['ref'] != null) {
+              final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+              if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+                fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+              }
+            }
+
+            // Get the leg reference from the leg object
+            final leg = legs[i];
+            int legRef = leg['ref'] as int;
+            legFareBasisMap[legRef] = fareBasisCode;
+          }
+        }
+      }
+
+      // If we still have no mappings, use a fallback approach
+      if (legFareBasisMap.isEmpty && !segmentInfoList.isEmpty) {
+        // Just repeat the segment info for each leg if we can't map properly
+        segmentInfoList = List.generate(legs.length, (index) =>
+        index < segmentInfoList.length
+            ? segmentInfoList[index]
+            : FlightSegmentInfo(
+          bookingCode: '',
+          cabinCode: '',
+          mealCode: '',
+          seatsAvailable: '',
+          fareBasisCode: '',
+        )
+        );
       }
     } catch (e) {
       print('Error parsing segment info: $e');
@@ -514,7 +590,8 @@ extension FlightDateTimeExtension on FlightController {
     final timeParts = timeString.split('+')[0].split(':');
     final hours = int.parse(timeParts[0]);
     final minutes = int.parse(timeParts[1]);
-    final seconds = int.parse(timeParts[2]);
+    // final seconds = int.parse(timeParts[2]);
+    final seconds = int.parse(timeParts[2].replaceAll(RegExp(r'[^0-9]'), ''));
 
     DateTime dateTime = DateTime(
       date.year,
@@ -542,6 +619,10 @@ extension FlightDateTimeExtension on FlightController {
       }
 
       final groupedResponse = response['groupedItineraryResponse'];
+
+      // Parse fareComponentDescs
+      final fareComponentDescsMap = parseFareComponentDescs(response);
+
       final baggageAllowanceDescsMap = <int, Map<String, dynamic>>{};
       if (groupedResponse['baggageAllowanceDescs'] != null) {
         for (var baggage in groupedResponse['baggageAllowanceDescs'] as List) {
@@ -574,7 +655,7 @@ extension FlightDateTimeExtension on FlightController {
 
       for (var group in itineraryGroups) {
         final legDescriptions =
-            group['groupDescription']['legDescriptions'] as List?;
+        group['groupDescription']['legDescriptions'] as List?;
         if (legDescriptions == null) continue;
 
         final itineraries = group['itineraries'] as List?;
@@ -587,12 +668,30 @@ extension FlightDateTimeExtension on FlightController {
           final pricingInfo = itinerary['pricingInformation'] as List?;
           if (pricingInfo == null || pricingInfo.isEmpty) continue;
 
+          // Process all available packages from pricingInfo
           final List<FlightPackageInfo> packages = [];
           for (var pricing in pricingInfo) {
             try {
               final fareInfo = pricing['fare'];
+
+              // Handle regular fare packages
               if (fareInfo != null) {
                 packages.add(FlightPackageInfo.fromApiResponse(fareInfo));
+              }
+              // Handle sold-out packages
+              else if (pricing.containsKey('soldOut')) {
+                final soldOutInfo = pricing['soldOut'];
+                final soldOutLegs = soldOutInfo['soldOutLegs'] as List?;
+
+                if (soldOutLegs != null && soldOutLegs.isNotEmpty) {
+                  for (var soldOutLeg in soldOutLegs) {
+                    packages.add(FlightPackageInfo.soldOut(
+                      brandCode: soldOutLeg['brandCode'] ?? '',
+                      brandDescription: soldOutLeg['brandDescription'] ?? '',
+                      cabinCode: _getCabinCodeFromBrandInfo(soldOutLeg),
+                    ));
+                  }
+                }
               }
             } catch (e) {
               print('Error parsing package: $e');
@@ -601,13 +700,67 @@ extension FlightDateTimeExtension on FlightController {
 
           final mainFareInfo = pricingInfo[0]['fare'];
 
-          // Parse segment information for this itinerary
-          final segmentInfoList = parseSegmentInfo(mainFareInfo, legs);
+          // Parse segment information with fareComponentDescsMap
+          final segmentInfoList = parseSegmentInfo(mainFareInfo, legs, fareComponentDescsMap);
 
           List<Map<String, dynamic>> allStopSchedules = [];
           List<String> allStops = [];
           int totalDuration = 0;
           List<Map<String, dynamic>> legSchedules = [];
+
+          // First, map each leg reference to its fareComponent
+          Map<int, String> legFareBasisMap = {};
+          try {
+            final passengerInfo = mainFareInfo['passengerInfoList'][0]['passengerInfo'];
+            final fareComponents = passengerInfo['fareComponents'] as List;
+
+            // Create a more direct mapping from legs to fareBasisCodes
+            for (var i = 0; i < fareComponents.length; i++) {
+              final fareComponent = fareComponents[i];
+              String fareBasisCode = '';
+
+              if (fareComponent['ref'] != null) {
+                final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+                if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+                  fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+                }
+              }
+
+              // Try to find which leg this fareComponent applies to
+              final segments = fareComponent['segments'] as List? ?? [];
+              for (var segment in segments) {
+                if (segment['segment']['legRef'] != null) {
+                  legFareBasisMap[segment['segment']['legRef'] as int] = fareBasisCode;
+                }
+              }
+            }
+
+            // If we couldn't map by legRef, try by position (for multi-city/return flights)
+            if (legFareBasisMap.isEmpty) {
+              // For each leg, try to find a matching fareComponent
+              for (var i = 0; i < legs.length; i++) {
+                final leg = legs[i];
+                final legId = leg['ref'] as int;
+
+                // Find which fareComponent might apply to this leg
+                if (i < fareComponents.length) {
+                  final fareComponent = fareComponents[i];
+                  String fareBasisCode = '';
+
+                  if (fareComponent['ref'] != null) {
+                    final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+                    if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+                      fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+                    }
+                  }
+
+                  legFareBasisMap[legId] = fareBasisCode;
+                }
+              }
+            }
+          } catch (e) {
+            print('Error mapping legs to fareComponents: $e');
+          }
 
           for (var legIndex = 0; legIndex < legs.length; legIndex++) {
             final leg = legs[legIndex];
@@ -616,21 +769,30 @@ extension FlightDateTimeExtension on FlightController {
             if (legDesc == null) continue;
 
             final baseDate =
-                legDescriptions[legIndex]['departureDate'] as String;
+            legDescriptions[legIndex]['departureDate'] as String;
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
 
             List<Map<String, dynamic>> currentLegSchedules = [];
             List<String> currentLegStops = [];
 
+            // Get fareBasisCode for this specific leg
+            String fareBasisCode = legFareBasisMap[legId] ?? '';
+
+            // If we couldn't get a specific fareBasisCode for this leg,
+            // try to use one from segmentInfoList if available
+            if (fareBasisCode.isEmpty && legIndex < segmentInfoList.length) {
+              fareBasisCode = segmentInfoList[legIndex].fareBasisCode;
+            }
+
             for (var scheduleRef in schedules) {
               final schedule = scheduleDescsMap[scheduleRef['ref']];
               if (schedule == null) continue;
 
               final departureDateAdjustment =
-                  scheduleRef['departureDateAdjustment'] as int?;
+              scheduleRef['departureDateAdjustment'] as int?;
               final arrivalDateAdjustment =
-                  schedule['arrival']['dateAdjustment'] as int?;
+              schedule['arrival']['dateAdjustment'] as int?;
 
               final departureDateTime = _calculateFlightDateTime(baseDate,
                   schedule['departure']['time'], departureDateAdjustment);
@@ -640,9 +802,9 @@ extension FlightDateTimeExtension on FlightController {
 
               final scheduleWithDateTime = Map<String, dynamic>.from(schedule);
               scheduleWithDateTime['departure'] =
-                  Map<String, dynamic>.from(schedule['departure']);
+              Map<String, dynamic>.from(schedule['departure']);
               scheduleWithDateTime['arrival'] =
-                  Map<String, dynamic>.from(schedule['arrival']);
+              Map<String, dynamic>.from(schedule['arrival']);
 
               scheduleWithDateTime['departure']['dateTime'] =
                   _formatDateTimeWithoutMillis(departureDateTime);
@@ -656,7 +818,7 @@ extension FlightDateTimeExtension on FlightController {
               if (currentLegSchedules.length > 1) {
                 for (int i = 0; i < currentLegSchedules.length - 1; i++) {
                   currentLegStops.add(currentLegSchedules[i]['arrival']
-                          ['city'] ??
+                  ['city'] ??
                       "Unknown City");
                 }
               }
@@ -669,6 +831,7 @@ extension FlightDateTimeExtension on FlightController {
                 'schedules': currentLegSchedules,
                 'stops': currentLegStops,
                 'elapsedTime': legDesc['elapsedTime'],
+                'fareBasisCode': fareBasisCode, // This now has the correct fareBasisCode for each leg
               });
             }
 
@@ -690,54 +853,54 @@ extension FlightDateTimeExtension on FlightController {
               imgPath: airlineInfo.logoPath,
               airline: airlineInfo.name,
               flightNumber:
-                  '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
+              '${carrier['marketing'] ?? 'XX'}-${carrier['marketingFlightNumber'] ?? '000'}',
               departureTime: firstSchedule['departure']['dateTime'],
               arrivalTime: lastSchedule['arrival']['dateTime'],
               duration: '${totalDuration ~/ 60}h ${totalDuration % 60}m',
               price:
-                  (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
+              (mainFareInfo['totalFare']['totalPrice'] as num).toDouble(),
               from:
-                  '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
+              '${firstSchedule['departure']['city'] ?? 'Unknown'} (${firstSchedule['departure']['airport'] ?? 'Unknown'})',
               to: '${lastSchedule['arrival']['city'] ?? 'Unknown'} (${lastSchedule['arrival']['airport'] ?? 'Unknown'})',
               legSchedules: legSchedules,
               stopSchedules: allStopSchedules,
               type: getFareType(mainFareInfo),
               isRefundable: !(mainFareInfo['passengerInfoList'][0]
-                      ['passengerInfo']['nonRefundable'] ??
+              ['passengerInfo']['nonRefundable'] ??
                   true),
               isNonStop: allStopSchedules.length == 1,
               departureTerminal:
-                  firstSchedule['departure']['terminal']?.toString() ?? 'Main',
+              firstSchedule['departure']['terminal']?.toString() ?? 'Main',
               arrivalTerminal:
-                  lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
+              lastSchedule['arrival']['terminal']?.toString() ?? 'Main',
               departureCity:
-                  firstSchedule['departure']['city']?.toString() ?? 'Unknown',
+              firstSchedule['departure']['city']?.toString() ?? 'Unknown',
               arrivalCity:
-                  lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
+              lastSchedule['arrival']['city']?.toString() ?? 'Unknown',
               aircraftType:
-                  carrier['equipment']['code']?.toString() ?? 'Unknown',
+              carrier['equipment']['code']?.toString() ?? 'Unknown',
               taxes: parseTaxes(mainFareInfo['passengerInfoList'][0]
-                      ['passengerInfo']['taxes'] ??
+              ['passengerInfo']['taxes'] ??
                   []),
               baggageAllowance: _parseBaggageAllowance(
                   mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['baggageInformation'] as List? ??
+                  ['baggageInformation'] as List? ??
                       [],
                   baggageAllowanceDescsMap),
               packages: packages,
               stops: allStops
                   .where((stop) =>
-                      stop != firstSchedule['departure']['city'] &&
-                      stop != lastSchedule['arrival']['city'])
+              stop != firstSchedule['departure']['city'] &&
+                  stop != lastSchedule['arrival']['city'])
                   .toList(),
               legElapsedTime: totalDuration,
               cabinClass: mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['fareComponents'][0]['segments'][0]['segment']
-                      ['cabinCode'] ??
+              ['fareComponents'][0]['segments'][0]['segment']
+              ['cabinCode'] ??
                   'Y',
               mealCode: mainFareInfo['passengerInfoList'][0]['passengerInfo']
-                          ['fareComponents'][0]['segments'][0]['segment']
-                      ['mealCode'] ??
+              ['fareComponents'][0]['segments'][0]['segment']
+              ['mealCode'] ??
                   'N',
               groupId: itinerary['id'].toString(),
               segmentInfo: segmentInfoList,
@@ -761,6 +924,15 @@ extension FlightDateTimeExtension on FlightController {
       flights.value = [];
       filteredFlights.value = [];
     }
+  }
+
+  // Helper method to determine cabin code from brand information
+  String _getCabinCodeFromBrandInfo(Map<String, dynamic> brandInfo) {
+    final description = (brandInfo['brandDescription'] ?? '').toString().toUpperCase();
+    if (description.contains('BUSINESS')) return 'C';
+    if (description.contains('FIRST')) return 'F';
+    if (description.contains('PREMIUM')) return 'W';
+    return 'Y'; // Default to Economy
   }
 
   BaggageAllowance _parseBaggageAllowance(List baggageInformation,
@@ -804,11 +976,149 @@ class FlightSegmentInfo {
   final String cabinCode;
   final String mealCode;
   final String seatsAvailable;
+  final String fareBasisCode; // Added fareBasisCode
 
   FlightSegmentInfo({
     required this.bookingCode,
     required this.cabinCode,
     required this.mealCode,
     required this.seatsAvailable,
+    this.fareBasisCode = '', // Default empty string
   });
+}
+
+// Update the extension for parsing all segment info
+extension FlightSegmentExtension on FlightController {
+  // Update to include fareComponentDescsMap
+  List<List<FlightSegmentInfo>> parseAllSegmentInfo(
+      Map<String, dynamic> fareInfo,
+      List<dynamic> legs,
+      Map<int, Map<String, dynamic>> fareComponentDescsMap) {
+    List<List<FlightSegmentInfo>> allSegmentInfoLists = [];
+
+    try {
+      final passengerInfoList = fareInfo['passengerInfoList'] as List;
+
+      // First, map each leg reference to the corresponding fare component
+      Map<int, String> legFareBasisMap = {};
+
+      // For each passenger type
+      for (var passengerInfoItem in passengerInfoList) {
+        final passengerInfo = passengerInfoItem['passengerInfo'];
+        final fareComponents = passengerInfo['fareComponents'] as List;
+
+        // Try to create a mapping from legRef to fareBasisCode
+        for (var fareComponent in fareComponents) {
+          String fareBasisCode = '';
+          if (fareComponent['ref'] != null) {
+            final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+            if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+              fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+            }
+          }
+
+          // Check if segments have legRef to map directly
+          final segments = fareComponent['segments'] as List? ?? [];
+          for (var segment in segments) {
+            if (segment['segment'] != null && segment['segment']['legRef'] != null) {
+              final legRef = segment['segment']['legRef'] as int;
+              legFareBasisMap[legRef] = fareBasisCode;
+            }
+          }
+        }
+
+        // If we couldn't map by legRef, try to map by position
+        if (legFareBasisMap.isEmpty && legs.length <= fareComponents.length) {
+          for (var i = 0; i < legs.length; i++) {
+            if (i < fareComponents.length) {
+              final fareComponent = fareComponents[i];
+              String fareBasisCode = '';
+
+              if (fareComponent['ref'] != null) {
+                final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+                if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+                  fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+                }
+              }
+
+              final leg = legs[i];
+              final legRef = leg['ref'] as int;
+              legFareBasisMap[legRef] = fareBasisCode;
+            }
+          }
+        }
+
+        // Now create segment info list for this passenger
+        List<FlightSegmentInfo> segmentInfoList = [];
+
+        // For each leg
+        for (var i = 0; i < legs.length; i++) {
+          final leg = legs[i];
+          final legRef = leg['ref'] as int;
+
+          // Get the fareBasisCode for this leg
+          String fareBasisCode = legFareBasisMap[legRef] ?? '';
+
+          // If we couldn't get a fareBasisCode by legRef, try to get from fareComponents by index
+          if (fareBasisCode.isEmpty && i < fareComponents.length) {
+            final fareComponent = fareComponents[i];
+            if (fareComponent['ref'] != null) {
+              final fareComponentDesc = fareComponentDescsMap[fareComponent['ref'] as int];
+              if (fareComponentDesc != null && fareComponentDesc['fareBasisCode'] != null) {
+                fareBasisCode = fareComponentDesc['fareBasisCode'].toString();
+              }
+            }
+          }
+
+          // Find segments for this leg
+          bool foundSegment = false;
+          for (var fareComponent in fareComponents) {
+            final segments = fareComponent['segments'] as List? ?? [];
+            for (var segment in segments) {
+              if (segment['segment'] != null) {
+                // Check if this segment belongs to the current leg
+                bool belongsToLeg = false;
+                if (segment['segment']['legRef'] != null) {
+                  belongsToLeg = segment['segment']['legRef'] as int == legRef;
+                } else if (i < segments.length) {
+                  // If no legRef, assume by position
+                  belongsToLeg = true;
+                }
+
+                if (belongsToLeg) {
+                  segmentInfoList.add(FlightSegmentInfo(
+                    bookingCode: segment['segment']['bookingCode']?.toString() ?? '',
+                    cabinCode: segment['segment']['cabinCode']?.toString() ?? '',
+                    mealCode: segment['segment']['mealCode']?.toString() ?? '',
+                    seatsAvailable: segment['segment']['seatsAvailable']?.toString() ?? 'N',
+                    fareBasisCode: fareBasisCode,
+                  ));
+                  foundSegment = true;
+                  break;
+                }
+              }
+            }
+            if (foundSegment) break;
+          }
+
+          // If no segment found for this leg, add a placeholder
+          if (!foundSegment) {
+            segmentInfoList.add(FlightSegmentInfo(
+              bookingCode: '',
+              cabinCode: '',
+              mealCode: '',
+              seatsAvailable: '',
+              fareBasisCode: fareBasisCode,
+            ));
+          }
+        }
+
+        allSegmentInfoLists.add(segmentInfoList);
+      }
+    } catch (e) {
+      print('Error parsing all segment info: $e');
+    }
+
+    return allSegmentInfoLists;
+  }
 }

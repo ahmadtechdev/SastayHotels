@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -203,12 +205,8 @@ class BookingController extends GetxController {
 
     try {
       // Calculate total buying price from selected rooms
-      double totalBuyingPrice = 0;
       for (var roomData in searchHotelController.selectedRoomsData) {
         if (roomData['price'] != null) {
-          double pricePerNight =
-              double.tryParse(roomData['price']['net'].toString()) ?? 0;
-          totalBuyingPrice += pricePerNight * hotelDateController.nights.value;
         }
       }
 
