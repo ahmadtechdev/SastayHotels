@@ -133,10 +133,11 @@ class SearchHotelController extends GetxController {
   var roomsdata = [].obs;
   var hotelName = ''.obs;
   var image = ''.obs;
-  var zoneName=''.obs;
-  var destinationName  =''.obs;
-  var categoryName  =''.obs;
-
+  var zoneName = ''.obs;
+  var destinationName = ''.obs;
+  var categoryName = ''.obs;
+  var lat = ''.obs;
+  var lon = ''.obs;
 
   var hotelCode = ''.obs;
   var sessionId = ''.obs;

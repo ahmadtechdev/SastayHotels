@@ -20,7 +20,6 @@ class RoomCard extends StatelessWidget {
     this.isLoading = false, // Default to false
   });
 
-
   List<Map<String, dynamic>> _getCancellationPolicies() {
     final rates = room['rates'] as List?;
     if (rates == null || rates.isEmpty) return [];
@@ -109,12 +108,12 @@ class RoomCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ), 
                 const SizedBox(height: 8),
 
                 // Rate Type Badge
-                _buildBadge(_getRateType()),
-                const SizedBox(height: 16),
+                // _buildBadge(_getRateType()),
+                // const SizedBox(height: 16),
 
                 // Price Information
                 Row(

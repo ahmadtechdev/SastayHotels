@@ -49,6 +49,9 @@ dependencies:
   dio: ^5.7.0
   shared_preferences: ^2.5.1
   uuid: ^4.5.1
+  maps_launcher: ^3.0.0+1
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:

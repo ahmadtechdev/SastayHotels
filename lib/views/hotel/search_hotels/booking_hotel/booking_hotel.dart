@@ -1,3 +1,4 @@
+import 'package:flight_bocking/views/hotel/search_hotels/booking_hotel/booking_voucher/booking_voucher.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -244,6 +245,7 @@ class BookingHotelScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildTextField(
+                    
                     controller: bookingController.firstNameController,
                     hint: 'First Name',
                     prefixIcon: Icons.person_outline,
@@ -520,12 +522,12 @@ class BookingHotelScreen extends StatelessWidget {
       final bool success = await bookingController.saveHotelBookingToDB();
 
       if (success) {
-        Get.to(() => const ThankYouScreen());
+        Get.to(() => HotelVoucherScreen());
         CustomSnackBar(
           message: "Booking Confirmed Successfully!",
           backgroundColor: Colors.green,
         ).show();
-        bookingController.resetForm();
+        // bookingController.resetForm();
       } else {
         CustomSnackBar(
           message: "Booking failed. Please try again.",

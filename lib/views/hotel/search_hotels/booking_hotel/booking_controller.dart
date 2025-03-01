@@ -61,6 +61,9 @@ class BookingController extends GetxController {
   SelectRoomController SelectRoomcontroller = Get.find<SelectRoomController>();
   var buying_price = ''.obs;
   var censelation_date = ''.obs;
+  var booking_num = 0.obs;
+
+  
 
   ApiServiceHotel apiService = ApiServiceHotel();
 
@@ -154,14 +157,14 @@ class BookingController extends GetxController {
 
   void resetForm() {
     // Reset booker information
-    titleController.clear();
-    firstNameController.clear();
-    lastNameController.clear();
-    emailController.clear();
-    phoneController.clear();
-    addressController.clear();
-    cityController.clear();
-    specialRequestsController.clear();
+    // titleController.clear();
+    // firstNameController.clear();
+    // lastNameController.clear();
+    // emailController.clear();
+    // phoneController.clear();
+    // addressController.clear();
+    // cityController.clear();
+    // specialRequestsController.clear();
 
     // Reset special requests
     isGroundFloor.value = false;
@@ -206,8 +209,7 @@ class BookingController extends GetxController {
     try {
       // Calculate total buying price from selected rooms
       for (var roomData in searchHotelController.selectedRoomsData) {
-        if (roomData['price'] != null) {
-        }
+        if (roomData['price'] != null) {}
       }
 
       for (var i = 0; i < roomGuests.length; i++) {

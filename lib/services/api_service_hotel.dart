@@ -2,6 +2,7 @@ import 'dart:convert';
 // ignore: depend_on_referenced_packages
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flight_bocking/views/hotel/search_hotels/booking_hotel/booking_controller.dart';
 import 'package:get/get.dart';
 
 import '../views/hotel/search_hotels/search_hotel_controller.dart';
@@ -30,7 +31,6 @@ class ApiServiceHotel extends GetxService {
       },
     );
   }
-
 
   Future<Map<String, dynamic>?> getCancellationPolicy({
     required String sessionId,
@@ -108,6 +108,8 @@ class ApiServiceHotel extends GetxService {
   }
 
   Future<bool> bookHotel(Map<String, dynamic> requestBody) async {
+    final BookingController bookingcontroller = Get.put(BookingController());
+
     const String bookingEndpoint =
         'https://sastayhotels.pk/mobile_thankyou.php';
 
@@ -136,11 +138,19 @@ class ApiServiceHotel extends GetxService {
       print('Response Data: ${response.data}');
 
       if (response.statusCode == 200) {
-        // Check if the response indicates success
-        // You might need to adjust this based on the actual response structure
         if (response.data != null) {
+          // Extract and store booking number
+          if (response.data is Map && response.data['BookingNO'] != null) {
+            String bookingStr = response.data['BookingNO'].toString();
+            bookingStr = bookingStr.replaceAll('SHBK-', '');
+            bookingcontroller.booking_num.value = int.tryParse(bookingStr) ?? 0;
+            print(
+                'Booking number stored: ${bookingcontroller.booking_num.value}');
+          }
+
           if (response.data is Map) {
             if (response.data['status'] == 'success' ||
+                response.data['Success'] == 1 ||
                 response.data['success'] == true ||
                 response.data['code'] == 200) {
               return true;
@@ -212,14 +222,47 @@ class ApiServiceHotel extends GetxService {
       "stay": {"checkIn": checkInDate, "checkOut": checkOutDate},
       "occupancies": rooms
           .map((room) => {
-        "rooms": 1,
-        "adults": room['Adult'],
-        "children": room['Children'],
-        if (room['Children'] > 0) "childAges": room['ChildrenAges']
-      })
+                "rooms": 1,
+                "adults": room['Adult'],
+                "children": room['Children'],
+                if (room['Children'] > 0) "childAges": room['ChildrenAges']
+              })
           .toList(),
       "hotels": {
-        "hotel": [24196,24197,24199,24202,24203,24204,24216,24217,24218,24219,24220,24221,24222,24225,24226,24229,24230,24340,24341,24399,24400,24401,24403,24406,24407,24408,24409,24412,24413,24421,24422,24423    ]
+        "hotel": [
+          24196,
+          24197,
+          24199,
+          24202,
+          24203,
+          24204,
+          24216,
+          24217,
+          24218,
+          24219,
+          24220,
+          24221,
+          24222,
+          24225,
+          24226,
+          24229,
+          24230,
+          24340,
+          24341,
+          24399,
+          24400,
+          24401,
+          24403,
+          24406,
+          24407,
+          24408,
+          24409,
+          24412,
+          24413,
+          24421,
+          24422,
+          24423
+        ]
       }
     });
 

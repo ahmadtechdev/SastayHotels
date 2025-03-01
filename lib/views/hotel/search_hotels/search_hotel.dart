@@ -556,6 +556,8 @@ class HotelCard extends StatelessWidget {
                 controller.destinationName.value = hotel['address'] ?? '';
                 controller.zoneName.value = hotel['zoneName'] ?? '';
                 controller.categoryName.value = hotel['rating'].toString();
+                controller.lat.value = hotel['latitude'];
+                controller.lon.value = hotel['longitude'];
 
                 // Clear previous room data
                 controller.roomsdata.clear();
