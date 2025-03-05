@@ -5,16 +5,19 @@ import 'package:get/get.dart';
 import 'dart:async';
 
 import '../../../../widgets/colors.dart';
+import '../../form/travelers/traveler_controller.dart';
 import '../booking_flight/booking_flight.dart';
 
 class ReviewTripPage extends StatefulWidget {
   final bool isMulti; // Indicates if it's a multi-city trip
-  final Flight flight; // Add the selected flight parameter
+  final Flight flight; // Selected flight
+  final Map<String, dynamic> pricingInformation; // Pricing information from API for the selected package
 
   const ReviewTripPage({
     super.key,
     required this.isMulti,
-    required this.flight, // Mark the parameter as required
+    required this.flight,
+    required this.pricingInformation,
   });
 
   @override
@@ -32,10 +35,62 @@ class ReviewTripPageState extends State<ReviewTripPage> {
   ];
   late Timer _shadowTimer;
 
+  // Get the travelers controller to access passenger counts
+  final travelersController = Get.find<TravelersController>();
+
+  // Variables to store calculated prices
+  late double adultPrice;
+  late double childPrice;
+  late double infantPrice;
+  late double totalPrice;
+  late String currency;
+
   @override
   void initState() {
     super.initState();
     _startShadowAnimation();
+    _calculatePrices();
+  }
+
+  void _calculatePrices() {
+    // Extract pricing information from the API response
+    print("ahmad -1");
+    print(widget.pricingInformation);
+    final passengerInfoList = widget.pricingInformation["fare"]['passengerInfoList'];
+    print("ahmad");
+    print(passengerInfoList);
+
+    // Initialize prices
+    adultPrice = 0.0;
+    childPrice = 0.0;
+    infantPrice = 0.0;
+    totalPrice = 0.0;
+    currency = 'PKR'; // Default currency
+
+    // Calculate prices based on passenger type
+    for (var passengerInfo in passengerInfoList) {
+      final passengerType = passengerInfo['passengerInfo']['passengerType'];
+      final passengerTotalFare = passengerInfo['passengerInfo']['passengerTotalFare'];
+      final price = passengerTotalFare['totalFare'].toDouble();
+
+      if (passengerType == 'ADT') {
+        adultPrice = price;
+      } else if (passengerType == 'CHN') {
+        childPrice = price;
+      } else if (passengerType == 'INF') {
+        infantPrice = price;
+      }
+
+      // Update total price
+      totalPrice += price;
+    }
+
+    // If total price is not available, use the totalFare from the pricingInformation
+    if (totalPrice == 0.0) {
+      final totalFare = widget.pricingInformation['fare']['totalFare'];
+      totalPrice = totalFare['totalPrice'];
+      currency = totalFare['currency'];
+    }
   }
 
   void _startShadowAnimation() {
@@ -43,21 +98,21 @@ class ReviewTripPageState extends State<ReviewTripPage> {
       setState(() {
         _animatedShadow = _animatedShadow[0].offset.dy == 2
             ? [
-                BoxShadow(
-                  color: TColors.primary.withOpacity(0.4),
-                  blurRadius: 2,
-                  spreadRadius: 15,
-                  offset: const Offset(0, 0),
-                )
-              ]
+          BoxShadow(
+            color: TColors.primary.withOpacity(0.4),
+            blurRadius: 2,
+            spreadRadius: 15,
+            offset: const Offset(0, 0),
+          )
+        ]
             : [
-                BoxShadow(
-                  color: TColors.primary.withOpacity(0.4),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 2),
-                )
-              ];
+          BoxShadow(
+            color: TColors.primary.withOpacity(0.4),
+            blurRadius: 10,
+            spreadRadius: 2,
+            offset: const Offset(0, 2),
+          )
+        ];
       });
     });
   }
@@ -66,6 +121,14 @@ class ReviewTripPageState extends State<ReviewTripPage> {
   void dispose() {
     _shadowTimer.cancel();
     super.dispose();
+  }
+
+  // Format price to show with commas and fixed decimal places
+  String _formatPrice(double price) {
+    return price.toStringAsFixed(2).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]},'
+    );
   }
 
   @override
@@ -90,10 +153,8 @@ class ReviewTripPageState extends State<ReviewTripPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            // _reviewContainer(typeFlight: 'Departing'),
-            // Show the FlightCard for the selected flight
             FlightCard(
-              flight: widget.flight, // Pass the selected flight here
+              flight: widget.flight,
               showReturnFlight: widget.isMulti,
             ),
             const Padding(
@@ -108,7 +169,7 @@ class ReviewTripPageState extends State<ReviewTripPage> {
             ),
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12),
+              const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 1500),
                 curve: Curves.easeInOut,
@@ -118,24 +179,52 @@ class ReviewTripPageState extends State<ReviewTripPage> {
                   boxShadow: _animatedShadow,
                 ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SizedBox(
                   width: double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPriceRow('Adult Price x 2', 'PKR 556,827.00'),
-                      const SizedBox(height: 8),
-                      _buildPriceRow('Adult Price x 1', 'PKR 278,414.00'),
-                      const SizedBox(height: 8),
-                      _buildPriceRow('Infant Price x 1', 'PKR 25,787.00'),
+                      // Show adult price if there are adults
+                      if (travelersController.adultCount.value > 0)
+                        _buildPriceRow(
+                            'Adult Price x ${travelersController.adultCount.value}',
+                            '$currency ${_formatPrice(adultPrice * travelersController.adultCount.value)}'
+                        ),
+
+                      // Show child price if there are children
+                      if (travelersController.childrenCount.value > 0)
+                        Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            _buildPriceRow(
+                                'Child Price x ${travelersController.childrenCount.value}',
+                                '$currency ${_formatPrice(childPrice * travelersController.childrenCount.value)}'
+                            ),
+                          ],
+                        ),
+
+                      // Show infant price if there are infants
+                      if (travelersController.infantCount.value > 0)
+                        Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            _buildPriceRow(
+                                'Infant Price x ${travelersController.infantCount.value}',
+                                '$currency ${_formatPrice(infantPrice * travelersController.infantCount.value)}'
+                            ),
+                          ],
+                        ),
+
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8.0),
                         child: Divider(),
                       ),
+
+                      // Show total amount
                       _buildPriceRow(
                         'Total Amount',
-                        'PKR 861,026.00',
+                        '$currency ${_formatPrice(totalPrice)}',
                         isTotal: true,
                       ),
                     ],
@@ -152,47 +241,50 @@ class ReviewTripPageState extends State<ReviewTripPage> {
           const Divider(),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  children: [
-                    Text(
-                      'Review Details',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: TColors.grey),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'PKR 35,866',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    children: [
+                      const Text(
+                        'Review Details',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: TColors.grey),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  width: 200,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(() => BookingForm(flight: widget.flight));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: TColors.primary,
-                      foregroundColor: TColors.background,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(48),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$currency ${_formatPrice(totalPrice)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Book',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ],
+                  ),
+                  SizedBox(
+                    width: 200,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.to(() => BookingForm(flight: widget.flight));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: TColors.primary,
+                        foregroundColor: TColors.background,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(48),
+                        ),
+                      ),
+                      child: const Text(
+                        'Book',
+                        style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 2),
@@ -200,7 +292,6 @@ class ReviewTripPageState extends State<ReviewTripPage> {
       ),
     );
   }
-
 
   Widget _buildPriceRow(String label, String amount, {bool isTotal = false}) {
     return Row(

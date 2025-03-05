@@ -4,6 +4,8 @@ import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/f
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../views/flight/search_flights/booking_flight/booking_flight_controller.dart';
+
 class ApiServiceFlight extends GetxService {
   late final Dio dio;
   static const String _baseUrl = 'https://api.havail.sabre.com';
@@ -242,8 +244,8 @@ class ApiServiceFlight extends GetxService {
       };
 
       // Print request body (formatted)
-      print('Request Body:');
-      _printJsonPretty(requestBody);
+      // print('Request Body:');
+      // _printJsonPretty(requestBody);
 
       final response = await dio.post(
         '/v3/offers/shop',
@@ -256,11 +258,11 @@ class ApiServiceFlight extends GetxService {
         data: requestBody,
       );
 
-      print('Response Status Code: ${response.statusCode}');
+      // print('Response Status Code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('Response Data:');
-        _printJsonPretty(response.data['statistics']);
+        // print('Response Data:');
+        // _printJsonPretty(response.data['statistics']);
         return response.data;
       } else {
         throw Exception('Failed to search flights: ${response.statusCode}');
@@ -377,6 +379,285 @@ class ApiServiceFlight extends GetxService {
     }
 
     return tempAirlineMap;
+  }
+
+
+  // Add this function to create the PNR request body
+  Future<void> createPNRRequest({
+    required Flight flight,
+    required List<TravelerInfo> adults,
+    required List<TravelerInfo> children,
+    required List<TravelerInfo> infants,
+    required String bookerEmail,
+    required String bookerPhone,
+  }) async {
+    try {
+      // Extract necessary information from the flight and travelers
+      final List<Map<String, dynamic>> passengers = [];
+      final List<Map<String, dynamic>> flightSegments = [];
+
+      // Add adults
+      for (var i = 0; i < adults.length; i++) {
+        final adult = adults[i];
+        passengers.add({
+          "NameNumber": "${i + 1}.1",
+          "NameReference": "",
+          "PassengerType": "ADT",
+          "GivenName": adult.firstNameController.text,
+          "Surname": adult.lastNameController.text,
+        });
+      }
+
+      // Add children
+      for (var i = 0; i < children.length; i++) {
+        final child = children[i];
+        passengers.add({
+          "NameNumber": "${adults.length + i + 1}.1",
+          "NameReference": "C${i + 1}",
+          "PassengerType": "CNN",
+          "GivenName": child.firstNameController.text,
+          "Surname": child.lastNameController.text,
+        });
+      }
+
+      // Add infants
+      for (var i = 0; i < infants.length; i++) {
+        final infant = infants[i];
+        passengers.add({
+          "NameNumber": "${adults.length + children.length + i + 1}.1",
+          "NameReference": "I${i + 1}",
+          "PassengerType": "INF",
+          "Infant": true,
+          "GivenName": infant.firstNameController.text,
+          "Surname": infant.lastNameController.text,
+        });
+      }
+
+      // Add flight segments
+      for (var leg in flight.legSchedules) {
+        for (var schedule in leg['schedules']) {
+          flightSegments.add({
+            "DepartureDateTime": schedule['departure']['dateTime'],
+            "FlightNumber": schedule['carrier']['marketingFlightNumber'],
+            "NumberInParty": passengers.length.toString(),
+            "ResBookDesigCode": "M", // Assuming default booking code
+            "Status": "NN",
+            "DestinationLocation": {
+              "LocationCode": schedule['arrival']['airport'],
+            },
+            "MarketingAirline": {
+              "Code": schedule['carrier']['marketing'],
+              "FlightNumber": schedule['carrier']['marketingFlightNumber'],
+            },
+            "OriginLocation": {
+              "LocationCode": schedule['departure']['airport'],
+            },
+          });
+        }
+      }
+
+      // Extract FareBasis codes from flight data
+      final List<Map<String, dynamic>> fareBasisCodes = [];
+      for (var leg in flight.legSchedules) {
+        if (leg['fareBasisCode'] != null) {
+          fareBasisCodes.add({
+            "FareBasis": {
+              "Code": leg['fareBasisCode'],
+            },
+            "RPH": "${fareBasisCodes.length + 1}",
+          });
+        }
+      }
+
+      // Create the request body
+      final requestBody = {
+        "CreatePassengerNameRecordRQ": {
+          "haltOnAirPriceError": true,
+          "haltOnInvalidMCT": true,
+          "targetCity": "UL8L", // Assuming default target city
+          "version": "2.5.0",
+          "TravelItineraryAddInfo": {
+            "AgencyInfo": {
+              "Ticketing": {
+                "TicketType": "7T-A",
+              },
+            },
+            "CustomerInfo": {
+              "ContactNumbers": {
+                "ContactNumber": [
+                  {
+                    "NameNumber": "1.1",
+                    "Phone": bookerPhone,
+                    "PhoneUseType": "M",
+                  },
+                ],
+              },
+              "Email": [
+                {
+                  "Address": bookerEmail,
+                  "NameNumber": "1.1",
+                },
+              ],
+              "PersonName": passengers,
+            },
+          },
+          "AirBook": {
+            "OriginDestinationInformation": {
+              "FlightSegment": flightSegments,
+            },
+            "RetryRebook": {
+              "Option": true,
+            },
+            "HaltOnStatus": [
+              {"Code": "HL"},
+              {"Code": "HN"},
+              {"Code": "HX"},
+              {"Code": "LL"},
+              {"Code": "NN"},
+              {"Code": "NO"},
+              {"Code": "PN"},
+              {"Code": "UC"},
+              {"Code": "UN"},
+              {"Code": "US"},
+              {"Code": "UU"},
+            ],
+            "RedisplayReservation": {
+              "NumAttempts": 10,
+              "WaitInterval": 500,
+            },
+          },
+          "AirPrice": [
+            {
+              "PriceRequestInformation": {
+                "Retain": true,
+                "OptionalQualifiers": {
+                  "PricingQualifiers": {
+                    "CommandPricing": fareBasisCodes,
+                    "ItineraryOptions": {
+                      "SegmentSelect": fareBasisCodes.map((code) {
+                        return {
+                          "Number": code["RPH"],
+                          "RPH": code["RPH"],
+                        };
+                      }).toList(),
+                    },
+                    "PassengerType": [
+                      {
+                        "Code": "ADT",
+                        "Quantity": adults.length.toString(),
+                      },
+                      {
+                        "Code": "CNN",
+                        "Quantity": children.length.toString(),
+                      },
+                      {
+                        "Code": "INF",
+                        "Quantity": infants.length.toString(),
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          "SpecialReqDetails": {
+            "SpecialService": {
+              "SpecialServiceInfo": {
+                "AdvancePassenger": passengers.map((passenger) {
+                  return {
+                    "Document": {
+                      "IssueCountry": "PK",
+                      "NationalityCountry": "PK",
+                      "ExpirationDate": "2028-03-04",
+                      "Number": "1233435",
+                      "Type": "P",
+                    },
+                    "PersonName": {
+                      "GivenName": passenger["GivenName"],
+                      "MiddleName": "",
+                      "Surname": passenger["Surname"],
+                      "DateOfBirth": "2000-03-04",
+                      "DocumentHolder": true,
+                      "Gender": "M",
+                      "LapChild": passenger["PassengerType"] == "INF",
+                      "NameNumber": passenger["NameNumber"],
+                    },
+                  };
+                }).toList(),
+                "Service": [
+                  {
+                    "SSR_Code": "CTCM",
+                    "PersonName": {
+                      "NameNumber": "1.1",
+                    },
+                    "Text": bookerPhone,
+                  },
+                  {
+                    "SSR_Code": "CTCE",
+                    "PersonName": {
+                      "NameNumber": "1.1",
+                    },
+                    "Text": bookerEmail,
+                  },
+                ],
+              },
+            },
+          },
+          "PostProcessing": {
+            "ARUNK": {
+              "keepSegments": true,
+              "priorPricing": true,
+            },
+            "EndTransaction": {
+              "Email": {
+                "Ind": true,
+              },
+              "Source": {
+                "ReceivedFrom": "AryanB2B",
+              },
+            },
+            "PostBookingHKValidation": {
+              "waitInterval": 200,
+              "numAttempts": 4,
+            },
+            "WaitForAirlineRecLoc": {
+              "waitInterval": 200,
+              "numAttempts": 4,
+            },
+            "RedisplayReservation": {
+              "waitInterval": 1000,
+            },
+          },
+        },
+      };
+
+      // Print the request body
+      print('PNR Request Body:');
+      _printJsonPretty(requestBody);
+
+      // Make the API call
+      // final token = await getValidToken() ?? await generateToken();
+      // final response = await dio.post(
+      //   '/v2.5.0/passenger/records?mode=create',
+      //   options: Options(
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       'Authorization': 'Bearer $token',
+      //       'Conversation-ID': '2021.01.DevStudio',
+      //     },
+      //   ),
+      //   data: requestBody,
+      // );
+      //
+      // if (response.statusCode == 200) {
+      //   print('PNR created successfully');
+      // } else {
+      //   throw Exception('Failed to create PNR: ${response.statusCode}');
+      // }
+    } catch (e) {
+      print('Error in createPNRRequest: $e');
+      throw Exception('Error creating PNR: $e');
+    }
   }
 }
 

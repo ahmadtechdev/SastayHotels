@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flight_bocking/views/hotel/hotel/guests/guests_controller.dart';
 import 'package:flight_bocking/views/hotel/hotel/hotel_date_controller.dart';
 import 'package:flight_bocking/views/hotel/search_hotels/booking_hotel/booking_controller.dart';
@@ -14,12 +16,13 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 class HotelVoucherScreen extends StatelessWidget {
   final SearchHotelController searchHotelController =
-      Get.find<SearchHotelController>();
+  Get.find<SearchHotelController>();
   final HotelDateController hotelDateController =
-      Get.find<HotelDateController>();
+  Get.find<HotelDateController>();
   final GuestsController guestsController = Get.find<GuestsController>();
   final BookingController bookingController = Get.put(BookingController());
 
@@ -61,9 +64,160 @@ class HotelVoucherScreen extends StatelessWidget {
     );
   }
 
+  // Function to get a static map image
+  Future<Uint8List?> getStaticMapImage(
+      double latitude, double longitude, String apiKey) async {
+    try {
+      final url =
+          'https://maps.googleapis.com/maps/api/staticmap?center=$latitude,$longitude'
+          '&zoom=14&size=600x300&maptype=roadmap'
+          '&markers=color:red%7C$latitude,$longitude'
+          '&key=$apiKey';
+
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('Request timed out'),
+      );
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else {
+        print('Error fetching map: Status ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception fetching map image: $e');
+      return null;
+    }
+  }
+
+// Use this in your PDF generation
+  Future<pw.Widget> buildMapWidgetWithFallback(
+      double latitude, double longitude, String hotelName) async {
+    try {
+      // First try the API approach
+      final apiKey = 'AIzaSyAdlZKbva-1HbPJEY0spMkXauqMPf_nGJo';
+      final mapImageBytes =
+      await getStaticMapImage(latitude, longitude, apiKey);
+
+      if (mapImageBytes != null) {
+        return pw.Container(
+          height: 120,
+          width: double.infinity,
+          decoration: pw.BoxDecoration(
+            borderRadius: pw.BorderRadius.circular(8),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.ClipRRect(
+            child: pw.Image(
+              pw.MemoryImage(mapImageBytes),
+              fit: pw.BoxFit.cover,
+            ),
+          ),
+        );
+      } else {
+        // If API fails, use a pre-bundled placeholder map image from assets
+        final ByteData placeholderData =
+        await rootBundle.load('assets/img/map.png');
+        final Uint8List placeholderBytes = placeholderData.buffer.asUint8List();
+
+        return pw.Container(
+          height: 120,
+          width: double.infinity,
+          decoration: pw.BoxDecoration(
+            borderRadius: pw.BorderRadius.circular(8),
+            border: pw.Border.all(color: PdfColors.grey300),
+          ),
+          child: pw.Stack(
+            children: [
+              pw.ClipRRect(
+                child: pw.Image(
+                  pw.MemoryImage(placeholderBytes),
+                  fit: pw.BoxFit.cover,
+                ),
+              ),
+              pw.Positioned(
+                bottom: 4,
+                right: 4,
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  color: PdfColors.white,
+                  child: pw.Text(
+                    'Lat: $latitude, Long: $longitude',
+                    style: const pw.TextStyle(fontSize: 8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in buildMapWidgetWithFallback: $e');
+      // Last resort text-only fallback
+      return pw.Container(
+        height: 120,
+        width: double.infinity,
+        decoration: pw.BoxDecoration(
+          borderRadius: pw.BorderRadius.circular(8),
+          border: pw.Border.all(color: PdfColors.grey300),
+        ),
+        child: pw.Column(
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          children: [
+            pw.Text(
+              'Map unavailable',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              textAlign: pw.TextAlign.center,
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              hotelName,
+              textAlign: pw.TextAlign.center,
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Latitude: $latitude, Longitude: $longitude',
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 10),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  pw.Widget _buildPdfBulletPoint(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('• ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.Expanded(
+            child: pw.Text(
+              text,
+              style: const pw.TextStyle(fontSize: 10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _printVoucher(BuildContext context) async {
     try {
-      final pdf = await _generatePdf();
+      // Get latitude, longitude, and hotel name
+      final latitude =
+          double.tryParse(searchHotelController.lat.value) ?? 24.4672;
+      final longitude =
+          double.tryParse(searchHotelController.lon.value) ?? 39.6170;
+      final hotelName = searchHotelController.hotelName.value.isNotEmpty
+          ? searchHotelController.hotelName.value
+          : 'Leader Al Muna Kareem Hotel';
+
+      // Call generatePdf with latitude, longitude, and hotelName
+      final pdf = await generatePdf(latitude, longitude, hotelName);
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf,
         name: 'Hotel_Voucher_${bookingController.booking_num.value}',
@@ -75,25 +229,26 @@ class HotelVoucherScreen extends StatelessWidget {
     }
   }
 
-  Future<Uint8List> _generatePdf() async {
-    final pdf = pw.Document();
-
-    pw.MemoryImage? logoImage;
+  Future<pw.MemoryImage?> _loadLogoImage() async {
     try {
       final ByteData data = await rootBundle.load('assets/img/newLogo.png');
       final Uint8List bytes = data.buffer.asUint8List();
-      logoImage = pw.MemoryImage(bytes);
+      return pw.MemoryImage(bytes);
     } catch (e) {
       print('Error loading logo: $e');
+      return null; // Return null if there's an error
     }
+  }
 
-    final hotelName = searchHotelController.hotelName.value.isNotEmpty
-        ? searchHotelController.hotelName.value
-        : 'Leader Al Muna Kareem Hotel';
-
+  Future<Uint8List> generatePdf(
+      double latitude, double longitude, String hotelName) async {
+    final pdf = pw.Document();
+    final mapWidget =
+    await buildMapWidgetWithFallback(latitude, longitude, hotelName);
     final hotelAddress =
         'Omar Bin Al Katab Street PO Box 2961, Central Area, Madina 9055';
-    final country = 'Saudi Arabia';
+
+    pw.MemoryImage? logoImage = await _loadLogoImage();
 
     pdf.addPage(
       pw.Page(
@@ -135,18 +290,18 @@ class HotelVoucherScreen extends StatelessWidget {
                         logoImage != null
                             ? pw.Image(logoImage, height: 30)
                             : pw.Container(
-                                color: PdfColors.black,
-                                padding: const pw.EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 5),
-                                child: pw.Text(
-                                  'Stayinhotels.ae',
-                                  style: pw.TextStyle(
-                                    color: PdfColors.white,
-                                    fontWeight: pw.FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
+                          color: PdfColors.black,
+                          padding: const pw.EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          child: pw.Text(
+                            'Stayinhotels.ae',
+                            style: pw.TextStyle(
+                              color: PdfColors.white,
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
                         pw.SizedBox(height: 8),
                         pw.Text(
                           'Booking No#',
@@ -227,10 +382,51 @@ class HotelVoucherScreen extends StatelessWidget {
                         ),
                         pw.SizedBox(width: 8),
                         pw.Text(
-                          country,
+                          'country',
                           style: const pw.TextStyle(fontSize: 14),
                         ),
                       ],
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Text(
+                      'HOTEL LOCATION',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 12,
+                        color: PdfColors.black,
+                      ),
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Container(
+                      height: 80,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey300),
+                        borderRadius: pw.BorderRadius.circular(8),
+                      ),
+                      child: pw.Stack(
+                        children: [
+                          mapWidget,
+                          pw.Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: pw.Container(
+                              padding: const pw.EdgeInsets.all(4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                              ),
+                              child: pw.Row(
+                                children: [
+                                  pw.Text(
+                                    'Google Maps Location',
+                                    style: const pw.TextStyle(fontSize: 8),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -367,7 +563,56 @@ class HotelVoucherScreen extends StatelessWidget {
                 ),
               ),
               pw.SizedBox(height: 10),
-              // Important Notes
+              // Room Info
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'ROOM DETAILS',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    pw.Table(
+                      border: pw.TableBorder.all(color: PdfColors.grey300),
+                      columnWidths: {
+                        0: const pw.FlexColumnWidth(1),
+                        1: const pw.FlexColumnWidth(2),
+                        2: const pw.FlexColumnWidth(3),
+                        3: const pw.FlexColumnWidth(1),
+                        4: const pw.FlexColumnWidth(1),
+                      },
+                      children: [
+                        pw.TableRow(
+                          decoration:
+                          pw.BoxDecoration(color: PdfColors.grey200),
+                          children: [
+                            _buildPdfTableHeaderCell('Room No'),
+                            _buildPdfTableHeaderCell('Room Type / Board Basis'),
+                            _buildPdfTableHeaderCell('Guest Name'),
+                            _buildPdfTableHeaderCell('Adult(s)'),
+                            _buildPdfTableHeaderCell('Children'),
+                          ],
+                        ),
+                        ...List.generate(
+                          guestsController.roomCount.value,
+                              (index) => _buildPdfRoomRow(index + 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              // Booking Policy
               pw.Container(
                 padding: const pw.EdgeInsets.all(10),
                 decoration: pw.BoxDecoration(
@@ -390,10 +635,64 @@ class HotelVoucherScreen extends StatelessWidget {
                         'The usual check-in time is 12:00-14:00 PM (this may vary).'),
                     _buildPdfBulletPoint(
                         'Rooms may not be available for early check-in unless requested.'),
+                    _buildPdfBulletPoint(
+                        'Hotel reservation may be canceled automatically after 18:00 hours if hotel is not informed about the appointment time of the arrival.'),
+                    _buildPdfBulletPoint(
+                        'The total cost is between 10-12.00 hours between the high-way (non-toll) & the toll road with different destinations. And the checkout may involve additional charges.'),
+                    _buildPdfBulletPoint(
+                        'For any specific system related to particular hotel, kindly reach out to our support team for assistance.'),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              // Booking Refund Policy
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Booking Refund Policy',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                     pw.SizedBox(height: 8),
                     pw.Text(
-                      'Important Notes - Check your Reservation details carefully.',
+                      'Booking payable as per reservation details. Please collect all extras directly from (sleep in) departure. All matters issued are on the condition that all persons acknowledge that in person to taking part must be made, as people for which we shall not be liable for damage, loss, injury, delay or inconvenience caused to passenger as a result of any such arrangements. We will not accept any responsibility for additional expenses due to the changes or delay in air, road, rail sea or indeed any form of transport.',
                       style: const pw.TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              // Important Notes
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.red50,
+                  border: pw.Border.all(color: PdfColors.red200),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('! ',
+                        style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.red)),
+                    pw.Expanded(
+                      child: pw.Text(
+                        'Important Notes - Check your Reservation details carefully and inform us immediately if you need any further clarification; please do not hesitate to contact us.',
+                        style:
+                        pw.TextStyle(color: PdfColors.red700, fontSize: 10),
+                      ),
                     ),
                   ],
                 ),
@@ -407,22 +706,105 @@ class HotelVoucherScreen extends StatelessWidget {
     return pdf.save();
   }
 
-  pw.Widget _buildPdfBulletPoint(String text) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 4),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text('• ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          pw.Expanded(
-            child: pw.Text(
-              text,
-              style: const pw.TextStyle(fontSize: 10),
-            ),
-          ),
-        ],
+  pw.Widget _buildPdfTableHeaderCell(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      alignment: pw.Alignment.center,
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 10,
+        ),
       ),
     );
+  }
+
+  pw.Widget _buildPdfTableCell(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      alignment: pw.Alignment.center,
+      child: pw.Text(
+        text,
+        style: const pw.TextStyle(fontSize: 9),
+      ),
+    );
+  }
+
+  pw.TableRow _buildPdfRoomRow(int roomNo) {
+    final roomType = "Standard Room";
+    final boardBasis = "Bed & Breakfast";
+
+    final adultCount = roomNo <= guestsController.rooms.length
+        ? guestsController.rooms[roomNo - 1].adults.value
+        : 2;
+
+    final childrenCount = roomNo <= guestsController.rooms.length
+        ? guestsController.rooms[roomNo - 1].children.value
+        : 0;
+
+    return pw.TableRow(
+      children: [
+        _buildPdfTableCell(roomNo.toString()),
+        _buildPdfTableCell('$roomType / $boardBasis'),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(6),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: _getPdfGuestNames(roomNo - 1),
+          ),
+        ),
+        _buildPdfTableCell(adultCount.toString()),
+        _buildPdfTableCell(childrenCount.toString()),
+      ],
+    );
+  }
+
+  List<pw.Widget> _getPdfGuestNames(int roomIndex) {
+    List<pw.Widget> names = [];
+
+    // Check if we have data from the booking controller
+    if (roomIndex < bookingController.roomGuests.length) {
+      // Add adult names
+      for (var i = 0;
+      i < bookingController.roomGuests[roomIndex].adults.length;
+      i++) {
+        final adult = bookingController.roomGuests[roomIndex].adults[i];
+        if (adult.firstNameController.text.isNotEmpty) {
+          names.add(pw.Text(
+            'Adult ${i + 1}: ${adult.titleController.text} ${adult.firstNameController.text} ${adult.lastNameController.text}',
+            style: const pw.TextStyle(fontSize: 9),
+          ));
+        }
+      }
+
+      // Add child names
+      for (var i = 0;
+      i < bookingController.roomGuests[roomIndex].children.length;
+      i++) {
+        final child = bookingController.roomGuests[roomIndex].children[i];
+        if (child.firstNameController.text.isNotEmpty) {
+          names.add(pw.Text(
+            'Child ${i + 1}: ${child.titleController.text} ${child.firstNameController.text} ${child.lastNameController.text}',
+            style: const pw.TextStyle(fontSize: 9),
+          ));
+        }
+      }
+    }
+
+    // If no names found, add dummy data
+    if (names.isEmpty) {
+      names.add(pw.Text(
+        'Adult 1: Mrs Hadam Rashid',
+        style: const pw.TextStyle(fontSize: 9),
+      ));
+      names.add(pw.Text(
+        'Adult 2: Mrs Sana Aham',
+        style: const pw.TextStyle(fontSize: 9),
+      ));
+    }
+
+    return names;
   }
 
   Widget _buildVoucherCard(BuildContext context) {
@@ -467,7 +849,7 @@ class HotelVoucherScreen extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.black,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: const Text(
                     'Stayinhotels.ae',
                     style: TextStyle(
@@ -592,10 +974,10 @@ class HotelVoucherScreen extends StatelessWidget {
             onTap: () {
               // Navigate to the map screen with the actual coordinates
               Get.to(() => MapScreen(
-                    hotelName: hotelName,
-                    latitude: latitude,
-                    longitude: longitude,
-                  ));
+                hotelName: hotelName,
+                latitude: latitude,
+                longitude: longitude,
+              ));
             },
             child: Container(
               height: 120,
@@ -633,7 +1015,7 @@ class HotelVoucherScreen extends StatelessWidget {
                             ),
                           },
                           liteModeEnabled:
-                              true, // This makes it less resource-intensive
+                          true, // This makes it less resource-intensive
                         ),
                       )),
 
@@ -822,7 +1204,7 @@ class HotelVoucherScreen extends StatelessWidget {
               ),
               ...List.generate(
                 guestsController.roomCount.value,
-                (index) => _buildRoomRow(index + 1),
+                    (index) => _buildRoomRow(index + 1),
               ),
             ],
           ),
@@ -870,8 +1252,8 @@ class HotelVoucherScreen extends StatelessWidget {
     if (roomIndex < bookingController.roomGuests.length) {
       // Add adult names
       for (var i = 0;
-          i < bookingController.roomGuests[roomIndex].adults.length;
-          i++) {
+      i < bookingController.roomGuests[roomIndex].adults.length;
+      i++) {
         final adult = bookingController.roomGuests[roomIndex].adults[i];
         if (adult.firstNameController.text.isNotEmpty) {
           names.add(Text(
@@ -883,8 +1265,8 @@ class HotelVoucherScreen extends StatelessWidget {
 
       // Add child names
       for (var i = 0;
-          i < bookingController.roomGuests[roomIndex].children.length;
-          i++) {
+      i < bookingController.roomGuests[roomIndex].children.length;
+      i++) {
         final child = bookingController.roomGuests[roomIndex].children[i];
         if (child.firstNameController.text.isNotEmpty) {
           names.add(Text(
@@ -1055,11 +1437,11 @@ class HotelVoucherScreen extends StatelessWidget {
   }
 
   Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required VoidCallback onTap,
+      }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(

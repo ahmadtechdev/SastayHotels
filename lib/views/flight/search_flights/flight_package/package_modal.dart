@@ -14,6 +14,7 @@ class FlightPackageInfo {
   final String brandDescription;
   final bool isSoldOut;
 
+
   FlightPackageInfo({
     required this.cabinCode,
     String? cabinName,

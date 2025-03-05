@@ -4,6 +4,7 @@ import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/f
 import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../services/api_service_flight.dart';
 import '../../../../widgets/colors.dart';
 
 class BookingForm extends StatefulWidget {
@@ -32,7 +33,7 @@ class _BookingFormState extends State<BookingForm> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: Form(
             key: _formKey,
             child: Column(
@@ -40,11 +41,20 @@ class _BookingFormState extends State<BookingForm> {
               children: [
                 _buildFlightDetails(),
                 const SizedBox(height: 24),
-                _buildTravelersForm(),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _buildTravelersForm(),
+                ),
                 const SizedBox(height: 24),
-                _buildBookerDetails(),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _buildBookerDetails(),
+                ),
                 const SizedBox(height: 24),
-                _buildTermsAndConditions()
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: _buildTermsAndConditions(),
+                )
               ],
             ),
           ),
@@ -56,6 +66,7 @@ class _BookingFormState extends State<BookingForm> {
 
   Widget _buildTermsAndConditions() {
     return Card(
+      color: TColors.background,
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: CheckboxListTile(
@@ -145,6 +156,7 @@ class _BookingFormState extends State<BookingForm> {
     required String type,
   }) {
     return Card(
+      color: TColors.background,
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
@@ -469,6 +481,7 @@ class _BookingFormState extends State<BookingForm> {
 
   Widget _buildBookerDetails() {
     return Card(
+      color: TColors.background,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -603,9 +616,30 @@ class _BookingFormState extends State<BookingForm> {
             ],
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (_formKey.currentState!.validate()) {
-                // Process booking
+                // Get the booker's email and phone from the form
+                final bookerEmail = bookingController.emailController.text;
+                final bookerPhone = bookingController.phoneController.text;
+
+                // Call the PNR request function
+                final apiService = ApiServiceFlight();
+                await apiService.createPNRRequest(
+                  flight: widget.flight,
+                  adults: bookingController.adults,
+                  children: bookingController.children,
+                  infants: bookingController.infants,
+                  bookerEmail: bookerEmail,
+                  bookerPhone: bookerPhone,
+                );
+
+                // Optionally, you can navigate to a confirmation screen or show a success message
+                Get.snackbar(
+                  'Success',
+                  'PNR request created successfully',
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                );
               }
             },
             style: ElevatedButton.styleFrom(

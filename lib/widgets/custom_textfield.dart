@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 
-import 'colors.dart';
+import 'colors.dart'; // Ensure you have this file with color definitions
 
 class AirportData {
   final String code;
@@ -36,7 +38,6 @@ enum FieldType {
   destination,
 }
 
-// Create a GetX controller for airport data
 class AirportController extends GetxController {
   var airports = <AirportData>[].obs;
   var defaultDepartureAirports = <AirportData>[].obs;
@@ -44,8 +45,8 @@ class AirportController extends GetxController {
   var isLoading = false.obs;
   var errorMessage = ''.obs;
   var filteredAirports = <AirportData>[].obs;
+  var isAirportsLoaded = false.obs;
 
-  // Define city codes for departure defaults
   final List<String> departureAirportCodes = [
     "KHI",
     "LHE",
@@ -56,7 +57,6 @@ class AirportController extends GetxController {
     "SKT"
   ];
 
-  // Define city codes for destination defaults
   final List<String> destinationAirportCodes = [
     "DXB",
     "JED",
@@ -69,38 +69,49 @@ class AirportController extends GetxController {
     "BKK"
   ];
 
-  @override
-  void onInit() {
-    super.onInit();
-    fetchAirports();
-  }
-
   Future<void> fetchAirports() async {
     try {
+      // Reset previous states
       isLoading.value = true;
       errorMessage.value = '';
 
-      final response =
-      await http.get(Uri.parse('https://agent1.pk/api.php?type=airports'));
+      final response = await http
+          .get(Uri.parse('https://agent1.pk/api.php?type=airports'), headers: {
+        'Connection': 'keep-alive'
+      }).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw TimeoutException('Connection timeout');
+      });
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         if (jsonData['status'] == 'success' && jsonData['data'] is List) {
           final List<dynamic> airportsData = jsonData['data'];
+
+          // Check if data is actually received
+          if (airportsData.isEmpty) {
+            errorMessage.value = 'No airports found';
+            return;
+          }
+
           airports.value =
               airportsData.map((item) => AirportData.fromJson(item)).toList();
 
-          // Once we have all airports, filter for default lists
           _filterDefaultAirports();
+
+          isAirportsLoaded.value = true;
         } else {
-          errorMessage.value = 'Invalid data format';
+          errorMessage.value = jsonData['message'] ?? 'Invalid data format';
         }
       } else {
         errorMessage.value =
         'Failed to load airports. Status: ${response.statusCode}';
       }
+    } on SocketException {
+      errorMessage.value = 'No internet connection';
+    } on TimeoutException {
+      errorMessage.value = 'Connection timeout. Please try again';
     } catch (e) {
-      errorMessage.value = 'Error: $e';
+      errorMessage.value = 'Unexpected error: ${e.toString()}';
     } finally {
       isLoading.value = false;
     }
@@ -109,7 +120,6 @@ class AirportController extends GetxController {
   void _filterDefaultAirports() {
     if (airports.isEmpty) return;
 
-    // Filter for departure airports
     defaultDepartureAirports.value = airports
         .where((airport) => departureAirportCodes.contains(airport.code))
         .toList()
@@ -119,7 +129,6 @@ class AirportController extends GetxController {
         return indexA.compareTo(indexB);
       });
 
-    // Filter for destination airports
     defaultDestinationAirports.value = airports
         .where((airport) => destinationAirportCodes.contains(airport.code))
         .toList()
@@ -128,31 +137,14 @@ class AirportController extends GetxController {
         final indexB = destinationAirportCodes.indexOf(b.code);
         return indexA.compareTo(indexB);
       });
-
-    // Log any missing airports
-    if (defaultDepartureAirports.length < departureAirportCodes.length) {
-      print(
-          'Warning: Could not find all default departure airports in API response.');
-      print(
-          'Found ${defaultDepartureAirports.length} out of ${departureAirportCodes.length}');
-    }
-
-    if (defaultDestinationAirports.length < destinationAirportCodes.length) {
-      print(
-          'Warning: Could not find all default destination airports in API response.');
-      print(
-          'Found ${defaultDestinationAirports.length} out of ${destinationAirportCodes.length}');
-    }
   }
 
   void searchAirports(String query, FieldType fieldType) {
     if (query.isEmpty) {
-      // Show default airports when search is empty
       filteredAirports.value = fieldType == FieldType.departure
           ? defaultDepartureAirports
           : defaultDestinationAirports;
     } else {
-      // Filter all airports based on search query
       final searchQuery = query.toLowerCase();
       filteredAirports.value = airports
           .where((airport) =>
@@ -173,7 +165,6 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final FieldType fieldType;
 
-  // Get a singleton instance of the AirportController
   final AirportController airportController = Get.put(AirportController());
 
   CustomTextField({
@@ -184,7 +175,7 @@ class CustomTextField extends StatelessWidget {
     this.onCitySelected,
     TextEditingController? controller,
     this.fieldType = FieldType.departure,
-  })  : controller = controller ?? TextEditingController(text: initialValue);
+  }) : controller = controller ?? TextEditingController(text: initialValue);
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +200,15 @@ class CustomTextField extends StatelessWidget {
   }
 
   void _showAirportSuggestions(BuildContext context) {
-    // Initialize with the appropriate default list
+    // Reset any previous error
+    airportController.errorMessage.value = '';
+
+    // Trigger fetch if not loaded
+    if (!airportController.isAirportsLoaded.value) {
+      airportController.fetchAirports();
+    }
+
+    // Initialize with default airports
     airportController.filteredAirports.value = fieldType == FieldType.departure
         ? airportController.defaultDepartureAirports
         : airportController.defaultDestinationAirports;
@@ -260,6 +259,44 @@ class CustomTextField extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Obx(() {
+                  // Prioritize error message
+                  if (airportController.errorMessage.value.isNotEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 50),
+                          const SizedBox(height: 10),
+                          Text(
+                            airportController.errorMessage.value,
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 16),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: () =>
+                                airportController.fetchAirports(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: TColors.primary,
+                            ),
+                            child: const Text('Retry'),
+                          )
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Loading state
+                  if (airportController.isLoading.value) {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                          color: TColors.primary,
+                        ));
+                  }
+
+                  // Search results header
                   final searchActive = airportController.filteredAirports !=
                       (fieldType == FieldType.departure
                           ? airportController.defaultDepartureAirports
@@ -269,7 +306,9 @@ class CustomTextField extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        searchActive ? 'Search Results' : 'Suggested Airports',
+                        searchActive
+                            ? 'Search Results'
+                            : 'Suggested Airports',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
@@ -284,52 +323,55 @@ class CustomTextField extends StatelessWidget {
                 const SizedBox(height: 8),
                 Expanded(
                   child: Obx(() {
-                    if (airportController.isLoading.value) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (airportController
-                        .errorMessage.value.isNotEmpty) {
-                      return Center(
-                        child: Text(
-                          airportController.errorMessage.value,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    } else if (airportController.filteredAirports.isEmpty) {
+                    // No airports found scenario
+                    if (airportController.filteredAirports.isEmpty &&
+                        !airportController.isLoading.value &&
+                        airportController.errorMessage.value.isEmpty) {
                       return const Center(
-                        child: Text(
-                          'No matching airports found',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    } else {
-                      return ListView.builder(
-                        itemCount: airportController.filteredAirports.length,
-                        itemBuilder: (context, index) {
-                          final airport =
-                          airportController.filteredAirports[index];
-                          return ListTile(
-                            leading: const Icon(Icons.location_on,
-                                color: TColors.primary),
-                            title: Text(
-                              '${airport.cityName} (${airport.code})',
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.airport_shuttle,
+                                color: Colors.grey, size: 50),
+                            SizedBox(height: 10),
+                            Text(
+                              'No airports found',
                               style:
-                              const TextStyle(fontWeight: FontWeight.bold),
+                              TextStyle(color: Colors.grey, fontSize: 16),
                             ),
-                            subtitle:
-                            Text('${airport.name}, ${airport.countryName}'),
-                            onTap: () {
-                              controller.text =
-                              '${airport.cityName} (${airport.code})';
-                              if (onCitySelected != null) {
-                                onCitySelected!(
-                                    airport.cityName, airport.cityCode);
-                              }
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
+                          ],
+                        ),
                       );
                     }
+
+                    // Airports list
+                    return ListView.builder(
+                      itemCount: airportController.filteredAirports.length,
+                      itemBuilder: (context, index) {
+                        final airport =
+                        airportController.filteredAirports[index];
+                        return ListTile(
+                          leading: const Icon(Icons.location_on,
+                              color: TColors.primary),
+                          title: Text(
+                            '${airport.cityName} (${airport.code})',
+                            style:
+                            const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle:
+                          Text('${airport.name}, ${airport.countryName}'),
+                          onTap: () {
+                            controller.text =
+                            '${airport.cityName} (${airport.code})';
+                            if (onCitySelected != null) {
+                              onCitySelected!(
+                                  airport.cityName, airport.cityCode);
+                            }
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    );
                   }),
                 ),
               ],
@@ -341,7 +383,6 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-// Example of widget initialization and usage
 class AirportSelectionScreen extends StatelessWidget {
   AirportSelectionScreen({super.key});
 
@@ -350,8 +391,7 @@ class AirportSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Make sure controller is initialized first
-    // You would typically do this in your app's initial binding
+    // Ensure AirportController is registered
     if (!Get.isRegistered<AirportController>()) {
       Get.put(AirportController());
     }
@@ -371,7 +411,7 @@ class AirportSelectionScreen extends StatelessWidget {
               fieldType: FieldType.departure,
               onCitySelected: (cityName, cityCode) {
                 print('Selected departure: $cityName ($cityCode)');
-                // Handle selection
+                // Handle departure selection
               },
             ),
             const SizedBox(height: 16),
@@ -382,7 +422,7 @@ class AirportSelectionScreen extends StatelessWidget {
               fieldType: FieldType.destination,
               onCitySelected: (cityName, cityCode) {
                 print('Selected destination: $cityName ($cityCode)');
-                // Handle selection
+                // Handle destination selection
               },
             ),
           ],

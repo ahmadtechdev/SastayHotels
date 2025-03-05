@@ -206,6 +206,7 @@ class _FlightCardState extends State<FlightCard>
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                             // const SizedBox(width: 8),
                             // Text(

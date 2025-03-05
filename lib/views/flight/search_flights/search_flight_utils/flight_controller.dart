@@ -160,22 +160,29 @@ class FlightController extends GetxController {
     if (currentScenario.value == FlightScenario.oneWay) {
       // Directly proceed to package selection for one-way trips
       Get.to(() => PackageSelectionDialog(
-            flight: flight,
-            isAnyFlightRemaining: false,
-          ));
+        flight: flight,
+        isAnyFlightRemaining: false,
+        // pricingInformation: flight.pricingInforArray, // Pass pricing information
+      ));
     } else {
       // For return trips
       if (isSelectingFirstFlight.value) {
         // Select the first flight
         selectedFirstFlight.value = flight;
         isSelectingFirstFlight.value = false;
-        Get.to(() =>
-            PackageSelectionDialog(flight: flight, isAnyFlightRemaining: true));
+        Get.to(() => PackageSelectionDialog(
+          flight: flight,
+          isAnyFlightRemaining: true,
+          // pricingInformation: flight.pricingInforArray, // Pass pricing information
+        ));
       } else {
         // Select the second flight and move to the review page
         selectedSecondFlight.value = flight;
         Get.to(() => PackageSelectionDialog(
-            flight: flight, isAnyFlightRemaining: false));
+          flight: flight,
+          isAnyFlightRemaining: false,
+          // pricingInformation: flight.pricingInforArray, // Pass pricing information
+        ));
       }
     }
   }
@@ -666,6 +673,8 @@ extension FlightDateTimeExtension on FlightController {
           if (legs == null) continue;
 
           final pricingInfo = itinerary['pricingInformation'] as List?;
+          final List<Map<String, dynamic>> typedPricingInfo = pricingInfo?.map((item) =>
+          Map<String, dynamic>.from(item as Map)).toList() ?? [];
           if (pricingInfo == null || pricingInfo.isEmpty) continue;
 
           // Process all available packages from pricingInfo
@@ -904,6 +913,7 @@ extension FlightDateTimeExtension on FlightController {
                   'N',
               groupId: itinerary['id'].toString(),
               segmentInfo: segmentInfoList,
+              pricingInforArray: typedPricingInfo, // Use the properly typed list
             );
             parsedFlights.add(flight);
           } catch (e) {

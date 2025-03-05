@@ -46,6 +46,7 @@ class Flight {
   final String? tripType; // "oneWay", "return", "multiCity"
   final List<Map<String, dynamic>> legSchedules;
   final List<FlightSegmentInfo> segmentInfo;
+  final List<Map<String, dynamic>> pricingInforArray;
   // Add this new property
 
   Flight({
@@ -88,6 +89,7 @@ class Flight {
     this.connectedFlights,
     this.tripSequence,
     this.tripType,
+    required this.pricingInforArray
   });
 }
 

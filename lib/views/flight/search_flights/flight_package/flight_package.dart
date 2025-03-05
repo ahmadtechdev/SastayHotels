@@ -1,5 +1,6 @@
 
 import 'package:flight_bocking/views/flight/search_flights/search_flight_utils/widgets/flight_card.dart';
+import 'package:flight_bocking/widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,11 +17,13 @@ import 'package_modal.dart';
 class PackageSelectionDialog extends StatelessWidget {
   final Flight flight;
   final bool isAnyFlightRemaining;
+  // final List<Map<String, dynamic>> pricingInformation; // Add this parameter
 
   PackageSelectionDialog({
     super.key,
     required this.flight,
     required this.isAnyFlightRemaining,
+    // required this.pricingInformation, // Add this parameter
   });
 
   final PageController _pageController = PageController(viewportFraction: 0.9);
@@ -128,7 +131,7 @@ class PackageSelectionDialog extends StatelessWidget {
                   }
                   return Transform.scale(
                     scale: Curves.easeOutQuint.transform(value),
-                    child: _buildPackageCard(flight.packages[index]),
+                    child: _buildPackageCard(flight.packages[index], index),
                   );
                 },
               );
@@ -177,7 +180,7 @@ class PackageSelectionDialog extends StatelessWidget {
   }
 
   // Inside _buildPackageCard method of PackageSelectionDialog
-  Widget _buildPackageCard(FlightPackageInfo package) {
+  Widget _buildPackageCard(FlightPackageInfo package, int index) {
     final headerColor = package.isSoldOut
         ? Colors.grey
         : TColors.primary;
@@ -328,7 +331,7 @@ class PackageSelectionDialog extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: package.isSoldOut ? null : () => onSelectPackage(),
+              onPressed: package.isSoldOut ? null : () => onSelectPackage(index),
               style: ElevatedButton.styleFrom(
                 backgroundColor: package.isSoldOut ? Colors.grey : TColors.primary,
                 minimumSize: const Size(double.infinity, 48),
@@ -395,7 +398,7 @@ class PackageSelectionDialog extends StatelessWidget {
     );
   }
 
-  void onSelectPackage() async {
+  void onSelectPackage(int selectedPackageIndex) async {
     try {
       final apiService = ApiServiceFlight();
       final travelersController = Get.find<TravelersController>();
@@ -405,17 +408,20 @@ class PackageSelectionDialog extends StatelessWidget {
       final List<Map<String, dynamic>> originDestinations = [];
 
       // Process all flight segments for each leg schedule
-      for (var legIndex = 0;
-          legIndex < flight.legSchedules.length;
-          legIndex++) {
+      for (var legIndex = 0; legIndex < flight.legSchedules.length; legIndex++) {
         final legSchedule = flight.legSchedules[legIndex];
         final List<Map<String, dynamic>> flightSegments = [];
 
         // Process all schedules within this leg
-        for (var schedule in legSchedule['schedules']) {
+        for (var i = 0; i < legSchedule['schedules'].length; i++) {
+          var schedule = legSchedule['schedules'][i];
+
+          // Access the bookingCode from the current segment index
+          final bookingCode = (flight.segmentInfo.length > i) ? flight.segmentInfo[i].bookingCode : '';
+
           final carrier = schedule['carrier'];
           flightSegments.add({
-            "ClassOfService": flight.cabinClass,
+            "ClassOfService": bookingCode,
             "Number": carrier['marketingFlightNumber'],
             "DepartureDateTime": schedule['departure']['dateTime'],
             "ArrivalDateTime": schedule['arrival']['dateTime'],
@@ -432,6 +438,7 @@ class PackageSelectionDialog extends StatelessWidget {
             }
           });
         }
+
 
         // Create origin destination information for this leg
         final originDestination = {
@@ -526,7 +533,7 @@ class PackageSelectionDialog extends StatelessWidget {
         type: flightController.currentScenario.value.index,
         flightSegments: originDestinations
             .expand((od) =>
-                (od['TPA_Extensions']['Flight'] as List<Map<String, dynamic>>))
+        (od['TPA_Extensions']['Flight'] as List<Map<String, dynamic>>))
             .toList(),
         adult: travelersController.adultCount.value,
         child: travelersController.childrenCount.value,
@@ -534,13 +541,32 @@ class PackageSelectionDialog extends StatelessWidget {
         requestBody: requestBody,
       );
 
+      // Parse the response to get the pricing information
+      flightController.parseApiResponse(response);
+
+
+
+
       // Handle the response and navigation
       if (response.containsKey('groupedItineraryResponse')) {
+        // Get the pricing information from the parsed response
+        final pricingInformation = flightController.flights.first.pricingInforArray;
 
+        final validateBasicCode= flightController.flights.first.legSchedules.first['fareBasisCode'];
+        final basicCode= flight.legSchedules.first['fareBasisCode'];
+
+        print("Ahmad");
+        print(validateBasicCode);
+        print(basicCode);
+        if(validateBasicCode==basicCode){
           Get.to(() => ReviewTripPage(
-                isMulti: false,
-                flight: flight,
-              ));
+            isMulti: false,
+            flight: flight,
+            pricingInformation: pricingInformation[selectedPackageIndex], // Pass the selected package's pricing information
+          ));
+        }else{
+          CustomSnackBar(message: 'Basic FLight Code Not Matched', backgroundColor: TColors.third).show();
+        }
 
       } else {
         throw Exception('Invalid response format');
