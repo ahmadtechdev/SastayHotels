@@ -74,6 +74,7 @@ class FilterState {
 class FlightController extends GetxController {
   var selectedCurrency = 'PKR'.obs;
   var flights = <Flight>[].obs;
+  var availabilityFlights = <Flight>[].obs; // Separate list for availability check
   var filteredFlights = <Flight>[].obs;
   var filterState = Rx<FilterState>(FilterState(
     priceRange: const RangeValues(0, 100000),
@@ -616,12 +617,16 @@ extension FlightDateTimeExtension on FlightController {
     return dateTime;
   }
 
-  void parseApiResponse(Map<String, dynamic>? response) {
+  void parseApiResponse(Map<String, dynamic>? response, {bool isAvailabilityCheck = false}) {
     try {
       if (response == null || response['groupedItineraryResponse'] == null) {
         print('Error: Invalid API response structure');
-        flights.value = [];
-        filteredFlights.value = [];
+        if (isAvailabilityCheck) {
+          availabilityFlights.value = [];
+        } else {
+          flights.value = [];
+          filteredFlights.value = [];
+        }
         return;
       }
 
@@ -655,14 +660,17 @@ extension FlightDateTimeExtension on FlightController {
       final itineraryGroups = groupedResponse['itineraryGroups'] as List?;
       if (itineraryGroups == null) {
         print('Error: No itinerary groups found');
-        flights.value = [];
-        filteredFlights.value = [];
+        if (isAvailabilityCheck) {
+          availabilityFlights.value = [];
+        } else {
+          flights.value = [];
+          filteredFlights.value = [];
+        }
         return;
       }
 
       for (var group in itineraryGroups) {
-        final legDescriptions =
-        group['groupDescription']['legDescriptions'] as List?;
+        final legDescriptions = group['groupDescription']['legDescriptions'] as List?;
         if (legDescriptions == null) continue;
 
         final itineraries = group['itineraries'] as List?;
@@ -777,8 +785,7 @@ extension FlightDateTimeExtension on FlightController {
             final legDesc = legDescsMap[legId];
             if (legDesc == null) continue;
 
-            final baseDate =
-            legDescriptions[legIndex]['departureDate'] as String;
+            final baseDate = legDescriptions[legIndex]['departureDate'] as String;
             final schedules = legDesc['schedules'] as List?;
             if (schedules == null) continue;
 
@@ -798,10 +805,8 @@ extension FlightDateTimeExtension on FlightController {
               final schedule = scheduleDescsMap[scheduleRef['ref']];
               if (schedule == null) continue;
 
-              final departureDateAdjustment =
-              scheduleRef['departureDateAdjustment'] as int?;
-              final arrivalDateAdjustment =
-              schedule['arrival']['dateAdjustment'] as int?;
+              final departureDateAdjustment = scheduleRef['departureDateAdjustment'] as int?;
+              final arrivalDateAdjustment = schedule['arrival']['dateAdjustment'] as int?;
 
               final departureDateTime = _calculateFlightDateTime(baseDate,
                   schedule['departure']['time'], departureDateAdjustment);
@@ -922,17 +927,25 @@ extension FlightDateTimeExtension on FlightController {
         }
       }
 
-      flights.value = parsedFlights;
-      filteredFlights.value = parsedFlights;
+      if (isAvailabilityCheck) {
+        availabilityFlights.value = parsedFlights;
+      } else {
+        flights.value = parsedFlights;
+        filteredFlights.value = parsedFlights;
+      }
 
-      if (parsedFlights.isNotEmpty) {
+      if (parsedFlights.isNotEmpty && !isAvailabilityCheck) {
         initializeFilterRanges();
       }
     } catch (e, stackTrace) {
       print('Error parsing API response: $e');
       print('Stack trace: $stackTrace');
-      flights.value = [];
-      filteredFlights.value = [];
+      if (isAvailabilityCheck) {
+        availabilityFlights.value = [];
+      } else {
+        flights.value = [];
+        filteredFlights.value = [];
+      }
     }
   }
 

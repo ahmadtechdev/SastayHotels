@@ -63,7 +63,12 @@ class _BookingFormState extends State<BookingForm> {
       bottomNavigationBar: _buildBottomBar(),
     );
   }
-
+  @override
+  void dispose() {
+    bookingController.dispose();
+    travelersController.dispose();
+    super.dispose();
+  }
   Widget _buildTermsAndConditions() {
     return Card(
       color: TColors.background,
@@ -118,7 +123,7 @@ class _BookingFormState extends State<BookingForm> {
             (index) => _buildTravelerSection(
           title: 'Adult ${index + 1}',
           isInfant: false,
-          type: 'adult',
+          type: 'adult', index: index,
         ),
       );
 
@@ -127,7 +132,7 @@ class _BookingFormState extends State<BookingForm> {
             (index) => _buildTravelerSection(
           title: 'Child ${index + 1}',
           isInfant: false,
-          type: 'child',
+          type: 'child', index: index,
         ),
       );
 
@@ -137,6 +142,7 @@ class _BookingFormState extends State<BookingForm> {
           title: 'Infant ${index + 1}',
           isInfant: true,
           type: 'infant',
+                index: index
         ),
       );
 
@@ -154,7 +160,18 @@ class _BookingFormState extends State<BookingForm> {
     required String title,
     required bool isInfant,
     required String type,
+    required int index,
   }) {
+    // Get the corresponding TravelerInfo object based on the type and index
+    TravelerInfo travelerInfo;
+    if (type == 'adult') {
+      travelerInfo = bookingController.adults[index];
+    } else if (type == 'child') {
+      travelerInfo = bookingController.children[index];
+    } else {
+      travelerInfo = bookingController.infants[index];
+    }
+
     return Card(
       color: TColors.background,
       elevation: 3,
@@ -207,13 +224,15 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildDropdown(
                           hint: 'Gender',
                           items: ['Male', 'Female'],
+                          controller: travelerInfo.genderController,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDropdown(
                           hint: 'Title',
-                          items: ['Mr.', 'Mrs.', 'Ms.', 'Dr.'],
+                          items: ['Mr', 'Mrs', 'Ms'],
+                          controller: travelerInfo.titleController,
                         ),
                       ),
                     ],
@@ -225,6 +244,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Given Name',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.firstNameController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -232,6 +252,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Surname',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.lastNameController,
                         ),
                       ),
                     ],
@@ -242,6 +263,7 @@ class _BookingFormState extends State<BookingForm> {
                       Expanded(
                         child: _buildDateField(
                           hint: 'Date of Birth',
+                          controller: travelerInfo.dateOfBirthController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -250,6 +272,7 @@ class _BookingFormState extends State<BookingForm> {
                           hint: 'Phone',
                           prefixIcon: Icons.phone_outlined,
                           keyboardType: TextInputType.phone,
+                          controller: travelerInfo.phoneController,
                         ),
                       ),
                     ],
@@ -262,6 +285,7 @@ class _BookingFormState extends State<BookingForm> {
                           hint: 'Email',
                           prefixIcon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
+                          controller: travelerInfo.emailController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -269,6 +293,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Nationality',
                           prefixIcon: Icons.flag_outlined,
+                          controller: travelerInfo.nationalityController,
                         ),
                       ),
                     ],
@@ -280,12 +305,14 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Passport Number',
                           prefixIcon: Icons.document_scanner_outlined,
+                          controller: travelerInfo.passportController,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateField(
                           hint: 'Passport Expiry',
+                          controller: travelerInfo.passportExpiryController,
                         ),
                       ),
                     ],
@@ -297,7 +324,8 @@ class _BookingFormState extends State<BookingForm> {
                       Expanded(
                         child: _buildDropdown(
                           hint: 'Title',
-                          items: ['Mstr.', 'Miss'],
+                          items: ['Mstr', 'Miss'],
+                          controller: travelerInfo.titleController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -305,6 +333,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Given Name',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.firstNameController,
                         ),
                       ),
                     ],
@@ -316,12 +345,14 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Surname',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.lastNameController,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateField(
                           hint: 'Date of Birth',
+                          controller: travelerInfo.dateOfBirthController,
                         ),
                       ),
                     ],
@@ -333,6 +364,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Nationality',
                           prefixIcon: Icons.flag_outlined,
+                          controller: travelerInfo.nationalityController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -340,6 +372,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Passport Number',
                           prefixIcon: Icons.document_scanner_outlined,
+                          controller: travelerInfo.passportController,
                         ),
                       ),
                     ],
@@ -350,6 +383,7 @@ class _BookingFormState extends State<BookingForm> {
                       Expanded(
                         child: _buildDateField(
                           hint: 'Passport Expiry',
+                          controller: travelerInfo.passportExpiryController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -357,6 +391,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildDropdown(
                           hint: 'Gender',
                           items: ['Male', 'Female'],
+                          controller: travelerInfo.genderController,
                         ),
                       ),
                     ],
@@ -368,7 +403,8 @@ class _BookingFormState extends State<BookingForm> {
                       Expanded(
                         child: _buildDropdown(
                           hint: 'Title',
-                          items: ['Inf.'],
+                          items: ['Inf'],
+                          controller: travelerInfo.titleController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -376,6 +412,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Given Name',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.firstNameController,
                         ),
                       ),
                     ],
@@ -387,12 +424,14 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Surname',
                           prefixIcon: Icons.person_outline,
+                          controller: travelerInfo.lastNameController,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildDateField(
                           hint: 'Date of Birth',
+                          controller: travelerInfo.dateOfBirthController,
                         ),
                       ),
                     ],
@@ -404,6 +443,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Nationality',
                           prefixIcon: Icons.flag_outlined,
+                          controller: travelerInfo.nationalityController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -411,6 +451,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildTextField(
                           hint: 'Passport Number',
                           prefixIcon: Icons.document_scanner_outlined,
+                          controller: travelerInfo.passportController,
                         ),
                       ),
                     ],
@@ -421,6 +462,7 @@ class _BookingFormState extends State<BookingForm> {
                       Expanded(
                         child: _buildDateField(
                           hint: 'Passport Expiry',
+                          controller: travelerInfo.passportExpiryController,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -428,6 +470,7 @@ class _BookingFormState extends State<BookingForm> {
                         child: _buildDropdown(
                           hint: 'Gender',
                           items: ['Male', 'Female'],
+                          controller: travelerInfo.genderController,
                         ),
                       ),
                     ],
@@ -441,7 +484,10 @@ class _BookingFormState extends State<BookingForm> {
     );
   }
 
-  Widget _buildDateField({required String hint}) {
+  Widget _buildDateField({
+    required String hint,
+    required TextEditingController controller, // Pass the controller
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[100],
@@ -449,16 +495,24 @@ class _BookingFormState extends State<BookingForm> {
         border: Border.all(color: Colors.grey[300]!),
       ),
       child: TextField(
+        controller: controller, // Bind the controller
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: const Icon(Icons.calendar_today, color: TColors.primary),
           border: InputBorder.none,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
         readOnly: true,
         onTap: () async {
-          // Handle the selected date
+          final DateTime? pickedDate = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime(2100),
+          );
+          if (pickedDate != null) {
+            controller.text = "${pickedDate.toLocal()}".split(' ')[0]; // Update the controller
+          }
         },
       ),
     );
@@ -498,33 +552,39 @@ class _BookingFormState extends State<BookingForm> {
             _buildTextField(
               hint: 'First Name',
               prefixIcon: Icons.person_outline,
+              controller: bookingController.firstNameController, // Bind to controller
             ),
             const SizedBox(height: 12),
             _buildTextField(
               hint: 'Last Name',
               prefixIcon: Icons.person_outline,
+              controller: bookingController.lastNameController, // Bind to controller
             ),
             const SizedBox(height: 12),
             _buildTextField(
               hint: 'Email',
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
+              controller: bookingController.emailController,
             ),
             const SizedBox(height: 12),
             _buildTextField(
               hint: 'Phone',
               prefixIcon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
+              controller: bookingController.phoneController,
             ),
             const SizedBox(height: 12),
             _buildTextField(
               hint: 'Address',
               prefixIcon: Icons.location_on_outlined,
+              controller: bookingController.addressController,
             ),
             const SizedBox(height: 12),
             _buildTextField(
               hint: 'City',
               prefixIcon: Icons.location_city_outlined,
+              controller: bookingController.cityController,
             ),
           ],
         ),
@@ -534,33 +594,10 @@ class _BookingFormState extends State<BookingForm> {
 
   // Rest of the widget code remains the same...
 
-  Widget _buildTextField({
-    required String hint,
-    required IconData prefixIcon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: TextField(
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(prefixIcon, color: TColors.primary),
-          border: InputBorder.none,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDropdown({
     required String hint,
     required List<String> items,
+    required TextEditingController controller,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -580,7 +617,34 @@ class _BookingFormState extends State<BookingForm> {
             child: Text(value),
           );
         }).toList(),
-        onChanged: (value) {},
+        onChanged: (value) {
+          controller.text = value ?? '';
+        },
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required String hint,
+    required IconData prefixIcon,
+    required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(prefixIcon, color: TColors.primary),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
       ),
     );
   }
@@ -618,6 +682,53 @@ class _BookingFormState extends State<BookingForm> {
           ElevatedButton(
             onPressed: () async {
               if (_formKey.currentState!.validate()) {
+                // Print all booker details
+                print('Booker Details:');
+                print('First Name: ${bookingController.firstNameController.text}');
+                print('Last Name: ${bookingController.lastNameController.text}');
+                print('Email: ${bookingController.emailController.text}');
+                print('Phone: ${bookingController.phoneController.text}');
+                print('Address: ${bookingController.addressController.text}');
+                print('City: ${bookingController.cityController.text}');
+
+                // Print all adult details
+                for (var i = 0; i < bookingController.adults.length; i++) {
+                  print('Adult ${i + 1} Details:');
+                  print('Title: ${bookingController.adults[i].titleController.text}');
+                  print('First Name: ${bookingController.adults[i].firstNameController.text}');
+                  print('Last Name: ${bookingController.adults[i].lastNameController.text}');
+                  print('Date of Birth: ${bookingController.adults[i].dateOfBirthController.text}');
+                  print('Phone: ${bookingController.adults[i].phoneController.text}');
+                  print('Email: ${bookingController.adults[i].emailController.text}');
+                  print('Nationality: ${bookingController.adults[i].nationalityController.text}');
+                  print('Passport Number: ${bookingController.adults[i].passportController.text}');
+                  print('Passport Expiry: ${bookingController.adults[i].passportExpiryController.text}');
+                }
+
+                // Print all child details
+                for (var i = 0; i < bookingController.children.length; i++) {
+                  print('Child ${i + 1} Details:');
+                  print('Title: ${bookingController.children[i].titleController.text}');
+                  print('First Name: ${bookingController.children[i].firstNameController.text}');
+                  print('Last Name: ${bookingController.children[i].lastNameController.text}');
+                  print('Date of Birth: ${bookingController.children[i].dateOfBirthController.text}');
+                  print('Nationality: ${bookingController.children[i].nationalityController.text}');
+                  print('Passport Number: ${bookingController.children[i].passportController.text}');
+                  print('Passport Expiry: ${bookingController.children[i].passportExpiryController.text}');
+                }
+
+                // Print all infant details
+                for (var i = 0; i < bookingController.infants.length; i++) {
+                  print('Infant ${i + 1} Details:');
+                  print('Title: ${bookingController.infants[i].titleController.text}');
+                  print('First Name: ${bookingController.infants[i].firstNameController.text}');
+                  print('Last Name: ${bookingController.infants[i].lastNameController.text}');
+                  print('Date of Birth: ${bookingController.infants[i].dateOfBirthController.text}');
+                  print('Nationality: ${bookingController.infants[i].nationalityController.text}');
+                  print('Passport Number: ${bookingController.infants[i].passportController.text}');
+                  print('Passport Expiry: ${bookingController.infants[i].passportExpiryController.text}');
+                }
+
                 // Get the booker's email and phone from the form
                 final bookerEmail = bookingController.emailController.text;
                 final bookerPhone = bookingController.phoneController.text;

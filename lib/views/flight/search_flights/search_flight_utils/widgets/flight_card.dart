@@ -200,14 +200,14 @@ class _FlightCardState extends State<FlightCard>
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              legSchedule['fareBasisCode'],
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            // Text(
+                            //   legSchedule['fareBasisCode'],
+                            //   style: const TextStyle(
+                            //     fontSize: 14,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            //   overflow: TextOverflow.clip,
+                            // ),
                             // const SizedBox(width: 8),
                             // Text(
                             //   widget.flight.flightNumber,

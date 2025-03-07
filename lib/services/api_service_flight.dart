@@ -401,10 +401,13 @@ class ApiServiceFlight extends GetxService {
         final adult = adults[i];
         passengers.add({
           "NameNumber": "${i + 1}.1",
-          "NameReference": "",
+          "NameReference": "", // Empty string for adults
           "PassengerType": "ADT",
-          "GivenName": adult.firstNameController.text,
+          "GivenName": "${adult.firstNameController.text} ${adult.titleController.text}", // Concatenate title with first name
           "Surname": adult.lastNameController.text,
+          "DateOfBirth": adult.dateOfBirthController.text, // Add date of birth
+          "PassportNumber": adult.passportController.text, // Add passport number
+          "PassportExpiry": adult.passportExpiryController.text, // Add passport expiry
         });
       }
 
@@ -413,10 +416,13 @@ class ApiServiceFlight extends GetxService {
         final child = children[i];
         passengers.add({
           "NameNumber": "${adults.length + i + 1}.1",
-          "NameReference": "C${i + 1}",
+          "NameReference": "C04", // Format as C04, C05, etc.
           "PassengerType": "CNN",
-          "GivenName": child.firstNameController.text,
+          "GivenName": "${child.firstNameController.text} ${child.titleController.text}", // Concatenate title with first name
           "Surname": child.lastNameController.text,
+          "DateOfBirth": child.dateOfBirthController.text, // Add date of birth
+          "PassportNumber": child.passportController.text, // Add passport number
+          "PassportExpiry": child.passportExpiryController.text, // Add passport expiry
         });
       }
 
@@ -424,35 +430,42 @@ class ApiServiceFlight extends GetxService {
       for (var i = 0; i < infants.length; i++) {
         final infant = infants[i];
         passengers.add({
-          "NameNumber": "${adults.length + children.length + i + 1}.1",
-          "NameReference": "I${i + 1}",
+          "NameNumber": "${i + 1}.1", // Infants reference their respective adults
+          "NameReference": "I12", // Format as I12, I13, etc.
           "PassengerType": "INF",
           "Infant": true,
-          "GivenName": infant.firstNameController.text,
+          "GivenName": "${infant.firstNameController.text} ${infant.titleController.text}", // Concatenate title with first name
           "Surname": infant.lastNameController.text,
+          "DateOfBirth": infant.dateOfBirthController.text, // Add date of birth
+          "PassportNumber": infant.passportController.text, // Add passport number
+          "PassportExpiry": infant.passportExpiryController.text, // Add passport expiry
         });
       }
 
       // Add flight segments
+      var i =0;
       for (var leg in flight.legSchedules) {
         for (var schedule in leg['schedules']) {
           flightSegments.add({
             "DepartureDateTime": schedule['departure']['dateTime'],
-            "FlightNumber": schedule['carrier']['marketingFlightNumber'],
+            "FlightNumber": schedule['carrier']['marketingFlightNumber'].toString(),
             "NumberInParty": passengers.length.toString(),
-            "ResBookDesigCode": "M", // Assuming default booking code
+            "ResBookDesigCode": flight.segmentInfo[i].bookingCode,
             "Status": "NN",
             "DestinationLocation": {
               "LocationCode": schedule['arrival']['airport'],
             },
             "MarketingAirline": {
               "Code": schedule['carrier']['marketing'],
-              "FlightNumber": schedule['carrier']['marketingFlightNumber'],
+              "FlightNumber": schedule['carrier']['marketingFlightNumber'].toString(),
             },
             "OriginLocation": {
               "LocationCode": schedule['departure']['airport'],
             },
           });
+          i++;
+          print("ahm");
+          print(i);
         }
       }
 
@@ -469,12 +482,39 @@ class ApiServiceFlight extends GetxService {
         }
       }
 
+      // Get the first adult's phone and email
+      final firstAdultPhone = adults.isNotEmpty ? adults[0].phoneController.text : bookerPhone;
+      final firstAdultEmail = adults.isNotEmpty ? adults[0].emailController.text : bookerEmail;
+
+      List<Map<String, String>> passengerType = [];
+
+      if (adults.isNotEmpty) {
+        passengerType.add({
+          "Code": "ADT",
+          "Quantity": adults.length.toString(),
+        });
+      }
+
+      if (children.isNotEmpty) {
+        passengerType.add({
+          "Code": "CNN",
+          "Quantity": children.length.toString(),
+        });
+      }
+
+      if (infants.isNotEmpty) {
+        passengerType.add({
+          "Code": "INF",
+          "Quantity": infants.length.toString(),
+        });
+      }
+
       // Create the request body
       final requestBody = {
         "CreatePassengerNameRecordRQ": {
           "haltOnAirPriceError": true,
           "haltOnInvalidMCT": true,
-          "targetCity": "UL8L", // Assuming default target city
+          "targetCity": "6MD8", // Assuming default target city
           "version": "2.5.0",
           "TravelItineraryAddInfo": {
             "AgencyInfo": {
@@ -484,21 +524,44 @@ class ApiServiceFlight extends GetxService {
             },
             "CustomerInfo": {
               "ContactNumbers": {
-                "ContactNumber": [
-                  {
-                    "NameNumber": "1.1",
-                    "Phone": bookerPhone,
-                    "PhoneUseType": "M",
-                  },
-                ],
+                "ContactNumber": passengers
+                    .where((passenger) => passenger["PassengerType"] != "INF") // Exclude infants
+                    .map((passenger) => {
+                  "NameNumber": passenger["NameNumber"],
+                  "Phone": firstAdultPhone, // Use first adult's phone for all travelers
+                  "PhoneUseType": "M"
+                })
+                    .toList(),
               },
-              "Email": [
-                {
-                  "Address": bookerEmail,
-                  "NameNumber": "1.1",
-                },
-              ],
-              "PersonName": passengers,
+              "Email": passengers
+                  .where((passenger) => passenger["PassengerType"] != "INF") // Exclude infants
+                  .map((passenger) => {
+                "Address": firstAdultEmail, // Replace @ with //
+                "NameNumber": passenger["NameNumber"]
+              })
+                  .toList(),
+              // "PersonName": passengers.map((passenger) => {
+              //   "NameNumber": "1.1",
+              //   "NameReference": passenger["NameReference"],
+              //   "PassengerType": passenger["PassengerType"],
+              //   "GivenName": passenger["GivenName"],
+              //   "Surname": passenger["Surname"],
+              //   if (passenger["PassengerType"] == "INF") "Infant": true, // Add Infant field only for infants
+              // }).toList(),
+              "PersonName": passengers.asMap().entries.map((entry) {
+                int index = entry.key + 1; // Start from 1 instead of 0
+                var passenger = entry.value;
+
+                return {
+                  "NameNumber": "$index.1", // Incrementing NameNumber
+                  "NameReference": passenger["NameReference"],
+                  "PassengerType": passenger["PassengerType"],
+                  if (passenger["PassengerType"] == "INF") "Infant": true, // Add Infant field only for infants
+                  "GivenName": passenger["GivenName"],
+                  "Surname": passenger["Surname"],
+                };
+              }).toList(),
+
             },
           },
           "AirBook": {
@@ -534,27 +597,26 @@ class ApiServiceFlight extends GetxService {
                   "PricingQualifiers": {
                     "CommandPricing": fareBasisCodes,
                     "ItineraryOptions": {
-                      "SegmentSelect": fareBasisCodes.map((code) {
-                        return {
-                          "Number": code["RPH"],
-                          "RPH": code["RPH"],
-                        };
+                      "SegmentSelect": fareBasisCodes.map((code) => {
+                        "Number": code["RPH"],
+                        "RPH": code["RPH"],
                       }).toList(),
                     },
-                    "PassengerType": [
-                      {
-                        "Code": "ADT",
-                        "Quantity": adults.length.toString(),
-                      },
-                      {
-                        "Code": "CNN",
-                        "Quantity": children.length.toString(),
-                      },
-                      {
-                        "Code": "INF",
-                        "Quantity": infants.length.toString(),
-                      },
-                    ],
+                    "PassengerType": passengerType,
+                    // "PassengerType": [
+                    //   {
+                    //     "Code": "ADT",
+                    //     "Quantity": adults.length.toString(),
+                    //   },
+                    //   {
+                    //     "Code": "CNN",
+                    //     "Quantity": children.length.toString(),
+                    //   },
+                    //   {
+                    //     "Code": "INF",
+                    //     "Quantity": infants.length.toString(),
+                    //   },
+                    // ],
                   },
                 },
               },
@@ -568,37 +630,56 @@ class ApiServiceFlight extends GetxService {
                     "Document": {
                       "IssueCountry": "PK",
                       "NationalityCountry": "PK",
-                      "ExpirationDate": "2028-03-04",
-                      "Number": "1233435",
+                      "ExpirationDate": passenger["PassportExpiry"], // Use traveler's passport expiry date
+                      "Number": passenger["PassportNumber"], // Use traveler's passport number
                       "Type": "P",
                     },
                     "PersonName": {
                       "GivenName": passenger["GivenName"],
                       "MiddleName": "",
                       "Surname": passenger["Surname"],
-                      "DateOfBirth": "2000-03-04",
+                      "DateOfBirth": passenger["DateOfBirth"], // Use traveler's date of birth
                       "DocumentHolder": true,
-                      "Gender": "M",
+                      "Gender": passenger["PassengerType"] == "INF" ? "M" : "F", // Default to M for infants
                       "LapChild": passenger["PassengerType"] == "INF",
                       "NameNumber": passenger["NameNumber"],
                     },
                   };
                 }).toList(),
                 "Service": [
-                  {
-                    "SSR_Code": "CTCM",
-                    "PersonName": {
-                      "NameNumber": "1.1",
+                  // Add CTCM and CTCE for all travelers (adults and children)
+                  ...passengers
+                      .where((passenger) => passenger["PassengerType"] != "INF") // Exclude infants
+                      .map((passenger) => [
+                    {
+                      "SSR_Code": "CTCM",
+                      "PersonName": {
+                        "NameNumber": passenger["NameNumber"],
+                      },
+                      "Text": firstAdultPhone,
                     },
-                    "Text": bookerPhone,
-                  },
-                  {
-                    "SSR_Code": "CTCE",
-                    "PersonName": {
-                      "NameNumber": "1.1",
+                    {
+                      "SSR_Code": "CTCE",
+                      "PersonName": {
+                        "NameNumber": passenger["NameNumber"],
+                      },
+                      "Text": firstAdultEmail.replaceAll('@', '//'),
                     },
-                    "Text": bookerEmail,
-                  },
+                  ])
+                      .expand((x) => x)
+                      .toList(),
+                  // Add INFT for infants
+                  ...passengers
+                      .where((passenger) => passenger["PassengerType"] == "INF") // Only for infants
+                      .map((passenger) => {
+                    "SSR_Code": "INFT",
+                    "PersonName": {
+                      "NameNumber": passenger["NameNumber"],
+                    },
+                    "Text":
+                    "${passenger["Surname"]}/${passenger["GivenName"].split(' ')[0]}${passenger["GivenName"].split(' ')[1]}/${passenger["DateOfBirth"]}"
+                  })
+                      .toList(),
                 ],
               },
             },
@@ -636,27 +717,92 @@ class ApiServiceFlight extends GetxService {
       _printJsonPretty(requestBody);
 
       // Make the API call
-      // final token = await getValidToken() ?? await generateToken();
-      // final response = await dio.post(
-      //   '/v2.5.0/passenger/records?mode=create',
-      //   options: Options(
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //       'Authorization': 'Bearer $token',
-      //       'Conversation-ID': '2021.01.DevStudio',
-      //     },
-      //   ),
-      //   data: requestBody,
-      // );
-      //
-      // if (response.statusCode == 200) {
-      //   print('PNR created successfully');
-      // } else {
-      //   throw Exception('Failed to create PNR: ${response.statusCode}');
-      // }
+      final token = await getValidToken() ?? await generateToken();
+      final response = await dio.post(
+        '/v2.5.0/passenger/records?mode=create',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+            'Conversation-ID': '2021.01.DevStudio',
+          },
+        ),
+        data: requestBody,
+      );
+
+      if (response.statusCode == 200) {
+        print("PNR Response");
+        _printJsonPretty(response.data);
+        handlePnrResponse(response.data);
+        print('PNR created successfully');
+      } else {
+        // throw Exception('Failed to create PNR: ${response.statusCode}');
+        // throw Exception('Failed to create PNR: ${response.data}');
+        _printJsonPretty(response.data);
+      }
     } catch (e) {
       print('Error in createPNRRequest: $e');
       throw Exception('Error creating PNR: $e');
+    }
+  }
+
+  void handlePnrResponse(Map<String, dynamic> pnrResponse) async {
+    final pnrData = pnrResponse['CreatePassengerNameRecordRS'];
+    if (pnrData['ApplicationResults']['status'] == 'Complete') {
+      final itineraryRefId = pnrData['ItineraryRef']['ID'];
+      print('ItineraryRef ID: $itineraryRefId');
+
+      try {
+        final bookingDetails = await ApiServiceFlight().getBooking(itineraryRefId);
+        print('Booking Details: $bookingDetails');
+      } catch (e) {
+        print('Error fetching booking details: $e');
+      }
+    } else {
+      print('PNR creation status is not complete.');
+    }
+  }
+
+  Future<Map<String, dynamic>> getBooking(String pnrId) async {
+    try {
+      // Get the valid token or generate a new one if necessary
+      final token = await getValidToken() ?? await generateToken();
+
+      // Prepare the request body
+      final requestBody = {
+        "confirmationId": pnrId,
+      };
+
+      // Print the request body for debugging
+      print('Get Booking Request Body:');
+      _printJsonPretty(requestBody);
+
+      // Make the API call
+      final response = await dio.post(
+        '/v1/trip/orders/getBooking',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: requestBody,
+      );
+
+      // Print the response for debugging
+      print('Get Booking Response:');
+      _printJsonPretty(response.data);
+
+      if (response.statusCode == 200) {
+        // Return the response data if the request is successful
+        return response.data;
+      } else {
+        // Handle errors
+        throw Exception('Failed to get booking details: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getBooking: $e');
+      throw Exception('Error getting booking details: $e');
     }
   }
 }

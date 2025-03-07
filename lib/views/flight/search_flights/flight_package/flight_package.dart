@@ -542,7 +542,7 @@ class PackageSelectionDialog extends StatelessWidget {
       );
 
       // Parse the response to get the pricing information
-      flightController.parseApiResponse(response);
+      flightController.parseApiResponse(response, isAvailabilityCheck: true);
 
 
 
@@ -550,9 +550,9 @@ class PackageSelectionDialog extends StatelessWidget {
       // Handle the response and navigation
       if (response.containsKey('groupedItineraryResponse')) {
         // Get the pricing information from the parsed response
-        final pricingInformation = flightController.flights.first.pricingInforArray;
+        final pricingInformation = flightController.availabilityFlights.first.pricingInforArray;
 
-        final validateBasicCode= flightController.flights.first.legSchedules.first['fareBasisCode'];
+        final validateBasicCode= flightController.availabilityFlights.first.legSchedules.first['fareBasisCode'];
         final basicCode= flight.legSchedules.first['fareBasisCode'];
 
         print("Ahmad");

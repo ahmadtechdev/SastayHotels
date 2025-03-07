@@ -9,6 +9,10 @@ class TravelerInfo {
   final TextEditingController passportController;
   final TextEditingController nationalityController;
   final TextEditingController dateOfBirthController;
+  final TextEditingController passportExpiryController;
+  final TextEditingController genderController;
+  final TextEditingController phoneController;
+  final TextEditingController emailController;
   final bool isInfant;
 
   TravelerInfo({required this.isInfant})
@@ -17,7 +21,11 @@ class TravelerInfo {
         lastNameController = TextEditingController(),
         passportController = TextEditingController(),
         nationalityController = TextEditingController(),
-        dateOfBirthController = TextEditingController();
+        dateOfBirthController = TextEditingController(),
+        passportExpiryController = TextEditingController(),
+        genderController = TextEditingController(),
+        phoneController = TextEditingController(),
+        emailController = TextEditingController();
 
   void dispose() {
     titleController.dispose();
@@ -26,6 +34,10 @@ class TravelerInfo {
     passportController.dispose();
     nationalityController.dispose();
     dateOfBirthController.dispose();
+    passportExpiryController.dispose();
+    genderController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
   }
 
   bool isValid() {
@@ -73,6 +85,9 @@ class BookingFlightController extends GetxController {
   final RxList<TravelerInfo> infants = <TravelerInfo>[].obs;
 
   // Booker Information
+  // Booker Information
+  final firstNameController = TextEditingController(); // Add this
+  final lastNameController = TextEditingController();  // Add this
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
   final addressController = TextEditingController();
@@ -258,6 +273,8 @@ class BookingFlightController extends GetxController {
   @override
   void onClose() {
     // Dispose booker information controllers
+    firstNameController.dispose(); // Add this
+    lastNameController.dispose();  // Add this
     emailController.dispose();
     phoneController.dispose();
     addressController.dispose();
