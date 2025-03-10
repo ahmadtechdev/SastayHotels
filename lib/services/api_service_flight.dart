@@ -392,6 +392,7 @@ class ApiServiceFlight extends GetxService {
     required String bookerPhone,
   }) async {
     try {
+
       // Extract necessary information from the flight and travelers
       final List<Map<String, dynamic>> passengers = [];
       final List<Map<String, dynamic>> flightSegments = [];
@@ -463,9 +464,8 @@ class ApiServiceFlight extends GetxService {
               "LocationCode": schedule['departure']['airport'],
             },
           });
-          i++;
-          print("ahm");
-          print(i);
+
+
         }
       }
 
@@ -733,11 +733,34 @@ class ApiServiceFlight extends GetxService {
       if (response.statusCode == 200) {
         print("PNR Response");
         _printJsonPretty(response.data);
-        handlePnrResponse(response.data);
-        print('PNR created successfully');
+print("Next Request Data");
+        // Extract necessary data from the PNR response
+        final pnrData = response.data['CreatePassengerNameRecordRS'];
+        if (pnrData['ApplicationResults']['status'] == 'Complete') {
+          final itineraryRefId = pnrData['ItineraryRef']['ID'];
+          print('ItineraryRef ID: $itineraryRefId');
+
+          // Extract TotalAmount and CurrencyCode
+          final totalAmount = pnrData['AirPrice'][0]['PriceQuote']['PricedItinerary']['TotalAmount'];
+          final currencyCode = pnrData['AirPrice'][0]['PriceQuote']['PricedItinerary']['CurrencyCode'];
+          print('Total Amount: $totalAmount $currencyCode');
+
+          // Extract passenger-specific amounts
+          final airItineraryPricingInfo = pnrData['AirPrice'][0]['PriceQuote']['PricedItinerary']['AirItineraryPricingInfo'];
+          for (var aipia in airItineraryPricingInfo) {
+            final code = aipia['PassengerTypeQuantity']['Code'];
+            final quantity = aipia['PassengerTypeQuantity']['Quantity'];
+            final amount = aipia['ItinTotalFare']['TotalFare']['Amount'];
+            print('Passenger Type: $code, Quantity: $quantity, Amount: $amount $currencyCode');
+          }
+
+          // Call getBooking API
+          final bookingDetails = await getBooking(itineraryRefId);
+          print('Booking Details: $bookingDetails');
+        } else {
+          print('PNR creation status is not complete.');
+        }
       } else {
-        // throw Exception('Failed to create PNR: ${response.statusCode}');
-        // throw Exception('Failed to create PNR: ${response.data}');
         _printJsonPretty(response.data);
       }
     } catch (e) {
